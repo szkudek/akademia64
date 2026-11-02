@@ -127,3 +127,10 @@ body{color:var(--text)}
 .account-verification p{font-size:12px;line-height:1.8;color:var(--reading);margin-bottom:13px}
 .account-verification button{margin-bottom:9px;display:block}
 .account-verification p:empty{display:none}
+.account-danger{margin-top:26px;padding-top:15px;border-top:1px solid var(--line)}
+.account-danger .text-link{color:#a34d3a}
+.danger-btn{background:#914533;color:#fff8ef;margin:5px 14px 10px 0}
+.danger-btn:hover{background:#743626}
+[data-theme="dark"] .account-danger .text-link{color:#e1a78d}
+[data-theme="dark"] .danger-btn{background:#a34f3d;color:#fff4e4}
+[data-theme="dark"] .danger-btn:hover{background:#b65a45}

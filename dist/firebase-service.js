@@ -45,6 +45,34 @@ export function createFirebaseService({auth,db,authSDK:a,dbSDK:d}){
       if(!auth.currentUser)return null;
       await a.reload(auth.currentUser);await a.getIdToken(auth.currentUser,true);return profile(auth.currentUser);
     },
+    async deleteAccount(password){
+      const current=auth.currentUser;
+      if(!current)throw appError('account/changed');
+      const id=current.uid;
+      const credential=a.EmailAuthProvider.credential(current.email,password);
+      await a.reauthenticateWithCredential(current,credential);
+      if(auth.currentUser?.uid!==id)throw appError('account/changed');
+      // Reauthentication must succeed before either the account or its data is removed.
+      const ref=d.doc(db,'users',id,'progress','main');
+      let snapshot=null;
+      if(current.emailVerified){
+        snapshot=await deadline(d.getDocFromServer(ref));
+        if(auth.currentUser?.uid!==id)throw appError('account/changed');
+        await deadline(d.deleteDoc(ref));
+      }
+      try{
+        if(auth.currentUser?.uid!==id)throw appError('account/changed');
+        await a.deleteUser(current);
+      }catch(error){
+        // Keep progress if Firebase refuses the final account deletion.
+        if(snapshot?.exists()&&auth.currentUser?.uid===id){
+          try{await deadline(d.setDoc(ref,{...normalizeProgress(snapshot.data()),updatedAt:d.serverTimestamp()}))}
+          catch{throw appError('account/delete-partial')}
+        }
+        throw error;
+      }
+      return {id};
+    },
     async getProgress(id){
       const ref=owner(id);const result=await deadline(d.getDocFromServer(ref));owner(id);
       return result.exists()?normalizeProgress(result.data()):emptyProgress();
@@ -82,7 +110,8 @@ export function firebaseMessage(error){
     'account/changed':'Konto zmieniło się w innej karcie. Odśwież stronę.',
     'account/unverified':'Potwierdź adres e-mail, aby zapisywać postępy na koncie.',
     'account/invalid-name':'Nazwa musi mieć od 2 do 40 znaków.',
-    'account/weak-password':'Hasło musi mieć co najmniej 12 znaków.'
+    'account/weak-password':'Hasło musi mieć co najmniej 12 znaków.',
+    'account/delete-partial':'Konto nie zostało usunięte, ale przywrócenie postępów nie powiodło się. Postępy pozostają na urządzeniu. Spróbuj ponownie.'
   };
   return messages[code]||'Nie udało się wykonać operacji. Sprawdź połączenie i spróbuj ponownie.';
 }

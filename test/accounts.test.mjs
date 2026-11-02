@@ -12,6 +12,9 @@ function fixture(){
   async updateProfile(user,{displayName}){user.displayName=displayName},
   async signInWithEmailAndPassword(auth,email,password){auth.currentUser={...account(email.split('@')[0]),email};return {user:auth.currentUser}},
   async signOut(auth){auth.currentUser=null;listener?.(null)},
+  EmailAuthProvider:{credential:(email,password)=>({email,password})},
+  async reauthenticateWithCredential(user,credential){calls.push(['reauth',user.uid]);if(credential.password!=='correct password')throw Object.assign(new Error(),{code:'auth/invalid-credential'})},
+  async deleteUser(user){calls.push(['delete-user',user.uid]);auth.currentUser=null;listener?.(null)},
   async sendPasswordResetEmail(auth,email){calls.push(['reset',email])},
   async sendEmailVerification(user){calls.push(['verify',user.uid])},
   async reload(){},async getIdToken(){calls.push(['refresh-token'])},
@@ -19,7 +22,9 @@ function fixture(){
  };
  const d={
   doc(db,...path){return path.join('/')},
-  async getDocFromServer(ref){calls.push(['read',ref]);return {exists:()=>records.has(ref),data:()=>records.get(ref)}},
+  async getDocFromServer(ref){calls.push(['read',ref]);const data=records.get(ref);return {exists:()=>data!==undefined,data:()=>data}},
+  async deleteDoc(ref){calls.push(['delete-doc',ref]);records.delete(ref)},
+  async setDoc(ref,value){calls.push(['restore-doc',ref]);records.set(ref,value)},
   async runTransaction(db,callback){return callback({async get(ref){return {exists:()=>records.has(ref),data:()=>records.get(ref)}},set(ref,value){calls.push(['write',ref]);records.set(ref,value)}})},
   serverTimestamp:()=>({serverTimestamp:true})
  };
@@ -70,4 +75,24 @@ test('the published root entry references dist assets and targets only the acade
 });
 test('permission and connection errors have useful messages without raw service details',()=>{
  assert.match(firebaseMessage({code:'permission-denied'}),/dostępu/);assert.match(firebaseMessage({code:'auth/operation-not-allowed'}),/nie zostało/);assert.match(firebaseMessage({code:'unknown',message:'sensitive internal details'}),/Nie udało/);
+});
+
+
+test('deletion reauthenticates first and removes only the current user and their progress',async()=>{
+ const f=fixture();f.auth.currentUser=f.account('alice');
+ await f.service.saveProgress('alice',p);f.records.set('users/bob/progress/main',p);
+ await f.service.deleteAccount('correct password');
+ assert.equal(f.service.currentUser(),null);assert.equal(f.records.has('users/alice/progress/main'),false);assert.equal(f.records.has('users/bob/progress/main'),true);
+ const sequence=f.calls.map(c=>c[0]);assert.ok(sequence.indexOf('reauth')<sequence.indexOf('delete-doc'));assert.ok(sequence.indexOf('delete-doc')<sequence.indexOf('delete-user'));
+});
+test('an incorrect confirmation password cannot remove data or an account',async()=>{
+ const f=fixture();f.auth.currentUser=f.account('alice');await f.service.saveProgress('alice',p);
+ await assert.rejects(f.service.deleteAccount('wrong password'),{code:'auth/invalid-credential'});
+ assert.ok(f.records.has('users/alice/progress/main'));assert.equal(f.auth.currentUser.uid,'alice');assert.ok(!f.calls.some(c=>c[0]==='delete-doc'||c[0]==='delete-user'));
+});
+test('a failed final Firebase deletion restores the saved progress',async()=>{
+ const f=fixture();f.auth.currentUser=f.account('alice');await f.service.saveProgress('alice',p);
+ f.a.deleteUser=async()=>{throw Object.assign(new Error(),{code:'auth/network-request-failed'})};
+ await assert.rejects(f.service.deleteAccount('correct password'),{code:'auth/network-request-failed'});
+ assert.deepEqual(await f.service.getProgress('alice'),p);assert.equal(f.auth.currentUser.uid,'alice');
 });

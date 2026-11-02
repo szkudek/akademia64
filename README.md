@@ -52,6 +52,10 @@ Bez internetu nadal działa nauka gościa i lokalny zapis. Do zalogowania oraz s
 
 Dotychczasowe lokalne konta SQLite były wersją rozwojową i nie są automatycznie migrowane do Firebase. Postępy gościa można zaimportować przez profil.
 
+## Usuwanie konta
+
+W profilu wybierz **Usuń konto**, potwierdź bieżącym hasłem i zaznacz potwierdzenie. Aplikacja najpierw ponownie uwierzytelnia użytkownika, następnie usuwa jego dokument postępów, konto Firebase Authentication oraz lokalny cache tego konta. Postępy gościa pozostają osobno. Jeśli Firebase odmówi końcowego usunięcia konta, aplikacja próbuje przywrócić dokument postępów.
+
 ## Sprawdzanie zmian
 
 ```sh

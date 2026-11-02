@@ -4,6 +4,7 @@ const guestKey='akademia64-v1';
 const $=selector=>document.querySelector(selector);
 function read(key){try{return normalizeProgress(JSON.parse(localStorage.getItem(key)||'null'))}catch{return emptyProgress()}}
 const hasProgress=p=>p.done.length||p.solved.length||p.games;
+let deleting=false;
 let service=null,user=null,ready=false,onProgress=()=>{},timer,pending=null,saving=false,generation=0,syncState='',formBusy=false,busyElements=[],deferredAuth;
 function key(){return user?`akademia64-user-${user.id}`:guestKey}
 function remember(p){try{localStorage.setItem(key(),JSON.stringify(normalizeProgress(p)));return true}catch{return false}}
@@ -18,7 +19,7 @@ function updateUI(){
 }
 function schedule(){clearTimeout(timer);if(user?.verified&&pending)timer=setTimeout(flush,900)}
 async function flush(){
-  clearTimeout(timer);if(saving||!pending||!user?.verified||!service)return;
+  clearTimeout(timer);if(saving||!pending||!user?.verified||!service||deleting)return;
   const own=generation,id=user.id,item=pending;pending=null;saving=true;syncState='Zapisywanie…';updateUI();
   try{await service.saveProgress(id,item);if(own===generation)syncState=pending?'Oczekuje na zapis':'Zapisano na koncie'}
   catch(error){if(own===generation){pending=mergeProgress(item,pending||emptyProgress());syncState=firebaseMessage(error)}}
@@ -68,7 +69,7 @@ function form(mode='login'){
 }
 function profile(){
   shell('Twoja akademia.','Twoje konto, Twoje tempo nauki.');
-  $('#account-body').innerHTML='<div class="account-profile"><div class="avatar" id="profile-avatar"></div><div><strong id="profile-name"></strong><span id="profile-email"></span></div></div><div id="verification-panel"></div><div class="instruction" id="account-sync"></div><button class="btn outline" id="refresh-progress">Odśwież zapis</button><div id="guest-import"></div><div class="account-profile-actions"><button class="btn" id="account-continue">Wróć do nauki →</button><button class="text-link" id="account-logout">Wyloguj się</button></div>';
+  $('#account-body').innerHTML='<div class="account-profile"><div class="avatar" id="profile-avatar"></div><div><strong id="profile-name"></strong><span id="profile-email"></span></div></div><div id="verification-panel"></div><div class="instruction" id="account-sync"></div><button class="btn outline" id="refresh-progress">Odśwież zapis</button><div id="guest-import"></div><div class="account-profile-actions"><button class="btn" id="account-continue">Wróć do nauki →</button><button class="text-link" id="account-logout">Wyloguj się</button></div><div class="account-danger"><button class="text-link" id="delete-account">Usuń konto</button></div>';
   $('#profile-name').textContent=user.name;$('#profile-email').textContent=user.email;$('#profile-avatar').textContent=[...user.name][0].toUpperCase();updateUI();
   if(!user.verified){
     $('#verification-panel').innerHTML='<div class="account-verification"><h3>Potwierdź swój e-mail.</h3><p>Aby zapisywać postępy na koncie, otwórz link w wiadomości weryfikacyjnej. Do tego czasu możesz uczyć się dalej — postępy zostają na tym urządzeniu.</p><button class="btn outline" id="send-verification">Wyślij link potwierdzający</button><button class="text-link" id="check-verification">Adres już potwierdzony — sprawdź</button><p id="verification-message" role="status"></p></div>';
@@ -76,6 +77,7 @@ function profile(){
     $('#check-verification').onclick=()=>submit(async()=>{await loadAccount(await service.refreshUser());profile();if(!user?.verified)notify('Adres nie jest jeszcze potwierdzony. Otwórz link z wiadomości i spróbuj ponownie.')});
   }
   $('#account-continue').onclick=close;
+  $('#delete-account').onclick=deletionForm;
   $('#refresh-progress').onclick=()=>submit(async()=>{const current=await service.refreshUser();if(!current){await loadAccount(null);form('login');return}await loadAccount(current);await flush();profile()});
   if(user.verified&&hasProgress(read(guestKey))){
     $('#guest-import').innerHTML='<div class="account-import"><h3>Masz postępy jako gość.</h3><p>Możesz połączyć je z postępami na koncie. Ukończone lekcje i zadania zostaną zachowane.</p><button class="btn outline" id="import-progress">Przenieś postępy gościa</button></div>';
@@ -83,10 +85,34 @@ function profile(){
   }
   $('#account-logout').onclick=()=>submit(async()=>{await flush();await service.logout();await loadAccount(null);formBusy=false;close()});
 }
+function deletionForm(){
+  const id=user.id;
+  shell('Usunąć to konto?','Usunięcie konta i zapisanych na nim postępów jest trwałe. Nie dotyczy konta Google ani innych aplikacji.');
+  $('#account-body').innerHTML='<div class="account-profile"><div><strong id="delete-name"></strong><span id="delete-email"></span></div></div><form id="delete-form">'+field('Potwierdź aktualnym hasłem','password','password','current-password','maxlength="256"')+'<label class="account-check"><input type="checkbox" id="delete-confirm" required> Rozumiem, że konto i postępy zostaną usunięte.</label><button type="submit" class="btn danger-btn">Usuń konto i postępy</button><button type="button" class="text-link" id="cancel-delete">Zachowaj konto</button></form>';
+  $('#delete-name').textContent=user.name;$('#delete-email').textContent=user.email;
+  $('#cancel-delete').onclick=profile;
+  $('#delete-form').onsubmit=e=>{
+    e.preventDefault();const password=new FormData(e.currentTarget).get('password');
+    if(user?.id!==id){notify('Konto zmieniło się. Odśwież stronę.');return}
+    submit(async()=>{
+      deleting=true;clearTimeout(timer);
+      try{
+        // Finish an already-started sync before deleting its document.
+        while(saving)await new Promise(resolve=>setTimeout(resolve,50));
+        await service.deleteAccount(password);
+        pending=null;generation++;try{localStorage.removeItem(`akademia64-user-${id}`)}catch{}
+        await loadAccount(null);deferredAuth=undefined;
+        shell('Konto zostało usunięte.','Usunięto konto oraz przypisane do niego postępy. Możesz nadal korzystać z akademii jako gość.');
+        $('#account-body').innerHTML='<button class="btn" id="deleted-continue">Wróć do akademii →</button>';
+        $('#deleted-continue').onclick=close;
+      }finally{deleting=false}
+    });
+  };
+}
 async function connect(){service=await loadFirebase();await loadAccount(service.currentUser());service.observe(observed)}
 export const accounts={
   get user(){return user},
-  saveProgress(value){const progress=normalizeProgress(value);const saved=remember(progress);if(user?.verified){pending=progress;syncState='Oczekuje na zapis';schedule();updateUI()}return saved},
+  saveProgress(value){const progress=normalizeProgress(value);const saved=remember(progress);if(user?.verified&&!deleting){pending=progress;syncState='Oczekuje na zapis';schedule();updateUI()}return saved},
   async start(callback){
     onProgress=callback;$('#account-button').onclick=()=>user?profile():form('login');$('#sidebar-account').onclick=()=>user?profile():form('login');$('#account-dialog .dialog-close').onclick=close;
     $('#account-dialog').addEventListener('cancel',e=>{if(formBusy)e.preventDefault();else close()});
