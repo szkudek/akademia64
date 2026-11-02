@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+
+# Local hosting configuration and credentials
+.openai/
+.env
+.env.*
+!.env.example
