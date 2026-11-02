@@ -1,3 +1,4 @@
+import { accounts } from './accounts.js';
 import { Chess } from './vendor/chess.js';
 const $=s=>document.querySelector(s);const main=$('#main');
 const icons={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
@@ -42,14 +43,14 @@ const openings=[{id:'italian',title:'Partia włoska',tag:'Otwarta gra · białe'
 {id:'sicilian',title:'Obrona sycylijska',tag:'Asymetryczna gra · czarne',pieces:'♞♟',desc:'Poznaj aktywną odpowiedź czarnych na pierwszy ruch e4.',line:['e4','c5','Nf3','d6','d4','cxd4','Nxd4','Nf6'],notes:['Białe zajmują centrum.','Czarne naciskają na d4 pionem z kolumny c. To obrona sycylijska.','Białe rozwijają skoczka.','Czarne wspierają centrum i otwierają drogę gońcowi.','Białe otwierają centrum.','Czarne wymieniają piona c na centralnego piona d.','Skoczek odbija piona i zajmuje aktywne pole.','Czarne atakują e4. Powstaje dynamiczna, asymetryczna pozycja.']}];
 let state;try{state=JSON.parse(localStorage.getItem('akademia64-v1')||'{}')}catch{state={}}
 state={done:[],solved:[],days:[],games:0,...state};for(const key of ['done','solved','days'])if(!Array.isArray(state[key]))state[key]=[];
-function save(){try{localStorage.setItem('akademia64-v1',JSON.stringify(state))}catch{toast('Przeglądarka nie pozwala zapisać postępów.')}updateLevel()}
+function save(){if(!accounts.saveProgress(state))toast('Przeglądarka nie pozwala zapisać postępów.');updateLevel()}
 function today(){return new Date().toLocaleDateString('sv-SE')}
 function activity(){if(!state.days.includes(today()))state.days.push(today());save()}
 function toast(text){$('#toast').textContent=text;$('#toast').classList.add('visible');setTimeout(()=>$('#toast').classList.remove('visible'),3500)}
 function dialog(title,text){$('#dialog-content').innerHTML=`<div class="eyebrow">AKADEMIA 64</div><h2>${title}</h2><p>${text}</p><button class="btn" id="dialog-ok">Rozumiem <span>→</span></button>`;$('#dialog').showModal();$('#dialog-ok').onclick=()=>$('#dialog').close()}
 $('#dialog .dialog-close').onclick=()=>$('#dialog').close();$('#dialog').onclick=e=>{if(e.target===$('#dialog'))$('#dialog').close()};
 $('#help-button').onclick=()=>dialog('Twoja droga do dobrej gry','Zacznij od mapy nauki albo wybierz zadania. Na szachownicy kliknij figurę, a potem pole docelowe. Lekcje i trening są bez limitu czasu. Gra treningowa używa lokalnego przeciwnika komputerowego; rozmowa z trenerem AI nie jest jeszcze dostępna.');
-$('#storage-info').onclick=()=>dialog('Postępy zostają z Tobą','Lekcje, rozwiązane zadania i odznaki zapisujemy w pamięci tej przeglądarki. Nie potrzebujesz konta. Dane nie synchronizują się między urządzeniami; wyczyszczenie danych strony usuwa postępy.');
+$('#storage-info').onclick=()=>accounts.showStorageInfo();
 $('.menu-toggle').onclick=()=>$('.sidebar').classList.toggle('open');
 function updateLevel(){$('#level-name').textContent=state.done.length>=all.length?'Absolwent podstaw':state.done.length>=10?'Odkrywca szachów':'Początkujący'}
 function progress(){return Math.round(state.done.length/all.length*100)}
@@ -95,3 +96,4 @@ function updateGame(){const h=game.history();$('#history').innerHTML=h.map((m,i)
 function achievements(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">ŚLADY TWOJEGO ROZWOJU</div><h1>Umiejętności, z których możesz być dumny.</h1><p>Każda odznaka oznacza ukończony etap. Zbieraj doświadczenia i wracaj do nauki wtedy, kiedy masz ochotę.</p></div><div class="achievements-grid">${units.map((u,i)=>`<div class="achievement ${earned(i)?'earned':''}"><div class="medal">${u.icon}</div><h3>${u.badge}</h3><p>Ukończ etap „${u.title}”.</p><small>${earned(i)?'✓ ZDOBYTA':`${u.lessons.filter((l,j)=>state.done.includes(`${i}-${j}`)).length} / ${u.lessons.length} LEKCJI`}</small></div>`).join('')}</div><div class="empty-note">${state.days.length?`Masz za sobą ${state.days.length} ${state.days.length===1?'dzień':'dni'} aktywnej nauki. `:''}Odznaki zostają z Tobą. Przerwa w nauce nie odbiera żadnego osiągnięcia.</div>`}
 function route(){clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id]=(location.hash.slice(1)||'home').split('/');const navPage={lesson:'learn',puzzle:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',achievements:'Osiągnięcia'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');const routes={home,learn,lesson:()=>lesson(id),puzzles:puzzleList,puzzle:()=>puzzle(id),openings:openingsPage,opening:()=>opening(id),play,achievements};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);route();
+await accounts.start(progress=>{state=progress;route()});
