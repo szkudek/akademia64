@@ -122,3 +122,8 @@ body{color:var(--text)}
 [data-theme="dark"] .account-message.error{background:#48342b;color:#edc8ac}
 [data-theme="dark"] .account-check input{accent-color:#a9bd87}
 @media(max-width:650px){.account-dialog{padding:30px 23px}.account-dialog h2{font-size:34px}.top-right{gap:7px}.topbar{padding:0 10px}.account-button{padding:8px;font-size:10px}.top-right .icon-button{display:none}.theme-picker select{max-width:84px}.account-profile-actions{flex-wrap:wrap}.account-field input{font-size:16px}}
+.account-verification{padding:18px;border:1px solid var(--line);border-radius:6px;margin-bottom:18px;background:var(--soft)}
+.account-verification h3{font-size:26px;margin-bottom:10px}
+.account-verification p{font-size:12px;line-height:1.8;color:var(--reading);margin-bottom:13px}
+.account-verification button{margin-bottom:9px;display:block}
+.account-verification p:empty{display:none}

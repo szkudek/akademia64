@@ -1,90 +1,73 @@
-import { request as httpRequest } from 'node:http';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp,rm,readFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { createApp } from '../server/app.mjs';
+import {createFirebaseService,firebaseMessage} from '../dist/firebase-service.js';
+import {emptyProgress,mergeProgress,normalizeProgress,sameProgress} from '../dist/progress.js';
+import {readFile} from 'node:fs/promises';
 
-async function fixture(t,{disk=false,production=false}={}) {
- const dir=await mkdtemp(join(tmpdir(),'akademia64-test-'));
- const app=await createApp({dbPath:disk?join(dir,'accounts.sqlite'):':memory:',production,origin:production?'https://academy.example':null});
- await new Promise(r=>app.server.listen(0,'127.0.0.1',r));
- const base=`http://127.0.0.1:${app.server.address().port}`;
- t.after(async()=>{await app.close();await rm(dir,{recursive:true,force:true})});
- async function request(path,{method='GET',data,cookie,origin=production?'https://academy.example':base,headers={}}={}){
-  const response=await fetch(base+path,{method,headers:{...(cookie?{cookie}:{}),...(method!=='GET'?{'Content-Type':'application/json','Origin':origin,'X-Requested-With':'Akademia64'}:{}),...headers},...(data!==undefined?{body:JSON.stringify(data)}:{})});
-  let result;try{result=await response.json()}catch{result=null}
-  return {status:response.status,data:result,cookie:response.headers.get('set-cookie')?.split(';')[0],headers:response.headers};
- }
- return {request,app,dir,base};
+function fixture(){
+ const auth={currentUser:null};const records=new Map();const calls=[];let listener;
+ const account=(uid,verified=true)=>({uid,email:`${uid}@example.test`,displayName:uid,emailVerified:verified});
+ const a={
+  async createUserWithEmailAndPassword(auth,email,password){calls.push(['register',email]);auth.currentUser={...account('new',false),email,displayName:null};return {user:auth.currentUser}},
+  async updateProfile(user,{displayName}){user.displayName=displayName},
+  async signInWithEmailAndPassword(auth,email,password){auth.currentUser={...account(email.split('@')[0]),email};return {user:auth.currentUser}},
+  async signOut(auth){auth.currentUser=null;listener?.(null)},
+  async sendPasswordResetEmail(auth,email){calls.push(['reset',email])},
+  async sendEmailVerification(user){calls.push(['verify',user.uid])},
+  async reload(){},async getIdToken(){calls.push(['refresh-token'])},
+  onAuthStateChanged(auth,callback){listener=callback;return ()=>{listener=null}}
+ };
+ const d={
+  doc(db,...path){return path.join('/')},
+  async getDocFromServer(ref){calls.push(['read',ref]);return {exists:()=>records.has(ref),data:()=>records.get(ref)}},
+  async runTransaction(db,callback){return callback({async get(ref){return {exists:()=>records.has(ref),data:()=>records.get(ref)}},set(ref,value){calls.push(['write',ref]);records.set(ref,value)}})},
+  serverTimestamp:()=>({serverTimestamp:true})
+ };
+ return {auth,a,d,account,records,calls,service:createFirebaseService({auth,db:{},authSDK:a,dbSDK:d})};
 }
-const credentials=(email='learner@example.test')=>({name:'Szachista',email,password:'Testowa długa fraza 2026'});
-const progress={done:['0-0'],solved:['mate1'],days:['2026-11-02'],games:1};
-
-test('accounts: registration, cookies, session restore, isolation, merge, logout and password login',async t=>{
- const {request}=await fixture(t);
- const first=await request('/api/register',{method:'POST',data:credentials()});
- assert.equal(first.status,201);
- assert.equal((await request('/api/register',{method:'POST',data:credentials()})).status,409);
- assert.ok(first.data.recoveryCode);assert.ok(!('password_hash' in first.data.user));
- assert.match(first.headers.get('set-cookie'),/HttpOnly/);assert.match(first.headers.get('set-cookie'),/SameSite=Strict/);
- assert.equal((await request('/api/session',{cookie:first.cookie})).data.user.email,'learner@example.test');
- assert.equal((await request('/api/progress',{method:'PUT',cookie:first.cookie,data:progress})).status,200);
- const second=await request('/api/register',{method:'POST',data:credentials('second@example.test')});
- assert.equal(second.status,201);
- assert.equal((await request('/api/progress',{method:'PUT',cookie:second.cookie,data:progress,headers:{'X-Academy-User':first.data.user.id}})).status,409);
- assert.equal((await request('/api/logout',{method:'POST',cookie:second.cookie,data:{},headers:{'X-Academy-User':first.data.user.id}})).status,409);
- assert.deepEqual((await request('/api/progress',{cookie:second.cookie})).data.progress,{done:[],solved:[],days:[],games:0});
- const merged=await request('/api/progress',{method:'PUT',cookie:first.cookie,data:{...progress,done:['0-1'],solved:[]}});
- assert.deepEqual(new Set(merged.data.progress.done),new Set(['0-0','0-1']));assert.deepEqual(merged.data.progress.solved,['mate1']);
- await request('/api/logout',{method:'POST',cookie:first.cookie,data:{}});
- assert.equal((await request('/api/progress',{cookie:first.cookie})).status,401);
- assert.equal((await request('/api/login',{method:'POST',data:{email:'learner@example.test',password:'zlehaslo'}})).status,401);
- const login=await request('/api/login',{method:'POST',data:credentials()});assert.equal(login.status,200);assert.notEqual(login.cookie,first.cookie);
- assert.equal((await request('/api/progress',{cookie:login.cookie})).data.progress.done.length,2);
+const p={done:['0-0'],solved:['mate1'],days:['2026-11-02'],games:1};
+test('registration uses Firebase without storing passwords or automatically sending mail',async()=>{
+ const {service,auth,calls}=fixture();
+ const result=await service.register({email:' learner@example.test ',password:'Test password phrase',name:' Szachista '});
+ assert.equal(result.user.id,'new');assert.equal(result.user.name,'Szachista');assert.equal(result.user.verified,false);assert.equal(auth.currentUser.displayName,'Szachista');
+ assert.equal(calls.filter(c=>c[0]==='verify').length,0);
+ await service.sendVerification();assert.deepEqual(calls.at(-1),['verify','new']);
+ await assert.rejects(service.register({email:'a@example.test',password:'short',name:'Test'}),{code:'account/weak-password'});
 });
-
-test('reset consumes the recovery code, invalidates all sessions and changes the password',async t=>{
- const {request}=await fixture(t);
- const register=await request('/api/register',{method:'POST',data:credentials()});
- const login=await request('/api/login',{method:'POST',data:credentials()});
- const data={email:credentials().email,password:'Nowa bezpieczna fraza 2026',recoveryCode:register.data.recoveryCode};
- assert.equal((await request('/api/reset-password',{method:'POST',data:{...data,recoveryCode:'incorrect'}})).status,400);
- const reset=await request('/api/reset-password',{method:'POST',data});assert.equal(reset.status,200);assert.notEqual(reset.data.recoveryCode,data.recoveryCode);
- assert.equal((await request('/api/progress',{cookie:register.cookie})).status,401);assert.equal((await request('/api/progress',{cookie:login.cookie})).status,401);
- assert.equal((await request('/api/reset-password',{method:'POST',data})).status,400);
- assert.equal((await request('/api/login',{method:'POST',data:credentials()})).status,401);
- assert.equal((await request('/api/login',{method:'POST',data:{email:data.email,password:data.password}})).status,200);
+test('only the current, verified account reads or writes its progress',async()=>{
+ const {service,auth,account,calls}=fixture();auth.currentUser=account('alice');
+ await service.saveProgress('alice',p);assert.deepEqual(await service.getProgress('alice'),p);
+ await assert.rejects(service.getProgress('bob'),{code:'account/changed'});
+ auth.currentUser=account('bob');assert.deepEqual(await service.getProgress('bob'),emptyProgress());
+ await assert.rejects(service.saveProgress('alice',p),{code:'account/changed'});
+ auth.currentUser=account('alice',false);await assert.rejects(service.saveProgress('alice',p),{code:'account/unverified'});
+ assert.equal(calls.filter(c=>c[0]==='write').length,1);
 });
-
-test('validates input, denies cross-origin writes, prevents SQL injection and rate limits attacks',async t=>{
- const {request,base}=await fixture(t);
- assert.equal((await request('/api/register',{method:'POST',data:credentials(),origin:'https://attacker.example'})).status,403);
- const rejectedHost=await new Promise((resolve,reject)=>{const req=httpRequest(base+'/api/session',{headers:{Host:'attacker.example'}},res=>{res.resume();resolve(res.statusCode)});req.on('error',reject);req.end()});
- assert.equal(rejectedHost,403);
- assert.equal((await request('/api/register',{method:'POST',data:{...credentials(),password:'short'}})).status,400);
- assert.equal((await request('/api/register',{method:'POST',data:{...credentials(),email:'no-email'}})).status,400);
- assert.equal((await request('/api/login',{method:'POST',data:{email:"'OR'1'='1@example.test",password:'irrelevant'}})).status,401);
- for(let i=0;i<12;i++)assert.equal((await request('/api/login',{method:'POST',data:credentials('missing@example.test')})).status,401);
- assert.equal((await request('/api/login',{method:'POST',data:credentials('missing@example.test')})).status,429);
+test('transaction merges guest, cached and remote progress without erasing completed lessons',async()=>{
+ const {service,auth,account}=fixture();auth.currentUser=account('alice');
+ await service.saveProgress('alice',p);
+ const result=await service.saveProgress('alice',{...p,done:['0-1'],solved:[],games:0});
+ assert.deepEqual(new Set(result.done),new Set(['0-0','0-1']));assert.deepEqual(result.solved,['mate1']);assert.equal(result.games,1);
 });
-
-test('stores no plaintext passwords, serves only public assets and production cookies are Secure',async t=>{
- const {request,dir}=await fixture(t,{disk:true,production:true});
- const register=await request('/api/register',{method:'POST',data:credentials()});assert.equal(register.status,201);assert.match(register.headers.get('set-cookie'),/; Secure/);assert.match(register.cookie,/^__Host-/);
- for(const file of ['accounts.sqlite','accounts.sqlite-wal']){const bytes=await readFile(join(dir,file)).catch(()=>Buffer.alloc(0));assert.ok(!bytes.includes(Buffer.from(credentials().password)));assert.ok(!bytes.includes(Buffer.from(register.data.recoveryCode)))}
- assert.equal((await request('/data/accounts.sqlite')).status,404);assert.equal((await request('/server/app.mjs')).status,404);
- assert.equal((await request('/api/progress',{method:'PUT',cookie:register.cookie,data:{done:'wrong'}})).status,400);
- const local=await fixture(t);const response=await fetch(local.base+'/');assert.equal(response.status,200);assert.match(await response.text(),/account-button/);
+test('a session change during a transaction cannot write another account’s data',async()=>{
+ const f=fixture();f.auth.currentUser=f.account('alice');
+ f.d.runTransaction=async(db,callback)=>callback({async get(){f.auth.currentUser=f.account('bob');return {exists:()=>false}},set(){assert.fail('Must not write after an account switch')}});
+ await assert.rejects(f.service.saveProgress('alice',p),{code:'account/changed'});
 });
-
-test('account and progress persist after server restart',async t=>{
- const dir=await mkdtemp(join(tmpdir(),'akademia64-persist-'));t.after(()=>rm(dir,{recursive:true,force:true}));
- const dbPath=join(dir,'academy.sqlite');let app=await createApp({dbPath});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));
- let base=`http://127.0.0.1:${app.server.address().port}`;
- const response=await fetch(base+'/api/register',{method:'POST',headers:{Origin:base,'Content-Type':'application/json','X-Requested-With':'Akademia64'},body:JSON.stringify(credentials())});const cookie=response.headers.get('set-cookie').split(';')[0];
- await fetch(base+'/api/progress',{method:'PUT',headers:{Origin:base,'Content-Type':'application/json','X-Requested-With':'Akademia64',Cookie:cookie},body:JSON.stringify(progress)});
- await app.close();app=await createApp({dbPath});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${app.server.address().port}`;
- t.after(()=>app.close());const persisted=await fetch(base+'/api/progress',{headers:{Cookie:cookie}});assert.deepEqual((await persisted.json()).progress,progress);
+test('password recovery uses Firebase email, does not disclose unknown addresses and logout clears session',async()=>{
+ const f=fixture();await f.service.resetPassword(' learner@example.test ');assert.deepEqual(f.calls.at(-1),['reset','learner@example.test']);
+ f.a.sendPasswordResetEmail=async()=>{throw Object.assign(new Error(),{code:'auth/user-not-found'})};await f.service.resetPassword('missing@example.test');
+ f.auth.currentUser=f.account('alice');await f.service.logout();assert.equal(f.service.currentUser(),null);
+});
+test('progress filters invalid ids, keeps unique achievements and is stable across merges',()=>{
+ const result=normalizeProgress({done:['0-0','0-0','injected'],solved:['mate1','x'],games:-1,days:['2026-11-02','x']});
+ assert.deepEqual(result,{...p,games:0});assert.deepEqual(mergeProgress(result,result),result);assert.ok(sameProgress(result,result));
+});
+test('the published root entry references dist assets and targets only the academy Firebase project',async()=>{
+ const root=await readFile(new URL('../index.html',import.meta.url),'utf8');const dist=await readFile(new URL('../dist/index.html',import.meta.url),'utf8');
+ assert.equal(root,dist.replaceAll('src="theme.js"','src="dist/theme.js"').replaceAll('href="styles.css"','href="dist/styles.css"').replaceAll('src="app.js"','src="dist/app.js"'));
+ const config=JSON.parse(await readFile(new URL('../.firebaserc',import.meta.url),'utf8'));assert.equal(config.projects.default,'akademia64-89e49');
+});
+test('permission and connection errors have useful messages without raw service details',()=>{
+ assert.match(firebaseMessage({code:'permission-denied'}),/dostępu/);assert.match(firebaseMessage({code:'auth/operation-not-allowed'}),/nie zostało/);assert.match(firebaseMessage({code:'unknown',message:'sensitive internal details'}),/Nie udało/);
 });

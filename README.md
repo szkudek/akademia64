@@ -1,10 +1,10 @@
 # Akademia 64
 
-Polska akademia szachowa: interaktywne lekcje, zadania taktyczne, debiuty, gra z komputerem i osobiste postępy.
+Interaktywna akademia szachowa: 19 lekcji, sześć zadań, trzy debiuty, trening z komputerem, mapa nauki i odznaki. Trzy motywy: jasny, ciemny oraz systemowy.
 
-## Uruchomienie z kontami
+## Uruchomienie
 
-Wymagany **Node.js 24 lub nowszy**. Aplikacja nie wymaga instalowania paczek.
+Aplikacja jest statyczna. Konta obsługuje Firebase Authentication, a postępy Cloud Firestore. Nie jest potrzebny własny serwer kont ani płatny plan Firebase.
 
 ```sh
 git clone https://github.com/szkudek/akademia64.git
@@ -12,40 +12,45 @@ cd akademia64
 npm start
 ```
 
-Otwórz **http://127.0.0.1:4173**. Ten serwer obsługuje zarówno stronę, jak i konta. Sama statyczna strona lub GitHub Pages nie obsługuje logowania.
+Wymagany Node.js 20+. Podgląd: http://127.0.0.1:4173. Można również użyć `python3 -m http.server 4173 --directory dist`.
 
-## Konta
+Projekt Firebase używany wyłącznie przez tę aplikację: **akademia64-89e49**. Konfiguracja klienta jest w `dist/firebase-config.js`. To publiczne identyfikatory aplikacji webowej; dostęp do danych kontrolują reguły Firestore. Nie należy tu umieszczać kont serwisowych, kluczy prywatnych ani danych administratora.
 
-- Rejestracja: nazwa użytkownika, e-mail i hasło o długości minimum 12 znaków.
-- Logowanie, wylogowanie oraz automatyczne odtworzenie sesji przez 7 dni.
-- Jednorazowy kod ratunkowy pozwala zmienić hasło. Nowy kod zastępuje poprzedni, a reset wylogowuje wszystkie sesje.
-- Hasła są haszowane przez scrypt z losową solą. W bazie znajdują się wyłącznie skróty haseł, kodów odzyskiwania i tokenów sesji.
-- Sesje korzystają z ciasteczek HttpOnly i SameSite=Strict, a w produkcji dodatkowo Secure.
-- Dane użytkowników zapisuje SQLite w `data/academy.sqlite`. Katalog `data/` nie trafia do repozytorium ani do publicznego katalogu strony.
-- Próby logowania, zakładania kont i odzyskiwania są ograniczane po stronie serwera.
-- Postępy są powiązane z kontem; użytkownik może świadomie połączyć z nimi postępy gościa.
-- Przy utracie połączenia ostatni postęp pozostaje w lokalnym cache przypisanym do konkretnego konta. Ponowny login lub powrót połączenia uruchamia zapis.
+## Konfiguracja projektu Firebase
 
-**Odzyskiwanie przez e-mail, weryfikacja adresu oraz logowanie Google nie są jeszcze podłączone.** Nie wysyłamy żadnych e-maili. Kod ratunkowy trzeba zachować; bez hasła i kodu ta wersja nie zapewnia samodzielnego odzyskania konta.
+1. Authentication → Sign-in method: włącz **Email/Password**. Google pozostaje wyłączone.
+2. Authentication → Settings → Authorized domains: dodaj **szkudek.github.io**. Do testów dodaj **localhost** i **127.0.0.1**, jeśli nie występują na liście. Wpisuj same nazwy hostów, bez protokołu i ścieżki.
+3. Firestore Database: utwórz domyślną bazę **Standard edition** w wybranej lokalizacji europejskiej, w trybie produkcyjnym.
+4. Firestore Database → Rules: wklej zawartość pliku [`firestore.rules`](firestore.rules) i kliknij **Publish**. Sama obecność pliku w repozytorium nie aktualizuje reguł w chmurze.
+5. Authentication → Settings → Password policy: ustaw minimalną długość hasła **12 znaków** w trybie wymuszania. Formularz ma ten sam limit, ale polityka po stronie Firebase zapobiega jego pominięciu.
+6. Authentication → Settings: włącz ochronę przed ujawnianiem istnienia adresów e-mail, jeśli nie jest aktywna.
+7. Authentication → Templates: sprawdź nazwę nadawcy i polskie szablony wiadomości potwierdzenia oraz resetowania hasła.
 
-## Przed publicznym uruchomieniem kont
-
-Ta gałąź przygotowuje pełną wersję lokalną. Do wdrożenia potrzebny jest serwer Node.js z trwałym dyskiem dla SQLite oraz HTTPS — GitHub Pages pozostaje statycznym podglądem.
-
-Ustawienia środowiska:
+Alternatywnie właściciel projektu może opublikować reguły po lokalnym zalogowaniu w oficjalnym Firebase CLI:
 
 ```sh
-NODE_ENV=production \
-APP_ORIGIN=https://twoja-domena.example \
-DATABASE_PATH=/trwaly-dysk/academy.sqlite \
-HOST=0.0.0.0 \
-PORT=4173 \
-node server/start.mjs
+firebase login
+firebase deploy --only firestore:rules --project akademia64-89e49
 ```
 
-`APP_ORIGIN` musi być dokładnym adresem origin strony (bez końcowego ukośnika). Nie ustawiaj produkcji pod zwykłym HTTP — ciasteczka Secure wymagają HTTPS. Serwer nie ufa nagłówkom X-Forwarded-For; za odwrotnym proxy limit prób jest współdzielony dla jego adresu IP. Przed większym ruchem potrzebna będzie konfiguracja limitów na zaufanym proxy.
+Polecenie ma jawnie wskazany projekt Akademii. Nie dotyczy innych projektów na koncie. Konfiguracja `.firebaserc` wskazuje ten sam identyfikator.
 
-Przed udostępnieniem kont należy ustalić obsługę poczty i weryfikacji adresów, kopie zapasowe bazy oraz zasady prywatności i usuwania kont. Uprawnienia do bazy i jej kopii powinny być ograniczone do właściciela aplikacji.
+## Jak działają konta
+
+- Rejestracja: nazwa, e-mail i hasło. Hasłami zarządza Firebase — aplikacja nie zapisuje ich w przeglądarce ani we własnej bazie.
+- Po rejestracji użytkownik klika w profilu **Wyślij link potwierdzający**. Po otwarciu linku z poczty wraca do profilu i klika **Adres już potwierdzony — sprawdź**.
+- Synchronizacja z Firestore jest dozwolona dopiero po weryfikacji e-maila. Do tego czasu można normalnie się uczyć; postępy zostają w lokalnym cache przypisanym do tego konta.
+- Reset hasła korzysta ze standardowej wiadomości Firebase, bez wcześniejszych kodów ratunkowych.
+- Sesja jest odtwarzana przez Firebase SDK. Wylogowanie i zmiana konta rozdzielają lokalne cache użytkowników.
+- Postępy gościa pozostają osobno. Przy zweryfikowanym koncie użytkownik może je przenieść przyciskiem w profilu.
+- Synchronizacja łączy ukończone lekcje, zadania i dni aktywności w transakcji. Liczba ukończonych partii jest łączona przez maksimum; równoczesne partie na dwóch urządzeniach mogą zostać policzone jako jedna.
+- Zapis jest opóźniony o 900 ms i wykonywany po zmianach, aby ograniczyć zużycie darmowego limitu. Nie pobieramy całych kolekcji i nie utrzymujemy stałych nasłuchów Firestore.
+
+Dokument użytkownika: `users/{uid}/progress/main`. Reguły pozwalają czytać i zmieniać wyłącznie własny dokument po potwierdzeniu e-maila. Pozostałe ścieżki są domyślnie zablokowane. Metadane profilu (nazwa i e-mail) są w Authentication; nie tworzymy publicznego katalogu użytkowników.
+
+Bez internetu nadal działa nauka gościa i lokalny zapis. Do zalogowania oraz synchronizacji potrzebne jest połączenie z Firebase i dostęp do oficjalnego CDN `www.gstatic.com`. Jeśli wczytanie SDK się nie powiedzie, przycisk logowania umożliwia ponowną próbę.
+
+Dotychczasowe lokalne konta SQLite były wersją rozwojową i nie są automatycznie migrowane do Firebase. Postępy gościa można zaimportować przez profil.
 
 ## Sprawdzanie zmian
 
@@ -55,24 +60,23 @@ npm test
 npm run sync:entry
 ```
 
-Testy sprawdzają rejestrację, sesje, rozdzielenie danych użytkowników, utratę dostępu po wylogowaniu i resecie, jednorazowe kody ratunkowe, ograniczanie prób, ochronę przed żądaniami z obcej domeny oraz trwałość bazy po restarcie.
+Testy adaptera Firebase korzystają z izolowanych atrap SDK: sprawdzają rejestrację, weryfikację, reset, wylogowanie, izolację kont, wyścig zmiany sesji podczas transakcji i łączenie postępów. Nie tworzą kont w prawdziwym projekcie i nie wysyłają wiadomości.
 
-Po zmianie `dist/index.html` uruchom `npm run sync:entry` — aktualizuje wejściowy plik w katalogu głównym, używany przez publikację z gałęzi GitHub Pages.
+Reguły w `firestore.rules` wymagają publikacji w projekcie. Testy z atrapami nie zastępują testu reguł na emulatorze Firebase ani sprawdzenia rejestracji i weryfikacji prawdziwego adresu przed publicznym startem.
 
-## Podgląd statyczny
+## Pliki i publikacja
 
-```sh
-npm run start:static
-```
+- `dist/index.html` — układ aplikacji.
+- `dist/styles.css` — wygląd i motywy.
+- `dist/app.js` — lekcje, zadania i gra.
+- `dist/accounts.js` — formularze kont i obsługa zapisu.
+- `dist/firebase-service.js` — adapter Authentication i Firestore; SDK 13.1.0 z oficjalnego CDN Google.
+- `dist/progress.js` — normalizacja i łączenie postępów.
+- `server/` — opcjonalny lokalny serwer statyczny; nie przechowuje kont.
+- `test/` — testy automatyczne.
 
-Statyczny podgląd zachowuje naukę gościa. Gdy serwer kont jest niedostępny, interfejs informuje o tym i nie udaje rejestracji.
+`dist/` jest edytowanym źródłem aplikacji. Po zmianie `dist/index.html` uruchom `npm run sync:entry`, aby zaktualizować wejście w katalogu głównym używane przez GitHub Pages przy publikacji z gałęzi. Workflow Pages publikuje sam katalog `dist/`.
 
-## Zawartość
+Firebase Authentication i Firestore działają również z GitHub Pages po publikacji aplikacji i konfiguracji chmury. Nie wymaga to przenoszenia strony na inny hosting. Google Sign-In pozostaje kolejnym etapem.
 
-- 19 lekcji w sześciu etapach.
-- Sześć zadań z podpowiedziami.
-- Trzy debiuty do poznania i przećwiczenia.
-- Lokalny przeciwnik komputerowy, wskazówki i cofanie ruchów.
-- Odznaki, mapa nauki i trzy motywy wyglądu.
-
-Kod aplikacji znajduje się w `dist/`, serwer kont w `server/`, a testy w `test/`. `dist/` jest edytowanym źródłem strony, nie wynikiem kompilacji. Legalność ruchów sprawdza chess.js 1.4.0 na licencji BSD-2-Clause (`dist/vendor/LICENSE-chess.txt`).
+Legalność ruchów sprawdza chess.js 1.4.0, licencja BSD-2-Clause w `dist/vendor/LICENSE-chess.txt`.
