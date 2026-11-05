@@ -72,7 +72,7 @@ function earned(i){return units[i].lessons.every((l,j)=>state.done.includes(`${i
 function learn(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">TWOJA ŚCIEŻKA</div><h1>Małe kroki. Solidne podstawy.</h1><p>Od pierwszego ruchu do samodzielnej partii. Idź po kolei lub wybierz temat, który Cię ciekawi.</p></div><div class="map-summary"><div><h3>Od zera do pierwszej partii</h3><p>${state.done.length} z ${all.length} lekcji · ${units.length} etapów</p></div><div><div class="progress-label"><span>Twój postęp</span><span>${progress()}%</span></div><div class="progress"><span style="width:${progress()}%"></span></div></div></div><div class="units">${units.map((u,i)=>`<section class="unit"><div class="unit-header"><div class="unit-emblem">${u.icon}</div><div><div class="eyebrow">ETAP 0${i+1}</div><h2>${u.title}</h2></div></div>${u.lessons.map((l,j)=>`<a class="lesson-link ${state.done.includes(`${i}-${j}`)?'done':''}" href="#lesson/${i}-${j}"><span class="lesson-status">${state.done.includes(`${i}-${j}`)?'✓':j+1}</span><span>${l.title}</span><small>${l.type==='game'?'Partia':'5–8 min'} &nbsp; →</small></a>`).join('')}<div class="badge-row">✧ &nbsp; ${earned(i)?'Zdobyta odznaka:':'Odznaka etapu:'} ${u.badge}</div></section>`).join('')}</div>`}
 let game=null,selected=null,targets=[],lastMove=null,context=null,solvedNow=false,aiTimer=null,gameToken=0,openingStep=0,openingMode='show',hintCount=0;
 function boardHTML(g){return `<div class="board" role="group" aria-label="Interaktywna szachownica">${g.board().flatMap((row,r)=>row.map((p,c)=>{const sq='abcdefgh'[c]+(8-r);return `<button class="square ${(r+c)%2?'dark':''} ${selected===sq?'selected':''} ${targets.includes(sq)&&(context?.kind!=='play'||$('#show-targets')?.checked!==false)?'target':''} ${lastMove?.includes(sq)?'last':''}" data-square="${sq}" aria-label="${sq}${p?`, ${p.color==='w'?'biały':'czarny'} ${names[p.type]}`:', puste pole'}">${p?`<span class="piece ${p.color==='w'?'white':''}">${icons[p.type]}</span>`:''}${c===0?`<span class="coord rank">${8-r}</span>`:''}${r===7?`<span class="coord">${'abcdefgh'[c]}</span>`:''}</button>`})).join('')}</div>`}
-function canDragPiece(sq){if(solvedNow||!game||!context)return false;if(context.kind==='opening'&&openingMode==='show')return false;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return false;if(context.kind==='lesson'&&['square','quiz','game'].includes(context.item.type))return false;return game.get(sq)?.color===game.turn()}
+function canDragPiece(sq){if(solvedNow||!game||!context)return false;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return false;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return false;if(context.kind==='lesson'&&['square','quiz','game'].includes(context.item.type))return false;return game.get(sq)?.color===game.turn()}
 function drawBoard(){if(!$('#board-host'))return;$('#board-host').innerHTML=boardHTML(game);boardInput.attach($('#board-host .board'),{position:game.fen(),pieceAt:sq=>game.get(sq),playerColor:context?.kind==='play'?'w':game.turn(),canDrag:canDragPiece,click:clickSquare,move:(from,to)=>{if(!canDragPiece(from))return;selected=from;targets=game.moves({square:from,verbose:true}).map(m=>m.to);clickSquare(to)}})}
 function setupBoard(fen){cancelPromotion?.();boardInput.reset();game=fen==='start'?new Chess():new Chess(fen);selected=null;targets=[];lastMove=null;solvedNow=false}
 function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Wszystkie zadania':context.kind==='opening'?'Wszystkie debiuty':'Moja akademia'}</a><div class="practice-layout"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div><div id="board-host"></div><div class="board-label bottom"><span id="board-bottom">${bottom}</span><span>AKADEMIA 64</span></div></section><section class="lesson-panel">${panel}</section></div>`;drawBoard()}
@@ -97,20 +97,158 @@ function promotionFor(from,to){
  });
 }
 
-async function clickSquare(sq){if(cancelPromotion)return;if(solvedNow||!game)return;if(context.kind==='opening'&&openingMode==='show')return;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return;
+async function clickSquare(sq){if(cancelPromotion)return;if(solvedNow||!game)return;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return;
 if(context.item?.type==='square'){if(sq===context.item.target)success('Dokładnie! h1 to jasny prawy dolny narożnik.');else feedback('Sprawdź literę kolumny i numer rzędu. Poszukaj pola h1.','error');return}
 if(context.kind==='lesson'&&['quiz','game'].includes(context.item.type))return;
 if(selected){const from=selected;const moves=game.moves({square:from,verbose:true});if(moves.some(m=>m.to===sq)){const activeGame=game,activeContext=context;const promotion=await promotionFor(from,sq);if(game!==activeGame||context!==activeContext)return;if(promotion===null)return;const move={from,to:sq,promotion};if(context.kind==='lesson'||context.kind==='puzzle'){const t=context.item.target;if(from!==t[0]||sq!==t[1]||(context.item.promotion&&promotion!==context.item.promotion)){feedback('To legalny ruch, ale cel ćwiczenia jest inny. Spróbuj jeszcze raz.','error');selected=null;targets=[];drawBoard();return}game.move(move);lastMove=[from,sq];success(game.isCheckmate()?'Mat! Król przeciwnika nie ma obrony. Doskonały ruch.':'Dobrze! Właśnie udało Ci się zastosować tę zasadę.');return}
-if(context.kind==='opening'){const expected=new Chess(game.fen());const m=expected.move(context.item.line[openingStep]);if(m.from!==from||m.to!==sq){feedback('Ten ruch jest legalny, ale ćwiczymy inny wariant. Skorzystaj z podpowiedzi.','error');return}game.move(move);openingStep++;lastMove=[from,sq];selected=null;targets=[];drawBoard();updateOpening();return}
+if(context.kind==='opening'){const expected=new Chess(game.fen());const m=expected.move(context.item.line[openingStep]);if(m.from!==from||m.to!==sq||(m.promotion&&promotion!==m.promotion)){feedback('Ten ruch jest legalny, ale ćwiczymy inny wariant. Skorzystaj z podpowiedzi.','error');return}game.move(move);openingStep++;lastMove=[from,sq];selected=null;targets=[];drawBoard();updateOpening();return}
 if(context.kind==='play'){game.move(move);lastMove=[from,sq];selected=null;targets=[];activity();drawBoard();updateGame();if(!game.isGameOver())scheduleAI();return}}
 }
 const p=game.get(sq);if(p&&p.color===game.turn()){selected=sq;targets=game.moves({square:sq,verbose:true}).map(m=>m.to)}else{selected=null;targets=[]}drawBoard()}
 function puzzleList(filter='Wszystkie'){const list=filter==='Wszystkie'?puzzles:puzzles.filter(p=>p.category===filter);main.innerHTML=`<div class="page-intro"><div class="eyebrow">TRENING UWAŻNOŚCI</div><h1>Znajdź ten jeden dobry ruch.</h1><p>Ćwicz rozpoznawanie okazji. Bez zegara, z podpowiedzią, zawsze we własnym tempie.</p></div><div class="filters">${['Wszystkie','Mat w jednym','Podwójny atak','Zdobywanie figur'].map(f=>`<button class="filter ${f===filter?'active':''}" data-filter="${f}">${f}</button>`).join('')}</div><div class="puzzle-cards">${list.map(p=>`<a href="#puzzle/${p.id}" class="puzzle-card"><div class="puzzle-art">${mini(p.fen)}</div><div class="puzzle-body"><div class="eyebrow">${p.category}</div><h3>${p.title}</h3><p>${p.level}</p></div><div class="puzzle-footer"><span>${state.solved.includes(p.id)?'✓ Rozwiązane':'Białe zaczynają'}</span><span>Rozwiąż &nbsp; →</span></div></a>`).join('')}</div>`;document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>puzzleList(b.dataset.filter))}
 function puzzle(id){const p=puzzles.find(x=>x.id===id);if(!p){location.hash='puzzles';return}context={kind:'puzzle',item:p};setupBoard(p.fen);practiceShell(`<div class="eyebrow">${p.category} · ${p.level}</div><h2>${p.title}</h2><div class="instruction puzzle-turn"><span class="turn-pawn ${game.turn()==='w'?'white':'black'}" aria-hidden="true">♟</span><span>Wykonaj najlepszy możliwy ruch dla ${game.turn()==='w'?'białych':'czarnych'}.</span></div><div id="feedback" class="feedback">${state.solved.includes(id)?'To zadanie masz już rozwiązane. Powtórz je dla utrwalenia.':'Spójrz na całą szachownicę. Co możesz osiągnąć jednym ruchem?'}</div><div class="lesson-actions"><a class="btn" id="next-puzzle" href="#puzzle/${puzzles[(puzzles.indexOf(p)+1)%puzzles.length].id}" hidden>Kolejne zadanie →</a><button class="btn outline" id="hint">Podpowiedź</button><button class="text-link" id="reset-exercise">Od początku</button></div>`,p.category,game.turn()==='w'?'Białe · Twój ruch':'Czarne · Twój ruch');$('#hint').onclick=()=>feedback(p.hint);$('#reset-exercise').onclick=()=>puzzle(id)}
-function openingsPage(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">PIERWSZE RUCHY, ŚWIADOME PLANY</div><h1>Dobry początek ma znaczenie.</h1><p>Poznaj trzy klasyczne debiuty. Najpierw zobacz ruchy i ich sens, a potem odtwórz wariant na szachownicy.</p></div><div class="opening-cards">${openings.map((o,i)=>`<a class="opening-card" href="#opening/${o.id}"><div class="opening-art ${['','alt','dark'][i]}">${o.pieces}</div><div class="puzzle-body"><div class="eyebrow">${o.tag}</div><h3>${o.title}</h3><p>${o.desc}</p><div class="moves">${o.line.slice(0,4).map(m=>`<span class="move">${m}</span>`).join('')}</div></div><div class="puzzle-footer"><span>${o.line.length} półruchów · z wyjaśnieniem</span><span>Poznaj &nbsp;→</span></div></a>`).join('')}</div><div class="empty-note">Na początku skup się na planie: centrum, rozwój figur i bezpieczeństwo króla. Zapamiętane ruchy pomagają dopiero wtedy, gdy rozumiesz ich cel.</div>`}
-function opening(id){const o=openings.find(x=>x.id===id);if(!o){location.hash='openings';return}context={kind:'opening',item:o};openingStep=0;openingMode='show';setupBoard('start');practiceShell(`<div class="eyebrow">WARSZTAT DEBIUTOWY</div><h2>${o.title}</h2><p>${o.desc}</p><div class="filters"><button class="filter active" id="show-mode">Poznaj wariant</button><button class="filter" id="practice-mode">Przećwicz ruchy</button></div><div id="opening-moves" class="moves"></div><div id="feedback" class="feedback"></div><div class="lesson-actions"><button class="btn outline" id="opening-prev">← Wstecz</button><button class="btn" id="opening-next">Kolejny ruch →</button><button class="btn outline" id="opening-hint" hidden>Podpowiedź</button></div><p class="tiny" style="margin-top:18px">Notacja międzynarodowa: N — skoczek, B — goniec, R — wieża, Q — hetman, K — król. Ćwiczenie obejmuje ruchy obu stron.</p>`,o.title);$('#show-mode').onclick=()=>resetOpening('show');$('#practice-mode').onclick=()=>resetOpening('practice');$('#opening-next').onclick=()=>{if(openingStep>=o.line.length)return;const m=game.move(o.line[openingStep++]);lastMove=[m.from,m.to];selected=null;targets=[];drawBoard();updateOpening()};$('#opening-prev').onclick=()=>{if(openingStep>0){game.undo();openingStep--;lastMove=null;selected=null;targets=[];drawBoard();updateOpening()}};$('#opening-hint').onclick=()=>{if(openingStep<o.line.length){const g=new Chess(game.fen());const m=g.move(o.line[openingStep]);feedback(`Ruch ${openingStep+1}: ${names[m.piece]} z ${m.from} na ${m.to}.`)}};updateOpening()}
-function resetOpening(mode){openingMode=mode;openingStep=0;setupBoard('start');drawBoard();$('#show-mode').classList.toggle('active',mode==='show');$('#practice-mode').classList.toggle('active',mode==='practice');$('#opening-next').hidden=mode==='practice';$('#opening-hint').hidden=mode==='show';updateOpening()}
-function updateOpening(){const o=context.item;$('#opening-moves').innerHTML=o.line.map((m,i)=>`<span class="move ${i===openingStep-1?'current':''}">${i%2===0?Math.floor(i/2+1)+'. ':''}${openingMode==='practice'&&i>=openingStep?'…':m}</span>`).join('');$('#opening-prev').disabled=openingStep===0;$('#opening-next').disabled=openingStep===o.line.length;$('#board-bottom').textContent=game.turn()==='w'?'Białe · kolejny ruch':'Czarne · kolejny ruch';if(openingStep===o.line.length){feedback('Wariant ukończony. '+o.notes.at(-1),'success');activity();$('#opening-hint').disabled=true}else{$('#opening-hint').disabled=false;feedback(openingStep?o.notes[openingStep-1]:(openingMode==='show'?'Kliknij „Kolejny ruch”, aby poznać plan obu stron.':'Twój ruch. Odtwórz poznany wariant, grając obiema stronami.'))}}
+async function loadOpeningLibrary(){
+ const routeHash=location.hash;
+ main.innerHTML='<p role="status">Wczytywanie biblioteki debiutów…</p>';
+ try{
+  const library=await import('./opening-library.js');
+  return location.hash===routeHash?library:null;
+ }catch{
+  if(location.hash===routeHash)main.innerHTML='<div class="page-intro"><h1>Biblioteka debiutów</h1><p>Nie udało się wczytać katalogu.</p><button class="btn" id="opening-retry">Spróbuj ponownie</button></div>';
+  $('#opening-retry')?.addEventListener('click',()=>location.reload());
+  return null;
+ }
+}
+async function openingsPage(){
+ const library=await loadOpeningLibrary();
+ library?.renderOpeningLibrary(main);
+}
+async function opening(id){
+ const library=await loadOpeningLibrary();
+ if(!library)return;
+ const o=openings.find(item=>item.id===id)||library.getOpening(id,Chess);
+ if(!o){location.hash='openings';return}
+ const e=library.escapeHTML;
+ const course=o.course;
+ const guide=o.guide;
+ context={kind:'opening',item:o,formatMove:library.formatMove};
+ openingStep=0;
+ openingMode='show';
+ setupBoard('start');
+ practiceShell(`
+  <div class="eyebrow">WARSZTAT DEBIUTOWY${o.eco?' · '+e(o.eco):''}</div>
+  <h2>${e(course?.title||o.title)}</h2>
+  ${guide?`<p class="opening-idea">${e(guide.idea)}</p>
+  <div class="opening-strategy">
+    <section><h3>Plan białych</h3><p>${e(guide.white)}</p></section>
+    <section><h3>Plan czarnych</h3><p>${e(guide.black)}</p></section>
+  </div>
+  <details class="opening-guide-details"><summary>Jak różnią się warianty i na co uważać</summary>
+    <p>${e(guide.branches)}</p><p>${e(guide.warning)}</p>
+  </details>`:''}
+  ${course?`<label class="opening-variant-label">Przykład na szachownicy
+    <select id="course-variant">${course.variants.map((variant,i)=>`<option value="course-${course.id}-${i}">${e(variant.title)}</option>`).join('')}</select>
+  </label>`:''}
+  <p>${e(o.desc||'Przykładowy przebieg wariantu z katalogu ECO.')}</p>
+  ${o.plan?`<div class="instruction opening-plan"><strong>Plan gry</strong><br>${e(o.plan)}</div>`:''}
+  ${o.relatedCourse?`<p><a class="text-link" href="#opening/course-${o.relatedCourse.id}-0">Przeczytaj lekcję o całym debiucie →</a></p>`:''}
+  <h3 class="opening-move-heading" id="opening-move-heading">Pozycja wyjściowa</h3>
+  <div id="feedback" class="feedback opening-explanation" role="status"></div>
+  <div id="opening-moves" class="moves"></div>
+  <div class="lesson-actions"><button class="btn outline" id="opening-prev">← Wstecz</button><button class="btn" id="opening-next">Kolejny ruch →</button><button class="btn outline" id="opening-hint" hidden>Podpowiedź</button></div>
+  <p class="opening-notation">S — skoczek, G — goniec, W — wieża, H — hetman, K — król. </p>
+  <details class="opening-guide-details"><summary>Powtórka ruchów</summary>
+    <div class="filters"><button class="filter active" id="show-mode" aria-pressed="true">Wróć do objaśnień</button><button class="filter" id="practice-mode" aria-pressed="false">Odtwórz przykład</button></div>
+  </details>
+  ${o.family?`<a class="text-link" id="opening-related" href="#openings">Więcej wariantów z tej rodziny →</a>`:''}
+  ${course?.quiz.length?`<details class="opening-quiz"><summary>Sprawdź się · ${course.quiz.length} pytań</summary>
+    ${course.quiz.map((question,i)=>`<section class="opening-question"><h3>${i+1}. ${e(question.q)}</h3><div class="quiz-options">${question.a.map((answer,j)=>`<button class="quiz-option" data-choice="${j}">${e(answer)}</button>`).join('')}</div><p role="status" class="opening-answer" hidden></p></section>`).join('')}
+  </details>`:''}
+ `,e(course?.title||o.title));
+ main.querySelector('.practice-layout').classList.add('opening-lesson-layout');
+ if(course){
+  const variants=$('#course-variant');
+  variants.value=id;
+  variants.onchange=()=>{location.hash='opening/'+variants.value};
+  main.querySelectorAll('.opening-question').forEach((element,index)=>{
+   const question=course.quiz[index];
+   const status=element.querySelector('.opening-answer');
+   element.querySelectorAll('[data-choice]').forEach(button=>{
+    button.onclick=()=>{
+     const correct=Number(button.dataset.choice)===question.ok;
+     status.hidden=false;
+     status.textContent=correct?question.why:'Spróbuj jeszcze raz.';
+     if(correct){button.classList.add('correct');element.querySelectorAll('[data-choice]').forEach(answer=>{answer.disabled=true})}
+    };
+   });
+  });
+ }
+ $('#opening-related')?.addEventListener('click',()=>library.focusOpeningFamily(o.family));
+ $('#show-mode').onclick=()=>resetOpening('show');
+ $('#practice-mode').onclick=()=>resetOpening('practice');
+ $('#opening-next').onclick=()=>{
+  if(openingStep>=o.line.length)return;
+  const move=game.move(o.line[openingStep++]);
+  lastMove=[move.from,move.to];
+  selected=null;targets=[];
+  drawBoard();updateOpening();
+ };
+ $('#opening-prev').onclick=()=>{
+  if(!openingStep)return;
+  game.undo();openingStep--;
+  const previous=game.history({verbose:true}).at(-1);
+  lastMove=previous?[previous.from,previous.to]:null;
+  selected=null;targets=[];
+  drawBoard();updateOpening();
+ };
+ $('#opening-hint').onclick=()=>{
+  if(openingStep>=o.line.length)return;
+  const move=new Chess(game.fen()).move(o.line[openingStep]);
+  feedback(`Ruch ${openingStep+1}: ${names[move.piece]} z ${move.from} na ${move.to}.`);
+ };
+ updateOpening();
+}
+function resetOpening(mode){
+ openingMode=mode;openingStep=0;setupBoard('start');drawBoard();
+ for(const [id,value] of [['show-mode','show'],['practice-mode','practice']]){
+  const button=$('#'+id);
+  button.classList.toggle('active',mode===value);
+  button.setAttribute('aria-pressed',String(mode===value));
+ }
+ $('#opening-next').hidden=mode==='practice';
+ $('#opening-hint').hidden=mode==='show';
+ updateOpening();
+}
+function updateOpening(){
+ const {item:o,formatMove}=context;
+ const moves=$('#opening-moves');
+ moves.replaceChildren(...o.line.map((move,index)=>{
+  const token=document.createElement('span');
+  token.className='move'+(index===openingStep-1?' current':'');
+  token.textContent=(index%2===0?Math.floor(index/2+1)+'. ':'')+
+   (openingMode==='practice'&&index>=openingStep?'…':formatMove(move));
+  return token;
+ }));
+ const complete=openingStep===o.line.length;
+ $('#opening-prev').disabled=openingStep===0;
+ $('#opening-next').disabled=complete;
+ $('#opening-hint').disabled=complete;
+ $('#board-bottom').textContent=complete?'Koniec wariantu':game.turn()==='w'?'Białe · kolejny ruch':'Czarne · kolejny ruch';
+ const note=o.notes?.[openingStep-1];
+ const move=game.history({verbose:true}).at(-1);
+ const number=Math.ceil(openingStep/2);
+ $('#opening-move-heading').textContent=move
+  ? `${number}${move.color==='w'?'.':'…'} ${formatMove(move.san)} · ${move.color==='w'?'białe':'czarne'}`
+  : 'Pozycja wyjściowa';
+ if(complete){
+  feedback(note||'To ostatni ruch w tym przykładzie.','success');
+  if(openingMode==='practice')activity();
+ }else{
+  feedback(note||(openingMode==='show'
+   ? (openingStep?`Zobacz, jak zmienia się pozycja po ruchu z ${move.from} na ${move.to}.`:'Przejdź do pierwszego ruchu i obserwuj zaznaczone pola na planszy.')
+   : 'Odtwórz poznany wariant, grając obiema stronami.'));
+ }
+}
 const val={p:100,n:320,b:330,r:500,q:900,k:0};let gameFinished=false;
 function evaluate(g){if(g.isCheckmate())return g.turn()==='b'?-100000:100000;if(g.isDraw())return 0;let score=0;g.board().forEach((row,r)=>row.forEach((p,c)=>{if(!p)return;let v=val[p.type];const center=3.5-Math.abs(3.5-c)+3.5-Math.abs(3.5-r);if(['n','b'].includes(p.type))v+=center*7;if(p.type==='p')v+=(p.color==='b'?r:7-r)*7;score+=(p.color==='b'?1:-1)*v}));return score}
 function search(g,depth,alpha,beta){if(depth===0||g.isGameOver())return evaluate(g);const max=g.turn()==='b';let best=max?-Infinity:Infinity;const moves=g.moves({verbose:true}).sort((a,b)=>(val[b.captured]||0)-(val[a.captured]||0));for(const m of moves){g.move(m);const v=search(g,depth-1,alpha,beta);g.undo();best=max?Math.max(best,v):Math.min(best,v);if(max)alpha=Math.max(alpha,best);else beta=Math.min(beta,best);if(beta<=alpha)break}return best}

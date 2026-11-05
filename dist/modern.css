@@ -69,3 +69,91 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
 .promotion-choices{border-radius:0;overflow:visible;box-shadow:none;outline:0}.promotion-choice,.promotion-choice:nth-child(even){border-radius:50%;background:radial-gradient(circle at 35% 25%,#fffef4,#c9cfbe);box-shadow:0 2px 8px #0004}.promotion-choice:hover,.promotion-choice:focus-visible{background:radial-gradient(circle at 35% 25%,#edf7d6,#b0d17c);box-shadow:inset 0 0 0 3px #6f914d,0 2px 8px #0004}
 
 .puzzle-turn{display:flex;align-items:center;gap:14px}.turn-pawn{display:flex;align-items:center;justify-content:center;flex:0 0 38px;font-family:Georgia,'DejaVu Sans',serif;font-size:38px;line-height:1}.turn-pawn.white{color:#fff9e9;text-shadow:-1px 0 #46523e,0 1px #46523e,1px 0 #46523e,0 -1px #46523e}.turn-pawn.black{color:#17251c;text-shadow:-1px 0 #b9c6a8,0 1px #b9c6a8,1px 0 #b9c6a8,0 -1px #b9c6a8}
+
+.opening-start { margin-bottom: 44px; }
+.opening-start h2, .opening-index h2 { margin-bottom: 8px; }
+.opening-start > p, .opening-index > p { color: var(--muted); }
+.opening-course-grid, .opening-results { display: grid; gap: 14px; }
+.opening-course-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 20px; }
+.opening-course, .opening-result {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.opening-course {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 22px;
+}
+.opening-course-icon, .opening-eco {
+  background: color-mix(in srgb, var(--accent) 16%, var(--paper));
+  border-radius: 8px;
+  color: var(--heading);
+  padding: 5px 10px;
+}
+.opening-course-icon { font-size: 26px; }
+.opening-course h3 { line-height: 1.2; }
+.opening-course p { color: var(--muted); font-size: 14px; }
+.opening-course-link { margin-top: auto; padding-top: 8px; font-weight: 600; }
+.opening-course-link:hover, .opening-source a:hover { text-decoration: underline; }
+.opening-index { scroll-margin-top: 100px; }
+.opening-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0 12px;
+}
+.opening-filter-grid label, .opening-variant-label { display: grid; gap: 6px; font-size: 14px; }
+.opening-filter-grid input, .opening-filter-grid select, .opening-variant-label select {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--heading);
+  font-size: 14px;
+}
+.opening-filter-grid input:focus-visible { outline: 2px solid var(--accent); }
+.opening-count { margin-bottom: 12px; font-size: 14px; }
+.opening-results { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.opening-result { display: flex; align-items: flex-start; gap: 12px; padding: 15px; }
+.opening-result:hover { border-color: var(--accent); }
+.opening-eco { font-size: 12px; flex: none; }
+.opening-result-text { flex: 1; min-width: 0; }
+.opening-result-text strong, .opening-result-text small { display: block; }
+.opening-result-text small { margin-top: 5px; color: var(--muted); overflow-wrap: anywhere; }
+.opening-pagination { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.opening-source { margin-top: 20px; font-size: 13px; }
+.opening-source a { text-decoration: underline; text-underline-offset: 3px; }
+.opening-variant-label { margin: 0 0 14px; }
+.opening-notation { overflow-wrap: anywhere; }
+.opening-quiz { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
+.opening-quiz summary { cursor: pointer; font-weight: 600; }
+.opening-question { margin-top: 16px; }
+.opening-answer { min-height: 1.5em; }
+@media (max-width: 1000px) {
+  .opening-course-grid, .opening-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 570px) {
+  .opening-course-grid, .opening-results, .opening-filter-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.opening-strategy { display: grid; gap: 10px; margin-bottom: 14px; }
+.opening-strategy section {
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+.opening-strategy h3, .opening-move-heading { font-size: 17px; margin-bottom: 6px; }
+.opening-strategy p { margin-bottom: 0; }
+.opening-guide-details { margin: 0 0 16px; }
+.opening-guide-details summary { cursor: pointer; font-weight: 600; }
+.opening-guide-details p, .opening-guide-details .filters { margin: 10px 0 0; }
+.opening-explanation { font-size: 15px; margin-bottom: 2px; }
+.opening-notation { margin-top: 12px; }
+@media (min-width: 900px) {
+  .opening-lesson-layout > .board-card { position: sticky; top: 90px; align-self: start; }
+}
