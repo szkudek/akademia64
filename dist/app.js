@@ -1,6 +1,7 @@
 import { createBoardInput } from './board-input.js';
 import { accounts } from './accounts.js';
 import { Chess } from './vendor/chess.js';
+import { openingChapter } from './opening-chapter.js';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
 const icons={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
@@ -57,7 +58,12 @@ $('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').onclic
 function updateLevel(){$('#level-name').textContent=state.done.length>=all.length?'Absolwent podstaw':state.done.length>=10?'Odkrywca szachów':'Początkujący'}
 function progress(){return Math.round(state.done.length/all.length*100)}
 function nextLesson(){return all.find(l=>!state.done.includes(l.id))||all[0]}
-function mini(fen='start'){const g=fen==='start'?new Chess():new Chess(fen);return `<div class="mini-board" aria-hidden="true">${g.board().flatMap((row,r)=>row.map((p,c)=>`<span class="${(r+c)%2?'dark':''} ${p?.color==='w'?'white':''}">${p?icons[p.type]:''}</span>`)).join('')}</div>`}
+function mini(fen='start',marked=[]){const g=fen==='start'?new Chess():new Chess(fen);return `<div class="mini-board" aria-hidden="true">${g.board().flatMap((row,r)=>row.map((p,c)=>`<span class="${(r+c)%2?'dark':''} ${p?.color==='w'?'white':''} ${marked.includes('abcdefgh'[c]+(8-r))?'marked':''}">${p?icons[p.type]:''}</span>`)).join('')}</div>`}
+function openingDiagram(moves,marked,caption){
+ const position=new Chess();
+ moves.forEach(move=>position.move(move));
+ return `<figure class="opening-diagram">${mini(position.fen(),marked)}<figcaption>${caption}</figcaption></figure>`;
+}
 function pathHTML(){return `<div class="path modern-path">${units.map((u,i)=>{const count=u.lessons.filter((l,j)=>state.done.includes(`${i}-${j}`)).length;const lesson=u.lessons.findIndex((l,j)=>!state.done.includes(`${i}-${j}`));const current=nextLesson().ui===i;return `<a href="#lesson/${i}-${lesson<0?0:lesson}" class="path-node ${count===u.lessons.length?'done':current?'current':''}"><div class="path-node-top"><span class="node-circle">${count===u.lessons.length?'✓':u.icon}</span><span class="stage-number">0${i+1}</span></div><strong>${['Szachownica','Twoja armia','Bezpieczny król','Zasady specjalne','Plan gry','Pierwsza partia'][i]}</strong><div class="stage-meta"><span>${count} / ${u.lessons.length} lekcji</span><span>${current?'Teraz':count===u.lessons.length?'Ukończone':'→'}</span></div><div class="progress"><span style="width:${count/u.lessons.length*100}%"></span></div></a>`}).join('')}</div>`}
 function home(){
  const l=nextLesson(),percent=progress();
@@ -132,6 +138,7 @@ async function opening(id){
  const e=library.escapeHTML;
  const course=o.course;
  const guide=o.guide;
+ const showCourseBoard=course&&location.hash.endsWith('/board');
  context={kind:'opening',item:o,formatMove:library.formatMove};
  openingStep=0;
  openingMode='show';
@@ -139,16 +146,6 @@ async function opening(id){
  practiceShell(`
   <div class="eyebrow">WARSZTAT DEBIUTOWY${o.eco?' · '+e(o.eco):''}</div>
   <h2>${e(course?.title||o.title)}</h2>
-  ${guide?`<h3 class="opening-section-title">Na czym polega ten debiut?</h3>
-  <p>${e(guide.idea)}</p>
-  <div class="opening-strategy">
-    <section><h3>Plan białych</h3><p>${e(guide.white)}</p></section>
-    <section><h3>Plan czarnych</h3><p>${e(guide.black)}</p></section>
-    <section><h3>Czym różnią się warianty?</h3><p>${e(guide.branches)}</p></section>
-    <section><h3>Na co uważać?</h3><p>${e(guide.warning)}</p></section>
-    <section><h3>Co sprawdzić na szachownicy?</h3><p>${e(guide.takeaway)}</p></section>
-  </div>
-  `:''}
   <div class="opening-example">
   ${course?`<label class="opening-variant-label">Wybierz wariant do prześledzenia
     <select id="course-variant">${course.variants.map((variant,i)=>`<option value="course-${course.id}-${i}">${e(variant.title)}</option>`).join('')}</select>
@@ -175,19 +172,52 @@ async function opening(id){
  const layout=main.querySelector('.practice-layout');
  layout.classList.add('opening-lesson-layout');
  const boardCard=layout.querySelector('.board-card');
- boardCard.prepend(layout.querySelector('.opening-example'));
- boardCard.append(layout.querySelector('.opening-walkthrough'));
+ const example=layout.querySelector('.opening-example');
+ const walkthrough=layout.querySelector('.opening-walkthrough');
  const lesson=document.createElement('section');
  lesson.className='opening-workshop';
  lesson.innerHTML=library.openingPicker(course?.id,id);
  const title=layout.querySelector('.lesson-panel > h2');
  title.className='opening-workshop-title';
- lesson.append(title,layout);
+ if(course){
+  const panel=layout.querySelector('.lesson-panel');
+  const chapter=document.createElement('div');
+  chapter.innerHTML=openingChapter(course,guide,openingDiagram,e);
+  const explorer=document.createElement('details');
+  explorer.className='opening-explorer';
+  explorer.open=showCourseBoard;
+  explorer.innerHTML='<summary class="btn">Sprawdź debiut <span aria-hidden="true">▾</span></summary>';
+  const boardLayout=document.createElement('div');
+  boardLayout.className='opening-board-layout';
+  const boardPanel=document.createElement('aside');
+  boardPanel.className='opening-board-panel';
+  boardPanel.setAttribute('aria-label','Wariant i przebieg ruchów');
+  boardPanel.append(example,walkthrough);
+  boardLayout.append(boardCard,boardPanel);
+  explorer.append(boardLayout);
+  chapter.querySelectorAll('.opening-board-link').forEach(link=>{
+   link.addEventListener('click',event=>{
+    if(link.hash!==location.hash)return;
+    event.preventDefault();
+    explorer.open=true;
+    explorer.scrollIntoView({block:'start'});
+   });
+  });
+  lesson.append(chapter.firstElementChild,explorer);
+  const followup=document.createElement('div');
+  followup.className='opening-followup';
+  followup.append(panel.querySelector('.opening-quiz'),panel.querySelector('#opening-related'));
+  lesson.append(followup);
+ }else{
+  boardCard.prepend(example);
+  boardCard.append(walkthrough);
+  lesson.append(title,layout);
+ }
  main.replaceChildren(lesson);
  if(course){
   const variants=$('#course-variant');
   variants.value=id;
-  variants.onchange=()=>{location.hash='opening/'+variants.value};
+  variants.onchange=()=>{location.hash='opening/'+variants.value+'/board'};
   main.querySelectorAll('.opening-question').forEach((element,index)=>{
    const question=course.quiz[index];
    const status=element.querySelector('.opening-answer');
@@ -225,6 +255,7 @@ async function opening(id){
   feedback(`Ruch ${openingStep+1}: ${names[move.piece]} z ${move.from} na ${move.to}.`);
  };
  updateOpening();
+ if(showCourseBoard) $('.opening-explorer').scrollIntoView({block:'start'});
 }
 function resetOpening(mode){
  openingMode=mode;openingStep=0;setupBoard('start');drawBoard();
