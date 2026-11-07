@@ -282,9 +282,9 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
 
 /* Motyw 3 — jasne powierzchnie, niebieska nawigacja i turkusowe akcenty. */
 :root:not([data-theme="dark"]) {
-  --canvas: #f2f7fc;
-  --nav: #fff;
-  --paper: #fff;
+  --canvas: #e4ecf3;
+  --nav: #edf2f6;
+  --paper: #eff3f7;
   --heading: #122947;
   --text: #233e5a;
   --reading: #39546d;
@@ -294,8 +294,8 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
   --green2: #174b9c;
   --gold: #08766f;
   --accent: #2bbdb3;
-  --soft-blue: #e8f1ff;
-  --soft-teal: #e0f6f3;
+  --soft-blue: #e0e9f5;
+  --soft-teal: #dcefeb;
   --board-light: #e5f3fa;
   --board-dark: #77aabf;
   --card-shadow: 0 6px 22px #1d4a7810;
@@ -330,7 +330,7 @@ h1, h2, .hero h2 { font-weight: 700; }
 }
 
 :root:not([data-theme="dark"]) .academy-banner {
-  background: linear-gradient(118deg, #fdfefe 8%, #e8f2ff 56%, #cef2ed);
+  background: linear-gradient(118deg, #eaf0f6 8%, #dce8f6 56%, #cce4e4);
   border-color: var(--line);
   box-shadow: var(--card-shadow);
 }
@@ -365,7 +365,7 @@ h1, h2, .hero h2 { font-weight: 700; }
 :root:not([data-theme="dark"]) .banner-halo { border-color: #1757bd22; box-shadow: none; }
 
 :root:not([data-theme="dark"]) .hero {
-  background: linear-gradient(125deg, #fff 20%, #e6f4ff) !important;
+  background: linear-gradient(125deg, #edf2f7 20%, #dceaf6) !important;
   color: var(--text);
   border-color: var(--line);
   box-shadow: var(--card-shadow);
@@ -449,3 +449,100 @@ h1, h2, .hero h2 { font-weight: 700; }
   .hero-visual :is(.hero-board-wrap, .orbit) { display: none; }
   .board-floating-note { right: 20px; bottom: 20px; }
 }
+
+/* Ciemny wariant motywu 3. */
+[data-theme="dark"] {
+  --canvas: #101a29;
+  --nav: #152236;
+  --paper: #19283b;
+  --heading: #edf4ff;
+  --text: #dce7f5;
+  --reading: #c3d1e2;
+  --muted: #a6bbd0;
+  --line: #354a63;
+  --soft: #233953;
+  --subtle: #1e3048;
+  --control: #d2e2f4;
+  --green: #80b6ff;
+  --accent: #69d8cf;
+  --gold: var(--accent);
+  --board-light: #c4dbe8;
+  --board-dark: #709db5;
+}
+
+[data-theme="dark"] .academy-banner {
+  background: linear-gradient(120deg, #172943 18%, #1b3654 64%, #19434a);
+  border-color: var(--line);
+}
+[data-theme="dark"] .hero {
+  background: linear-gradient(125deg, #19283b, #1f3651) !important;
+  border-color: var(--line);
+}
+[data-theme="dark"] :is(.academy-banner h1, .hero h2, .quote-card blockquote) { color: var(--heading); }
+[data-theme="dark"] .academy-banner h1 em { color: var(--green); font-family: inherit; }
+[data-theme="dark"] :is(.academy-banner p, .hero p, .quote-card p) { color: var(--reading) !important; }
+[data-theme="dark"] :is(.eyebrow, .hero .eyebrow, .banner-kicker, .banner-art-label, .quote-card .eyebrow,
+    .text-link, .quote-card .text-link, .opening-course-link, .insight-mark) { color: var(--accent); }
+[data-theme="dark"] :is(.banner-coordinate, .hero-meta, .hero-course-note, .board-floating-note small, .stage-number) {
+  color: var(--muted);
+}
+[data-theme="dark"] :is(.banner-kicker > span:first-child, .banner-kicker-line, .live-dot, .progress > span) {
+  background: var(--accent);
+}
+[data-theme="dark"] .banner-chess { filter: hue-rotate(95deg) drop-shadow(0 15px 14px #0a132a88); }
+[data-theme="dark"] .banner-board {
+  background: conic-gradient(#80b6ff33 25%, transparent 0 50%, #80b6ff33 0 75%, transparent 0) 0 0 / 64px 64px;
+  border-color: var(--line);
+}
+[data-theme="dark"] :is(.banner-halo, .orbit) { border-color: #80b6ff30; box-shadow: none; }
+
+[data-theme="dark"] :is(.brand-symbol, .sidebar nav a:hover, .sidebar nav a.active, .stat-icon, .step-icon,
+    .course-tag, .unit-emblem, .modern-path .node-circle, .move, .quiz-option:not(.correct), .puzzle-art, .empty-note) {
+  background: var(--soft);
+  color: var(--green);
+  border-color: var(--line);
+}
+[data-theme="dark"] :is(.quote-card, .step-icon.completed, .modern-path .path-node.current,
+    .modern-path .path-node:hover, .modern-path .path-node.current .node-circle, .modern-path .path-node.done .node-circle) {
+  background: #1d3b46 !important;
+  color: var(--accent);
+  border-color: #3b6773;
+}
+[data-theme="dark"] .modern-path .path-node.current .stage-meta > span:last-child { color: var(--accent); }
+[data-theme="dark"] .quote-piece { color: #2c4f5c !important; }
+[data-theme="dark"] :is(.progress, .modern-path .path-node .progress, .hero-meta-divider) { background: var(--line); }
+[data-theme="dark"] :is(.board-card, .board-floating-note, dialog) {
+  background: var(--paper);
+  color: var(--text);
+  border-color: var(--line);
+}
+[data-theme="dark"] :is(.board-label, .board-hint, footer, footer button, footer span, .history span) { color: var(--muted); }
+[data-theme="dark"] :is(.instruction, .feedback:not(.success, .error), .quiz-option:not(.correct):hover) {
+  background: var(--soft);
+  color: var(--text);
+  border-color: var(--green);
+}
+[data-theme="dark"] :is(.banner-link, .btn:not(.outline, .danger-btn), .filter.active, .move.current) {
+  background: var(--green) !important;
+  color: var(--canvas) !important;
+  border-color: transparent;
+}
+[data-theme="dark"] .banner-link { border-radius: 12px; padding: 12px 18px; }
+[data-theme="dark"] :is(.banner-link, .btn:not(.outline, .danger-btn), .filter.active):hover {
+  background: #a5ccff !important;
+}
+[data-theme="dark"] :is(.btn.outline, .filter:not(.active), .icon-button, select) {
+  color: var(--control);
+  border-color: var(--line);
+}
+[data-theme="dark"] .btn.outline:hover { background: var(--soft); }
+
+[data-theme="dark"] :is(.hero-board-wrap, .puzzle-art .mini-board) { background: #2e506e; border-color: #2e506e; }
+[data-theme="dark"] :is(.board .square, .mini-board > span, .hero-board-wrap .mini-board > span, .puzzle-art .mini-board > span) { background: var(--board-light); }
+[data-theme="dark"] :is(.board .square, .mini-board > span, .hero-board-wrap .mini-board > span, .puzzle-art .mini-board > span).dark { background: var(--board-dark); }
+[data-theme="dark"] .board .square.selected,
+[data-theme="dark"] .opening-diagram .mini-board > .marked { background: #efcc7f; }
+[data-theme="dark"] .board .square .coord { color: #152d47; }
+[data-theme="dark"] dialog::backdrop { background: #091321b0; }
+[data-theme="dark"] :is(a, button, select, input, summary):focus-visible { outline-color: var(--green); }
+[data-theme="dark"] .board .square:focus-visible { outline-offset: -3px; }
