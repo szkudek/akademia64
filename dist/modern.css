@@ -282,22 +282,22 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
 
 /* Motyw 3 — jasne powierzchnie, niebieska nawigacja i turkusowe akcenty. */
 :root:not([data-theme="dark"]) {
-  --canvas: #e4ecf3;
-  --nav: #edf2f6;
-  --paper: #eff3f7;
-  --heading: #122947;
-  --text: #233e5a;
-  --reading: #39546d;
-  --muted: #526b82;
-  --line: #d6e3ef;
-  --green: #1757bd;
-  --green2: #174b9c;
-  --gold: #08766f;
+  --canvas: #ded7c8;
+  --nav: #e5ded1;
+  --paper: #eae3d6;
+  --heading: #263139;
+  --text: #313b40;
+  --reading: #3c4549;
+  --muted: #505a60;
+  --line: #c8bfaf;
+  --green: #315b78;
+  --green2: #244861;
+  --gold: #24625c;
   --accent: #2bbdb3;
-  --soft-blue: #e0e9f5;
-  --soft-teal: #dcefeb;
-  --board-light: #e5f3fa;
-  --board-dark: #77aabf;
+  --soft-blue: #dbe2e3;
+  --soft-teal: #dbe4dc;
+  --board-light: #dcd8c9;
+  --board-dark: #7c9aa0;
   --card-shadow: 0 6px 22px #1d4a7810;
 }
 
@@ -330,7 +330,7 @@ h1, h2, .hero h2 { font-weight: 700; }
 }
 
 :root:not([data-theme="dark"]) .academy-banner {
-  background: linear-gradient(118deg, #eaf0f6 8%, #dce8f6 56%, #cce4e4);
+  background: linear-gradient(118deg, #eae3d6 8%, #e3dfd2 56%, #d2ded7);
   border-color: var(--line);
   box-shadow: var(--card-shadow);
 }
@@ -365,7 +365,7 @@ h1, h2, .hero h2 { font-weight: 700; }
 :root:not([data-theme="dark"]) .banner-halo { border-color: #1757bd22; box-shadow: none; }
 
 :root:not([data-theme="dark"]) .hero {
-  background: linear-gradient(125deg, #edf2f7 20%, #dceaf6) !important;
+  background: linear-gradient(125deg, #eae3d6 20%, #dce3df) !important;
   color: var(--text);
   border-color: var(--line);
   box-shadow: var(--card-shadow);
@@ -395,10 +395,10 @@ h1, h2, .hero h2 { font-weight: 700; }
 :root:not([data-theme="dark"]) :is(.progress, .modern-path .path-node .progress) { background: var(--soft-blue); }
 :root:not([data-theme="dark"]) .progress > span { background: var(--gold); }
 
-:root:not([data-theme="dark"]) .quote-card { background: var(--soft-teal) !important; border-color: #c4e8e4; }
+:root:not([data-theme="dark"]) .quote-card { background: var(--soft-teal) !important; border-color: #bdcfc3; }
 :root:not([data-theme="dark"]) .quote-card blockquote { color: var(--heading); }
 :root:not([data-theme="dark"]) .insight-mark { color: var(--gold); }
-:root:not([data-theme="dark"]) .quote-piece { color: #b8e6e0 !important; }
+:root:not([data-theme="dark"]) .quote-piece { color: #bfd1c5 !important; }
 
 :root:not([data-theme="dark"]) .puzzle-art { background: var(--soft-blue); }
 :root:not([data-theme="dark"]) .puzzle-art .mini-board { border-color: #2d5f8b; }
@@ -546,3 +546,38 @@ h1, h2, .hero h2 { font-weight: 700; }
 [data-theme="dark"] dialog::backdrop { background: #091321b0; }
 [data-theme="dark"] :is(a, button, select, input, summary):focus-visible { outline-color: var(--green); }
 [data-theme="dark"] .board .square:focus-visible { outline-offset: -3px; }
+
+/* Comfortable measure for long lessons in the light reading theme. */
+:root:not([data-theme="dark"]) .opening-chapter {
+  max-width: 65rem;
+  margin-inline: auto;
+}
+
+:root:not([data-theme="dark"]) .opening-chapter :is(p, .opening-sources) {
+  max-width: 66ch;
+  font-size: 1.0625rem;
+  line-height: 1.8;
+}
+
+:root:not([data-theme="dark"]) .opening-chapter p + p {
+  margin-top: .9em;
+}
+
+:root:not([data-theme="dark"]) .opening-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+}
+
+:root:not([data-theme="dark"]) .opening-chapter h3 {
+  line-height: 1.3;
+}
+
+:root:not([data-theme="dark"]) :is(.lesson-panel .instruction, .opening-board-panel #feedback:not(.success, .error)) {
+  background: var(--soft-blue);
+  color: var(--reading);
+  border-color: var(--green);
+}
+
+:root:not([data-theme="dark"]) .stat {
+  background: var(--paper);
+}
