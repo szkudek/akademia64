@@ -5,6 +5,7 @@ export const openingGuides = {
     black: 'Po ...Gc5 czarne naciskają na f2 i mogą dokończyć rozwój przez ...Sf6, ...d6 i roszadę. Przy odpowiednim przygotowaniu ...d5 wyzwala centrum. Po bezpośrednim ...Sf6 czarne od razu atakują e4.',
     branches: 'Pianissimo pokazuje, jak przygotować d4 bez pośpiechu. W Obronie Dwóch Skoczków ruch Sg5 zmienia grę w taktyczną walkę o f7. Gambit Evansa oddaje pionka b, by uzyskać tempo na gońcu i zbudować centrum.',
     warning: 'Sam nacisk na f7 nie wystarcza do ataku. Przed Sg5 sprawdź, czy czarne mogą odpowiedzieć ...d5, atakując centrum i gońca na c4.',
+    takeaway: 'Po 3.Gc4 zobacz, jak czarne rozwijają kolejną figurę. Po ...Gc5 możesz porównać spokojne d3 z aktywnym c3 i d4. Po ...Sf6 najpierw zauważ groźbę zbicia na e4.',
   },
   caro: {
     idea: 'Po 1.e4 c6 czarne przygotowują ...d5. Pion c6 podpiera d5, a goniec z c8 może wyjść przed zagraniem ...e6.',
@@ -12,6 +13,7 @@ export const openingGuides = {
     black: 'W zamkniętym centrum szukaj przełamania ...c5 u podstawy łańcucha pionów. Gdy goniec wyjdzie na f5, pilnuj, czy białe mogą zyskać na nim tempo przez g4 lub h4.',
     branches: 'Porównaj wariant z e5, gdzie centrum jest zamknięte, z wymiennym, gdzie struktura szybko staje się symetryczna. Panow zmienia ją przez szybkie c4.',
     warning: 'W wariancie z e5 automatyczne ...e6 może zamknąć własnego gońca na c8. Najpierw sprawdź, czy może rozwinąć się na f5 lub g4.',
+    takeaway: 'Po ...d5 spójrz na białego pionka e4. Ruch e5 zamyka centrum, exd5 prowadzi do wymiany, a Sc3 lub Sd2 pozwala na razie utrzymać napięcie.',
   },
   spanish: {
     idea: 'Po 1.e4 e5 2.Sf3 Sc6 3.Gb5 białe wywierają nacisk na skoczka c6, który broni pionka e5. Ten nacisk pomaga białym walczyć o centrum podczas rozwoju.',
@@ -19,6 +21,7 @@ export const openingGuides = {
     black: 'Ruchy ...a6 i ...b5 zdobywają przestrzeń i odpychają gońca. ...Sf6 atakuje e4. W strukturze zamkniętej ...d6 zabezpiecza e5, a dobrze przygotowane ...d5 może otworzyć centrum.',
     branches: 'W wariancie wymiennym Gxc6 zmienia strukturę pionów czarnych. Obrona berlińska przez ...Sf6 od razu atakuje e4. W zamkniętej hiszpańskiej obie strony dłużej manewrują przed otwarciem centrum.',
     warning: 'Po Gxc6 dxc6 pion e5 może wyglądać na wolny. Po Sxe5 czarne mogą zagrać ...Hd4, atakując skoczka i pionka e4.',
+    takeaway: 'Porównaj pozycje po Gxc6 i Ga4. W pierwszej białe zmieniają strukturę pionów czarnych. W drugiej zachowują gońca i mogą dalej przygotowywać roszadę oraz d4.',
   },
   sicilian: {
     idea: 'Po 1.e4 c5 czarne walczą o d4 pionem z flanki. Jeśli białe zagrają d4 i nastąpi ...cxd4, czarne wymieniają pionka z linii c za centralnego pionka d. Obie strony dostają różne możliwości ataku.',
@@ -26,6 +29,7 @@ export const openingGuides = {
     black: 'Półotwarta linia c daje wieży pole do działania, a dobrze przygotowane ...d5 wyrównuje walkę w centrum. W wielu ustawieniach ...a6 i ...b5 pozwalają zdobyć przestrzeń na skrzydle hetmańskim.',
     branches: 'Najdorf używa ...a6, m.in. by kontrolować b5. W Smoku ...g6 i ...Gg7 kierują gońca na długą przekątną. Alapin z 2.c3 przygotowuje d4 i prowadzi do innej struktury.',
     warning: 'Plany zależą od struktury. Zanim skopiujesz atak pionami z innego wariantu, sprawdź, gdzie stoją króle i czy przeciwnik grozi przełamaniem w centrum.',
+    takeaway: 'Po wymianie na d4 znajdź półotwarte linie. Na linii c nie ma już czarnego pionka, więc czarne mogą ustawić tam wieżę. Białe mogą wykorzystać linię d do nacisku na pionka d6, jeśli czarne zagrały ...d6.',
   },
 };
 

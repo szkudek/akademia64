@@ -1,7 +1,6 @@
 import { createBoardInput } from './board-input.js';
 import { accounts } from './accounts.js';
 import { Chess } from './vendor/chess.js';
-import { openingPiece } from './opening-pieces.js';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
 const icons={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
@@ -72,7 +71,7 @@ function home(){
 function earned(i){return units[i].lessons.every((l,j)=>state.done.includes(`${i}-${j}`))}function earnedCount(){return units.filter((u,i)=>earned(i)).length}
 function learn(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">TWOJA ŚCIEŻKA</div><h1>Małe kroki. Solidne podstawy.</h1><p>Od pierwszego ruchu do samodzielnej partii. Idź po kolei lub wybierz temat, który Cię ciekawi.</p></div><div class="map-summary"><div><h3>Od zera do pierwszej partii</h3><p>${state.done.length} z ${all.length} lekcji · ${units.length} etapów</p></div><div><div class="progress-label"><span>Twój postęp</span><span>${progress()}%</span></div><div class="progress"><span style="width:${progress()}%"></span></div></div></div><div class="units">${units.map((u,i)=>`<section class="unit"><div class="unit-header"><div class="unit-emblem">${u.icon}</div><div><div class="eyebrow">ETAP 0${i+1}</div><h2>${u.title}</h2></div></div>${u.lessons.map((l,j)=>`<a class="lesson-link ${state.done.includes(`${i}-${j}`)?'done':''}" href="#lesson/${i}-${j}"><span class="lesson-status">${state.done.includes(`${i}-${j}`)?'✓':j+1}</span><span>${l.title}</span><small>${l.type==='game'?'Partia':'5–8 min'} &nbsp; →</small></a>`).join('')}<div class="badge-row">✧ &nbsp; ${earned(i)?'Zdobyta odznaka:':'Odznaka etapu:'} ${u.badge}</div></section>`).join('')}</div>`}
 let game=null,selected=null,targets=[],lastMove=null,context=null,solvedNow=false,aiTimer=null,gameToken=0,openingStep=0,openingMode='show',hintCount=0;
-function boardHTML(g){return `<div class="board" role="group" aria-label="Interaktywna szachownica">${g.board().flatMap((row,r)=>row.map((p,c)=>{const sq='abcdefgh'[c]+(8-r);return `<button class="square ${(r+c)%2?'dark':''} ${selected===sq?'selected':''} ${targets.includes(sq)&&(context?.kind!=='play'||$('#show-targets')?.checked!==false)?'target':''} ${lastMove?.includes(sq)?'last':''}" data-square="${sq}" aria-label="${sq}${p?`, ${p.color==='w'?'biały':'czarny'} ${names[p.type]}`:', puste pole'}">${p?context?.kind==='opening'?openingPiece(p):`<span class="piece ${p.color==='w'?'white':''}">${icons[p.type]}</span>`:''}${c===0?`<span class="coord rank">${8-r}</span>`:''}${r===7?`<span class="coord">${'abcdefgh'[c]}</span>`:''}</button>`})).join('')}</div>`}
+function boardHTML(g){return `<div class="board" role="group" aria-label="Interaktywna szachownica">${g.board().flatMap((row,r)=>row.map((p,c)=>{const sq='abcdefgh'[c]+(8-r);return `<button class="square ${(r+c)%2?'dark':''} ${selected===sq?'selected':''} ${targets.includes(sq)&&(context?.kind!=='play'||$('#show-targets')?.checked!==false)?'target':''} ${lastMove?.includes(sq)?'last':''}" data-square="${sq}" aria-label="${sq}${p?`, ${p.color==='w'?'biały':'czarny'} ${names[p.type]}`:', puste pole'}">${p?`<span class="piece ${p.color==='w'?'white':''}">${icons[p.type]}</span>`:''}${c===0?`<span class="coord rank">${8-r}</span>`:''}${r===7?`<span class="coord">${'abcdefgh'[c]}</span>`:''}</button>`})).join('')}</div>`}
 function canDragPiece(sq){if(solvedNow||!game||!context)return false;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return false;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return false;if(context.kind==='lesson'&&['square','quiz','game'].includes(context.item.type))return false;return game.get(sq)?.color===game.turn()}
 function drawBoard(){if(!$('#board-host'))return;$('#board-host').innerHTML=boardHTML(game);boardInput.attach($('#board-host .board'),{position:game.fen(),pieceAt:sq=>game.get(sq),playerColor:context?.kind==='play'?'w':game.turn(),canDrag:canDragPiece,click:clickSquare,move:(from,to)=>{if(!canDragPiece(from))return;selected=from;targets=game.moves({square:from,verbose:true}).map(m=>m.to);clickSquare(to)}})}
 function setupBoard(fen){cancelPromotion?.();boardInput.reset();game=fen==='start'?new Chess():new Chess(fen);selected=null;targets=[];lastMove=null;solvedNow=false}
@@ -91,7 +90,7 @@ function promotionFor(from,to){
   const column=document.createElement('div');column.className='promotion-choices';column.style.left=((to.charCodeAt(0)-97)*12.5)+'%';column.style[to[1]==='8'?'top':'bottom']='0';if(to[1]==='1')column.style.flexDirection='column-reverse';
   let finished=false;const previous=document.activeElement;
   const finish=value=>{if(finished)return;finished=true;overlay.remove();cancelPromotion=null;resolve(value);if(previous?.isConnected)previous.focus()};cancelPromotion=()=>finish(null);
-  for(const type of ['q','n','r','b']){const button=document.createElement('button');button.type='button';button.className='promotion-choice';button.setAttribute('aria-label',names[type]);button.innerHTML=context.kind==='opening'?openingPiece({type,color:pawn.color}):`<span class="piece ${pawn.color==='w'?'white':''}">${icons[type]}</span>`;button.onclick=e=>{e.stopPropagation();finish(type)};column.append(button)}
+  for(const type of ['q','n','r','b']){const button=document.createElement('button');button.type='button';button.className='promotion-choice';button.setAttribute('aria-label',names[type]);button.innerHTML=`<span class="piece ${pawn.color==='w'?'white':''}">${icons[type]}</span>`;button.onclick=e=>{e.stopPropagation();finish(type)};column.append(button)}
   overlay.append(column);overlay.addEventListener('pointerdown',e=>e.stopPropagation());overlay.addEventListener('contextmenu',e=>e.preventDefault());overlay.addEventListener('click',e=>{e.stopPropagation();if(e.target===overlay)finish(null)});
   overlay.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();finish(null)}if(e.key==='Tab'){e.preventDefault();const buttons=[...column.children],i=buttons.indexOf(document.activeElement);buttons[(i+(e.shiftKey?3:1))%4].focus()}});
   board.append(overlay);column.firstElementChild.focus();
@@ -140,28 +139,34 @@ async function opening(id){
  practiceShell(`
   <div class="eyebrow">WARSZTAT DEBIUTOWY${o.eco?' · '+e(o.eco):''}</div>
   <h2>${e(course?.title||o.title)}</h2>
-  ${guide?`<p class="opening-idea">${e(guide.idea)}</p>
+  ${guide?`<h3 class="opening-section-title">Na czym polega ten debiut?</h3>
+  <p>${e(guide.idea)}</p>
   <div class="opening-strategy">
     <section><h3>Plan białych</h3><p>${e(guide.white)}</p></section>
     <section><h3>Plan czarnych</h3><p>${e(guide.black)}</p></section>
+    <section><h3>Czym różnią się warianty?</h3><p>${e(guide.branches)}</p></section>
+    <section><h3>Na co uważać?</h3><p>${e(guide.warning)}</p></section>
+    <section><h3>Co sprawdzić na szachownicy?</h3><p>${e(guide.takeaway)}</p></section>
   </div>
-  <details class="opening-guide-details"><summary>Jak różnią się warianty i na co uważać</summary>
-    <p>${e(guide.branches)}</p><p>${e(guide.warning)}</p>
-  </details>`:''}
-  ${course?`<label class="opening-variant-label">Przykład na szachownicy
+  `:''}
+  <div class="opening-example">
+  ${course?`<label class="opening-variant-label">Wybierz wariant do prześledzenia
     <select id="course-variant">${course.variants.map((variant,i)=>`<option value="course-${course.id}-${i}">${e(variant.title)}</option>`).join('')}</select>
   </label>`:''}
   <p>${e(o.desc||'Przykładowy przebieg wariantu z katalogu ECO.')}</p>
-  ${o.plan?`<div class="instruction opening-plan"><strong>Plan gry</strong><br>${e(o.plan)}</div>`:''}
+  ${o.plan?`<p><strong>Na co zwrócić uwagę</strong><br>${e(o.plan)}</p>`:''}
+  </div>
   ${o.relatedCourse?`<p><a class="text-link" href="#opening/course-${o.relatedCourse.id}-0">Przeczytaj lekcję o całym debiucie →</a></p>`:''}
+  <div class="opening-walkthrough">
+  <div class="lesson-actions opening-board-actions"><button class="btn outline" id="opening-prev">← Wstecz</button><button class="btn" id="opening-next">Następny ruch →</button><button class="btn outline" id="opening-hint" hidden>Podpowiedź</button></div>
   <h3 class="opening-move-heading" id="opening-move-heading">Pozycja wyjściowa</h3>
   <div id="feedback" class="feedback opening-explanation" role="status"></div>
   <div id="opening-moves" class="moves"></div>
-  <div class="lesson-actions opening-board-actions"><button class="btn outline" id="opening-prev">← Wstecz</button><button class="btn" id="opening-next">Dalej →</button><button class="btn outline" id="opening-hint" hidden>Podpowiedź</button></div>
-  <p class="opening-notation">S — skoczek, G — goniec, W — wieża, H — hetman, K — król. </p>
+  <p class="opening-notation">S — skoczek, G — goniec, W — wieża, H — hetman, K — król. O-O oznacza krótką roszadę, a O-O-O długą.</p>
   <details class="opening-guide-details"><summary>Powtórka ruchów</summary>
-    <div class="filters"><button class="filter active" id="show-mode" aria-pressed="true">Wróć do objaśnień</button><button class="filter" id="practice-mode" aria-pressed="false">Odtwórz przykład</button></div>
+    <div class="filters"><button class="filter active" id="show-mode" aria-pressed="true">Pokaż ruchy</button><button class="filter" id="practice-mode" aria-pressed="false">Zagraj ruchy samodzielnie</button></div>
   </details>
+  </div>
   ${o.family?`<a class="text-link" id="opening-related" href="#openings/catalog">Więcej wariantów z tej rodziny →</a>`:''}
   ${course?.quiz.length?`<details class="opening-quiz"><summary>Sprawdź się · ${course.quiz.length} pytań</summary>
     ${course.quiz.map((question,i)=>`<section class="opening-question"><h3>${i+1}. ${e(question.q)}</h3><div class="quiz-options">${question.a.map((answer,j)=>`<button class="quiz-option" data-choice="${j}">${e(answer)}</button>`).join('')}</div><p role="status" class="opening-answer" hidden></p></section>`).join('')}
@@ -169,7 +174,9 @@ async function opening(id){
  `,e(course?.title||o.title));
  const layout=main.querySelector('.practice-layout');
  layout.classList.add('opening-lesson-layout');
- layout.querySelector('.board-card').append(layout.querySelector('.opening-board-actions'));
+ const boardCard=layout.querySelector('.board-card');
+ boardCard.prepend(layout.querySelector('.opening-example'));
+ boardCard.append(layout.querySelector('.opening-walkthrough'));
  const lesson=document.createElement('section');
  lesson.className='opening-workshop';
  lesson.innerHTML=library.openingPicker(course?.id,id);
@@ -244,7 +251,8 @@ function updateOpening(){
  $('#opening-prev').disabled=openingStep===0;
  $('#opening-next').disabled=complete;
  $('#opening-hint').disabled=complete;
- $('#board-bottom').textContent=complete?'Koniec wariantu':game.turn()==='w'?'Białe · kolejny ruch':'Czarne · kolejny ruch';
+ const turn=game.turn()==='w'?'Ruch białych':'Ruch czarnych';
+ $('#board-bottom').textContent=complete?'Koniec wariantu':`${turn} · ${openingStep+1} z ${o.line.length}`;
  const note=o.notes?.[openingStep-1];
  const move=game.history({verbose:true}).at(-1);
  const number=Math.ceil(openingStep/2);
