@@ -139,7 +139,7 @@ async function opening(id){
  const course=o.course;
  const guide=o.guide;
  const showCourseBoard=course&&location.hash.endsWith('/board');
- context={kind:'opening',item:o,formatMove:library.formatMove};
+ context={kind:'opening',item:o};
  openingStep=0;
  openingMode='show';
  setupBoard('start');
@@ -159,7 +159,7 @@ async function opening(id){
   <h3 class="opening-move-heading" id="opening-move-heading">Pozycja wyjściowa</h3>
   <div id="feedback" class="feedback opening-explanation" role="status"></div>
   <div id="opening-moves" class="moves"></div>
-  <p class="opening-notation">S — skoczek, G — goniec, W — wieża, H — hetman, K — król. O-O oznacza krótką roszadę, a O-O-O długą.</p>
+  <p class="opening-notation"><strong>Notacja SAN</strong><br>N – skoczek, B – goniec, R – wieża, Q – hetman, K – król. Pion zapisujemy bez litery, np. e4. O-O oznacza krótką roszadę, a O-O-O długą.</p>
   <details class="opening-guide-details"><summary>Powtórka ruchów</summary>
     <div class="filters"><button class="filter active" id="show-mode" aria-pressed="true">Pokaż ruchy</button><button class="filter" id="practice-mode" aria-pressed="false">Zagraj ruchy samodzielnie</button></div>
   </details>
@@ -269,13 +269,13 @@ function resetOpening(mode){
  updateOpening();
 }
 function updateOpening(){
- const {item:o,formatMove}=context;
+ const {item:o}=context;
  const moves=$('#opening-moves');
  moves.replaceChildren(...o.line.map((move,index)=>{
   const token=document.createElement('span');
   token.className='move'+(index===openingStep-1?' current':'');
   token.textContent=(index%2===0?Math.floor(index/2+1)+'. ':'')+
-   (openingMode==='practice'&&index>=openingStep?'…':formatMove(move));
+   (openingMode==='practice'&&index>=openingStep?'…':move);
   return token;
  }));
  const complete=openingStep===o.line.length;
@@ -288,7 +288,7 @@ function updateOpening(){
  const move=game.history({verbose:true}).at(-1);
  const number=Math.ceil(openingStep/2);
  $('#opening-move-heading').textContent=move
-  ? `${number}${move.color==='w'?'.':'…'} ${formatMove(move.san)} · ${move.color==='w'?'białe':'czarne'}`
+  ? `${number}${move.color==='w'?'.':'…'} ${move.san} · ${move.color==='w'?'białe':'czarne'}`
   : 'Pozycja wyjściowa';
  if(complete){
   feedback(note||'To ostatni ruch w tym przykładzie.','success');

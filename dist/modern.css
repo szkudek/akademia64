@@ -220,6 +220,12 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
 }
 .opening-section h3 { color: var(--heading); margin-bottom: 14px; }
 .opening-variants-intro { margin-bottom: 14px; }
+.italian-variant-group > summary { color: var(--heading); font-size: 17px; }
+.italian-variant-group > .opening-plans,
+.opening-position + .opening-plans { margin-top: 14px; }
+.opening-sources { color: var(--reading); line-height: 1.65; padding-inline-start: 22px; }
+.opening-sources li + li { margin-top: 6px; }
+.opening-sources a { text-decoration: underline; text-underline-offset: 3px; }
 .opening-position, .opening-plans { display: grid; gap: 16px; }
 .opening-position { grid-template-columns: minmax(0, 1fr) minmax(180px, 260px); align-items: start; }
 .opening-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }

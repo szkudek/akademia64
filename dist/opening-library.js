@@ -27,8 +27,7 @@ const aliases = {
 };
 const normalize = value => value.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replaceAll('ł', 'l');
 const polish = move => move.replace(/^[NBRQK]|(?<==)[NBRQK]/g, piece => ({ N: 'S', B: 'G', R: 'W', Q: 'H', K: 'K' })[piece]);
-export const formatMove = polish;
-export const formatLine = line => line.map((move, i) => (i % 2 ? '' : Math.floor(i / 2) + 1 + '. ') + polish(move)).join(' ');
+export const formatLine = line => line.map((move, i) => (i % 2 ? '' : Math.floor(i / 2) + 1 + '. ') + move).join(' ');
 
 const catalog = rows.map(([eco, name, moves], index) => {
   const [family, ...variation] = name.split(': ');
@@ -36,7 +35,7 @@ const catalog = rows.map(([eco, name, moves], index) => {
   const line = moves.split(' ');
   return {
     id: 'eco-' + index, eco, family, title, line,
-    search: normalize([eco, name, title, moves, formatLine(line)].join(' ')),
+    search: normalize([eco, name, title, moves, formatLine(line), formatLine(line.map(polish))].join(' ')),
   };
 });
 const families = [...new Set(catalog.map(item => item.family))].sort((a,b) =>
@@ -53,10 +52,10 @@ export function getOpening(id, Chess) {
     const variant = course?.variants[Number(courseMatch[2])];
     if (!variant) return null;
     const board = new Chess();
-    const line = variant.moves.map(move => board.move({
+    const line = (variant.san || variant.moves).map(move => board.move(variant.san ? move : {
       from: move.slice(0, 2), to: move.slice(2, 4), promotion: move[4],
     }).san);
-    const notes = course.id === 'sicilian' ? sicilianNotes(variant.moves) : variant.notes;
+    const notes = course.id === 'sicilian' && !variant.san ? sicilianNotes(variant.moves) : variant.notes;
     return { ...variant, id, course, guide: openingGuides[course.id], notes, line, family: course.family, eco: variant.eco || course.eco };
   }
   if (!/^eco-\d+$/.test(id)) return null;
@@ -71,7 +70,7 @@ export function focusOpeningFamily(family) {
 }
 
 export function openingPicker(activeCourse, activeId) {
-  const ecoRanges = { italian: 'C50–C54', caro: 'B10–B19', spanish: 'C60–C99', sicilian: 'B20–B99' };
+  const ecoRanges = { italian: 'C50–C59', caro: 'B10–B19', spanish: 'C60–C99', sicilian: 'B20–B99' };
   return `<header class="opening-banner">
     <h1>Biblioteka debiutów</h1>
     <p>Cztery lekcje, interaktywne warianty i quizy.</p>

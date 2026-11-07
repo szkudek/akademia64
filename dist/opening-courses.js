@@ -1,3 +1,6 @@
+import { italianVariations } from './italian-variations.js';
+import { caroExtra, spanishExtra, sicilianExtra } from './opening-extra-lines.js';
+
 export const openingCourses = [
   {
     "id": "italian",
@@ -16,7 +19,7 @@ export const openingCourses = [
         "why": "Pion f7 początkowo broni tylko czarny król."
       },
       {
-        "q": "Który ruch najczęściej odpowiada na 4.Sg5 w Obronie Dwóch Skoczków?",
+        "q": "Który ruch najczęściej odpowiada na 4.Ng5 w Obronie Dwóch Skoczków?",
         "a": [
           "4...d5",
           "4...h6",
@@ -36,7 +39,7 @@ export const openingCourses = [
         "why": "Białe oddają pionka, by zagrać c3 i d4 z tempem."
       },
       {
-        "q": "Co oznacza plan Sbd2–f1–g3?",
+        "q": "Co oznacza plan Nbd2–f1–g3?",
         "a": [
           "Manewr skoczka w Pianissimo",
           "Wymuszoną ofiarę",
@@ -44,6 +47,30 @@ export const openingCourses = [
         ],
         "ok": 0,
         "why": "Skoczek trafia na g3, skąd wspiera centrum i atak."
+      },
+      {
+        "q": "Co umożliwia ruch c3 w spokojnej partii włoskiej?",
+        "a": ["Podpiera przyszłe d4 i zwalnia c2 dla gońca", "Broni bezpośrednio pionka e4", "Umożliwia natychmiastową długą roszadę"],
+        "ok": 0,
+        "why": "Pion c3 kontroluje d4. Jeśli goniec zostanie zaatakowany na b3, może zachować przekątną, wycofując się na c2."
+      },
+      {
+        "q": "Po 3…Nf6 4.Ng5 d5 5.exd5 który ruch czarnych pozwala uniknąć ataku smażonej wątróbki?",
+        "a": ["5…Nxd5", "5…Na5", "5…Ke7"],
+        "ok": 1,
+        "why": "Skoczek atakuje gońca c4. Klasyczne 6.Nxf7 z atakiem hetmana na d5 powstaje po 5…Nxd5."
+      },
+      {
+        "q": "Co czarne powinny sprawdzić przed zdobyciem kolejnego pionka w przyjętym gambicie Evansa?",
+        "a": ["Czy białe mogą otworzyć centrum z tempem", "Czy biały król może zrobić długą roszadę w następnym ruchu", "Czy da się zmienić kolor gońca"],
+        "ok": 0,
+        "why": "Każdy dodatkowy ruch pionem daje białym czas na rozwój. Otwarcie linii przy królu stojącym na e8 może mieć większe znaczenie niż dodatkowy pionek."
+      },
+      {
+        "q": "Jaka jest groźba czarnych po 3…Nd4 4.Nxe5 Qg5?",
+        "a": ["Wyłącznie …Qxe5", "Hetman atakuje skoczka e5 i pionka g2", "Czarne mogą od razu zrobić roszadę"],
+        "ok": 1,
+        "why": "Hetman na g5 atakuje e5 wzdłuż piątego rzędu, a g2 po linii g. Białe muszą uwzględnić obie groźby."
       }
     ],
     "variants": [
@@ -71,7 +98,7 @@ export const openingCourses = [
         "title": "Giuoco Pianissimo — spokojny plan",
         "eco": null,
         "desc": "System z d3, c3 i stopniowym przygotowaniem d4. Włoskie „bardzo spokojna gra”.",
-        "plan": "Białe: O-O, We1, Sbd2–f1–g3. Czarne: ...d6, ...O-O i ...a6.",
+        "plan": "Białe: O-O, Re1, Nbd2–f1–g3. Czarne: ...d6, ...O-O i ...a6.",
         "moves": [
           "e2e4",
           "e7e5",
@@ -152,10 +179,10 @@ export const openingCourses = [
         ]
       },
       {
-        "title": "Obrona Dwóch Skoczków — 4.Sg5",
+        "title": "Obrona Dwóch Skoczków — 4.Ng5",
         "eco": null,
         "desc": "Ostra linia, w której białe natychmiast grożą uderzeniem na f7.",
-        "plan": "Czarne kontratakują w centrum ruchem ...d5, a następnie ...Sa5.",
+        "plan": "Czarne kontratakują w centrum ruchem ...d5, a następnie ...Na5.",
         "moves": [
           "e2e4",
           "e7e5",
@@ -199,7 +226,7 @@ export const openingCourses = [
         "title": "Gambit Evansa — 4.b4",
         "eco": null,
         "desc": "Białe poświęcają pionka skrzydłowego, aby zyskać tempa na rozwój i centrum.",
-        "plan": "Idea: ...Gxb4, c3, d4, szybka roszada i aktywne figury.",
+        "plan": "Idea: ...Bxb4, c3, d4, szybka roszada i aktywne figury.",
         "moves": [
           "e2e4",
           "e7e5",
@@ -234,7 +261,8 @@ export const openingCourses = [
           "Czarne zdobywają kolejnego pionka.",
           "Hetman naciska na f7 i b7; rekompensata ma charakter dynamiczny."
         ]
-      }
+      },
+      ...italianVariations
     ]
   },
   {
@@ -254,7 +282,7 @@ export const openingCourses = [
         "why": "Pion c6 wspiera centralne ...d5."
       },
       {
-        "q": "Dlaczego czarne często grają ...Gf5 przed ...e6?",
+        "q": "Dlaczego czarne często grają ...Bf5 przed ...e6?",
         "a": [
           "Aby oddać gońca",
           "Aby rozwinąć gońca poza łańcuch pionów",
@@ -277,7 +305,7 @@ export const openingCourses = [
         "q": "Co charakteryzuje atak Panowa?",
         "a": [
           "4.c4 i presja na d5",
-          "4.Hh5",
+          "4.Qh5",
           "Wymuszona wymiana hetmanów"
         ],
         "ok": 0,
@@ -310,14 +338,14 @@ export const openingCourses = [
           "Białe zajmują centrum i otwierają linie figur.",
           "Czarne przygotowują ...d5, wzmacniając pole d5 pionem c6.",
           "Białe tworzą silny duet pionów e4 i d4.",
-          "Czarne atakują centrum. Teraz białe wybierają m.in. 3.Sc3, 3.e5, 3.exd5 lub 3.f3."
+          "Czarne atakują centrum. Teraz białe wybierają m.in. 3.Nc3, 3.e5, 3.exd5 lub 3.f3."
         ]
       },
       {
-        "title": "Wariant klasyczny — 3.Sc3 dxe4",
+        "title": "Wariant klasyczny — 3.Nc3 dxe4",
         "eco": null,
-        "desc": "Typowa pozycja po 4.Sxe4 Gf5: czarne wyprowadzają gońca przed ...e6.",
-        "plan": "Czarne: ...Gf5, ...e6, ...Sd7, ...Sgf6 i ...c5. Białe: Sg3, h4–h5 i aktywny rozwój.",
+        "desc": "Typowa pozycja po 4.Nxe4 Bf5: czarne wyprowadzają gońca przed ...e6.",
+        "plan": "Czarne: ...Bf5, ...e6, ...Nd7, ...Ngf6 i ...c5. Białe: Ng3, h4–h5 i aktywny rozwój.",
         "moves": [
           "e2e4",
           "c7c6",
@@ -365,7 +393,7 @@ export const openingCourses = [
         "title": "Wariant zaawansowany — 3.e5",
         "eco": null,
         "desc": "Białe zdobywają przestrzeń; czarne podważają łańcuch pionów.",
-        "plan": "Czarne: ...Gf5, ...e6 i ...c5. Białe: Sf3, Ge2, O-O i c3.",
+        "plan": "Czarne: ...Bf5, ...e6 i ...c5. Białe: Nf3, Be2, O-O i c3.",
         "moves": [
           "e2e4",
           "c7c6",
@@ -498,10 +526,10 @@ export const openingCourses = [
         ]
       },
       {
-        "title": "System dwóch skoczków — 2.Sc3 i 3.Sf3",
+        "title": "System dwóch skoczków — 2.Nc3 i 3.Nf3",
         "eco": null,
         "desc": "Białe opóźniają d4, zachowując elastyczność.",
-        "plan": "Czarne: ...d5, ...Gg4 lub ...Sf6. Białe: spokojny rozwój i d4 w dogodnej chwili.",
+        "plan": "Czarne: ...d5, ...Bg4 lub ...Nf6. Białe: spokojny rozwój i d4 w dogodnej chwili.",
         "moves": [
           "e2e4",
           "c7c6",
@@ -528,7 +556,8 @@ export const openingCourses = [
           "Czarne przygotowują rozwój gońca f8.",
           "Białe budują centrum po przygotowaniu figur."
         ]
-      }
+      },
+      ...caroExtra
     ]
   },
   {
@@ -540,15 +569,15 @@ export const openingCourses = [
       {
         "q": "Jakie ruchy rozpoczynają Partię Hiszpańską?",
         "a": [
-          "1.e4 e5 2.Sf3 Sc6 3.Gb5",
-          "1.e4 e5 2.Sf3 Sc6 3.Gc4",
+          "1.e4 e5 2.Nf3 Nc6 3.Bb5",
+          "1.e4 e5 2.Nf3 Nc6 3.Bc4",
           "1.d4 d5 2.c4"
         ],
         "ok": 0,
-        "why": "Ruy López powstaje po 3.Gb5 — gońcu atakującym skoczka c6."
+        "why": "Ruy López powstaje po 3.Bb5 — gońcu atakującym skoczka c6."
       },
       {
-        "q": "Jaki jest główny sens ruchu 3.Gb5?",
+        "q": "Jaki jest główny sens ruchu 3.Bb5?",
         "a": [
           "Natychmiastowy mat na f7",
           "Nacisk na skoczka c6 broniącego e5",
@@ -568,14 +597,14 @@ export const openingCourses = [
         "why": "c3 przygotowuje centralne d4; białe często wspierają je Wie1."
       },
       {
-        "q": "Która obrona zaczyna się od 3...Sf6?",
+        "q": "Która obrona zaczyna się od 3...Nf6?",
         "a": [
           "Obrona Berlińska",
           "Obrona Morphy’ego",
           "Atak Marshalla"
         ],
         "ok": 0,
-        "why": "3...Sf6 to Berlin, natychmiastowy nacisk na e4."
+        "why": "3...Nf6 to Berlin, natychmiastowy nacisk na e4."
       },
       {
         "q": "Jaką cechę ma wariant wymienny?",
@@ -585,7 +614,7 @@ export const openingCourses = [
           "Czarne zawsze tracą figurę"
         ],
         "ok": 1,
-        "why": "Po 4.Gxc6 dxc6 czarne mają parę gońców, ale zdwojone pionki c."
+        "why": "Po 4.Bxc6 dxc6 czarne mają parę gońców, ale zdwojone pionki c."
       },
       {
         "q": "Jaki przełom jest kluczowy w ataku Marshalla?",
@@ -623,7 +652,7 @@ export const openingCourses = [
         "title": "Obrona Morphy’ego",
         "eco": null,
         "desc": "Najważniejsza odpowiedź czarnych: 3...a6.",
-        "plan": "Białe: O-O, Wie1, c3, d4. Czarne: ...a6, ...b5, ...Sf6, ...d6.",
+        "plan": "Białe: O-O, Wie1, c3, d4. Czarne: ...a6, ...b5, ...Nf6, ...d6.",
         "moves": [
           "e2e4",
           "e7e5",
@@ -664,8 +693,8 @@ export const openingCourses = [
       {
         "title": "Wariant zamknięty — plan manewrowy",
         "eco": null,
-        "desc": "Klasyczny schemat z ...Sa5, ...c5 i białym d4.",
-        "plan": "Białe: c3, d4, Sb1–d2–f1–g3. Czarne: ...Sa5, ...c5 i aktywność na skrzydle hetmańskim.",
+        "desc": "Klasyczny schemat z ...Na5, ...c5 i białym d4.",
+        "plan": "Białe: c3, d4, Nb1–d2–f1–g3. Czarne: ...Na5, ...c5 i aktywność na skrzydle hetmańskim.",
         "moves": [
           "e2e4",
           "e7e5",
@@ -706,7 +735,7 @@ export const openingCourses = [
           "Wzmocnienie centrum.",
           "Przygotowanie d4.",
           "Roszada czarnych.",
-          "Białe zapobiegają ...Gg4 i dają królowi pole h2.",
+          "Białe zapobiegają ...Bg4 i dają królowi pole h2.",
           "Skoczek atakuje gońca b3 i może wspierać ...c5.",
           "Goniec zachowuje ważną przekątną.",
           "Czarne podważają centrum i zdobywają przestrzeń.",
@@ -716,7 +745,7 @@ export const openingCourses = [
       {
         "title": "Obrona Berlińska",
         "eco": null,
-        "desc": "Solidna odpowiedź 3...Sf6 i słynna końcówka berlińska.",
+        "desc": "Solidna odpowiedź 3...Nf6 i słynna końcówka berlińska.",
         "plan": "Białe: aktywność i pionowa większość na skrzydle królewskim. Czarne: para gońców, solidna struktura i aktywny król.",
         "moves": [
           "e2e4",
@@ -756,7 +785,7 @@ export const openingCourses = [
         ]
       },
       {
-        "title": "Wariant wymienny — 4.Gxc6",
+        "title": "Wariant wymienny — 4.Bxc6",
         "eco": null,
         "desc": "Białe wymieniają gońca na skoczka, by osłabić strukturę pionów czarnych.",
         "plan": "Białe: gra przeciwko zdwojonym pionkom c. Czarne: para gońców i aktywna gra.",
@@ -792,7 +821,7 @@ export const openingCourses = [
         ]
       },
       {
-        "title": "Wariant otwarty — 5...Sxe4",
+        "title": "Wariant otwarty — 5...Nxe4",
         "eco": null,
         "desc": "Czarne przejmują pionka e4, licząc na aktywność figur.",
         "plan": "Białe: wykorzystaj inicjatywę i centrum. Czarne: aktywne figury i kontrgra.",
@@ -908,7 +937,8 @@ export const openingCourses = [
           "Roszada białych.",
           "Czarne przygotowują roszadę."
         ]
-      }
+      },
+      ...spanishExtra
     ]
   },
   {
@@ -931,17 +961,17 @@ export const openingCourses = [
         "q": "Która linia jest charakterystyczna dla sycylijskiej otwartej?",
         "a": [
           "2.c3",
-          "2.Sf3, a następnie d4",
-          "2.f4 bez Sc3"
+          "2.Nf3, a następnie d4",
+          "2.f4 bez Nc3"
         ],
         "ok": 1,
-        "why": "Białe zwykle grają Sf3 i d4, a czarne wymieniają pionka c na d."
+        "why": "Białe zwykle grają Nf3 i d4, a czarne wymieniają pionka c na d."
       },
       {
         "q": "Co oznacza 5...a6 w Najdorfie?",
         "a": [
           "Oddanie pionka",
-          "Ograniczenie Sb5 i przygotowanie ...b5",
+          "Ograniczenie Nb5 i przygotowanie ...b5",
           "Przygotowanie ...h5"
         ],
         "ok": 1,
@@ -950,9 +980,9 @@ export const openingCourses = [
       {
         "q": "Jaki jest typowy plan w Smoku?",
         "a": [
-          "...g6 i ...Gg7",
+          "...g6 i ...Bg7",
           "...f6 i ...Kf7",
-          "...b6 i ...Ga6 zawsze"
+          "...b6 i ...Ba6 zawsze"
         ],
         "ok": 0,
         "why": "Fianchetto gońca na g7 jest znakiem rozpoznawczym Smoka."
@@ -981,8 +1011,8 @@ export const openingCourses = [
         "q": "Co wyróżnia wariant Ałapina?",
         "a": [
           "2.c3",
-          "2.Gc4",
-          "2.Hh5"
+          "2.Bc4",
+          "2.Qh5"
         ],
         "ok": 0,
         "why": "2.c3 przygotowuje d4 i silne centrum pionowe."
@@ -1031,7 +1061,7 @@ export const openingCourses = [
       {
         "title": "Wariant Najdorfa",
         "eco": "B90",
-        "desc": "Elastyczny ruch ...a6 ogranicza skok Sb5 i przygotowuje ...b5.",
+        "desc": "Elastyczny ruch ...a6 ogranicza skok Nb5 i przygotowuje ...b5.",
         "plan": "Najdorf nie polega na natychmiastowym ataku: czarne przygotowują kontrgrę na skrzydle hetmańskim.",
         "moves": [
           "e2e4",
@@ -1050,7 +1080,7 @@ export const openingCourses = [
       {
         "title": "Atak angielski przeciw Najdorfowi",
         "eco": "B90",
-        "desc": "Białe planują Hd2, O-O-O i g4; czarne szukają kontrgry ...b5.",
+        "desc": "Białe planują Qd2, O-O-O i g4; czarne szukają kontrgry ...b5.",
         "plan": "Po ...e5 skoczek ustępuje na b3; białe stabilizują centrum przed atakiem pionami.",
         "moves": [
           "e2e4",
@@ -1075,7 +1105,7 @@ export const openingCourses = [
         "title": "Wariant Smoka",
         "eco": "B70",
         "desc": "Fianchetto gońca g7 tworzy presję na przekątnej a1–h8.",
-        "plan": "Białe często grają f3, Hd2 i długą roszadę; czarne naciskają na c3 i linię c.",
+        "plan": "Białe często grają f3, Qd2 i długą roszadę; czarne naciskają na c3 i linię c.",
         "moves": [
           "e2e4",
           "c7c5",
@@ -1096,7 +1126,7 @@ export const openingCourses = [
         "title": "Atak jugosłowiański",
         "eco": "B76",
         "desc": "Przeciwne roszady mogą prowadzić do wyścigu ataków.",
-        "plan": "Plan białych: Gc4, O-O-O, h4–h5; plan czarnych: ...Sc6, ...Wc8, ...Se5 i nacisk na c3.",
+        "plan": "Plan białych: Bc4, O-O-O, h4–h5; plan czarnych: ...Nc6, ...Rc8, ...Ne5 i nacisk na c3.",
         "moves": [
           "e2e4",
           "c7c5",
@@ -1120,7 +1150,7 @@ export const openingCourses = [
         "title": "Wariant Scheveningen",
         "eco": "B80",
         "desc": "Piony e6 i d6 tworzą zwartą, elastyczną strukturę.",
-        "plan": "Czarne zwykle dążą do ...a6, ...Hc7 i przełomów ...d5 lub ...b5.",
+        "plan": "Czarne zwykle dążą do ...a6, ...Qc7 i przełomów ...d5 lub ...b5.",
         "moves": [
           "e2e4",
           "c7c5",
@@ -1139,7 +1169,7 @@ export const openingCourses = [
         "title": "Wariant klasyczny",
         "eco": "B56",
         "desc": "Czarne rozwijają oba skoczki i zachowują różne struktury.",
-        "plan": "Białe mogą wybrać Gg5, Gc4 lub Ge2; czarne muszą uważać na presję w centrum.",
+        "plan": "Białe mogą wybrać Bg5, Bc4 lub Be2; czarne muszą uważać na presję w centrum.",
         "moves": [
           "e2e4",
           "c7c5",
@@ -1158,7 +1188,7 @@ export const openingCourses = [
         "title": "Wariant Swiesznikowa",
         "eco": "B33",
         "desc": "Aktywne ...e5 zyskuje tempo, ale osłabia pole d5.",
-        "plan": "Białe zwykle odpowiadają Sb5; czarne akceptują słabość d5 w zamian za aktywność.",
+        "plan": "Białe zwykle odpowiadają Nb5; czarne akceptują słabość d5 w zamian za aktywność.",
         "moves": [
           "e2e4",
           "c7c5",
@@ -1177,7 +1207,7 @@ export const openingCourses = [
         "title": "Sycylijska zamknięta",
         "eco": "B23",
         "desc": "Białe rezygnują z wczesnego d4 i budują atak na skrzydle królewskim.",
-        "plan": "Typowe plany białych: d3, f4 i Sf3; czarne grają ...d6, ...e6 i ...Wb8.",
+        "plan": "Typowe plany białych: d3, f4 i Nf3; czarne grają ...d6, ...e6 i ...Rb8.",
         "moves": [
           "e2e4",
           "c7c5",
@@ -1210,7 +1240,7 @@ export const openingCourses = [
         "title": "Atak Grand Prix",
         "eco": "B23",
         "desc": "Bezpośredni plan ataku białych na króla.",
-        "plan": "Białe często grają Gc4, d3, O-O i He1–h4; czarne kontratakują w centrum.",
+        "plan": "Białe często grają Bc4, d3, O-O i Qe1–h4; czarne kontratakują w centrum.",
         "moves": [
           "e2e4",
           "c7c5",
@@ -1239,7 +1269,8 @@ export const openingCourses = [
           "g7g6"
         ],
         "notes": []
-      }
+      },
+      ...sicilianExtra
     ]
   }
 ];
