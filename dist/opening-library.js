@@ -70,6 +70,25 @@ export function focusOpeningFamily(family) {
   Object.assign(filters, { query: '', family, move: '', eco: '', page: 0 });
 }
 
+export function openingPicker(activeCourse, activeId) {
+  const ecoRanges = { italian: 'C50–C54', caro: 'B10–B19', spanish: 'C60–C99', sicilian: 'B20–B99' };
+  return `<header class="opening-banner">
+    <h1>Biblioteka debiutów</h1>
+    <p>Cztery lekcje, interaktywne warianty i quizy.</p>
+  </header>
+  <nav class="opening-picker" aria-labelledby="opening-picker-title">
+    <h2 id="opening-picker-title">Wybierz debiut</h2>
+    <div class="opening-picker-grid">${openingCourses.map(course => {
+      const active = course.id === activeCourse;
+      return `<a href="#opening/${active ? activeId : `course-${course.id}-0`}"${active ? ' aria-current="page"' : ''}>
+        <strong>${e(course.title)}</strong><span>ECO ${ecoRanges[course.id] || e(course.eco)}</span>
+      </a>`;
+    }).join('')}</div>
+    <p>Przeglądaj warianty na szachownicy, poznaj plany obu stron i sprawdź się w quizie.</p>
+    <a class="opening-catalog-link" href="#openings/catalog">Otwórz katalog ECO →</a>
+  </nav>`;
+}
+
 export function renderOpeningLibrary(root) {
   root.innerHTML = `<section class="opening-library">
     <div class="page-intro"><div class="eyebrow">AKADEMIA 64 · DEBIUTY</div>
