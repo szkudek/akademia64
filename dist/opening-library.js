@@ -70,7 +70,7 @@ export function focusOpeningFamily(family) {
 }
 
 export function openingPicker(activeCourse, activeId) {
-  const ecoRanges = { italian: 'C50–C59', caro: 'B10–B19', spanish: 'C60–C99', sicilian: 'B20–B99' };
+  const pieces = { italian: '♝', caro: '♟', spanish: '♞', sicilian: '♜' };
   return `<header class="opening-banner">
     <h1>Biblioteka debiutów</h1>
     <p>Cztery lekcje, interaktywne warianty i quizy.</p>
@@ -80,7 +80,11 @@ export function openingPicker(activeCourse, activeId) {
     <div class="opening-picker-grid">${openingCourses.map(course => {
       const active = course.id === activeCourse;
       return `<a href="#opening/${active ? activeId : `course-${course.id}-0`}"${active ? ' aria-current="page"' : ''}>
-        <strong>${e(course.title)}</strong><span>ECO ${ecoRanges[course.id] || e(course.eco)}</span>
+        <svg class="opening-picker-art" viewBox="0 0 144 64" aria-hidden="true" focusable="false">
+          <path d="M16 64 80 0h31L47 64Zm63 0 64-64h1v26l-38 38Z" opacity=".042"/>
+          <text x="119" y="48" text-anchor="middle">${pieces[course.id]}</text>
+        </svg>
+        <strong>${e(course.title)}</strong>
       </a>`;
     }).join('')}</div>
     <p>Przeglądaj warianty na szachownicy, poznaj plany obu stron i sprawdź się w quizie.</p>
