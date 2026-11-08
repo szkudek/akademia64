@@ -248,14 +248,15 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
 .opening-gif-grid {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: start;
   gap: 10px;
   margin-top: 12px;
 }
 .opening-gif {
-  flex: 1 1 124px;
+  flex: 1 1 140px;
   min-width: 0;
-  max-width: 160px;
+  max-width: 200px;
   margin: 0;
 }
 .opening-gif img {
@@ -265,6 +266,24 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
   border-radius: 6px;
 }
 .opening-gif figcaption { margin-top: 4px; color: var(--reading); font-size: 12px; line-height: 1.4; }
+@media (min-width: 1050px) {
+  .opening-plans > section:has(> .opening-gif-grid) { display: flow-root; }
+  .opening-plans > section > .opening-gif-grid {
+    float: right;
+    width: min(45%, 200px);
+    margin-inline-start: 12px;
+  }
+  .opening-plans > section > .opening-gif-grid:has(> :nth-child(2)) {
+    width: min(66%, 410px);
+  }
+  .opening-plans > section > .opening-gif-grid .opening-gif { flex-basis: 0; }
+  .opening-plans > section:has(> .opening-gif-grid) > .opening-board-link {
+    max-width: calc(55% - 12px);
+  }
+  .opening-plans > section:has(> .opening-gif-grid > :nth-child(2)) > .opening-board-link {
+    max-width: calc(34% - 12px);
+  }
+}
 .opening-chapter h4 {
   margin: 0 0 8px;
   color: var(--heading);
