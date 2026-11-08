@@ -180,13 +180,12 @@ function videoPreview(course, e) {
 
 export function openingChapter(course, guide, diagram, e) {
   const previews = (...indices) => `<div class="opening-gif-grid">${indices.map(index => {
-    const asset = e(new URL(`./opening-gifs/${course.id}-${index}`, import.meta.url).href);
     const title = e(course.variants[index].title);
     return `<figure class="opening-gif">
-      <picture>
-        <source media="(prefers-reduced-motion: reduce)" srcset="${asset}.png">
-        <img src="${asset}.gif" alt="Szachownica — ${title}" width="192" height="212" loading="lazy" decoding="async">
-      </picture>
+      <div class="opening-preview" role="img" data-opening-preview="course-${e(course.id)}-${index}" aria-label="Szachownica — ${title}">
+        <div class="opening-preview-board"></div>
+        <div class="opening-preview-move" aria-hidden="true"></div>
+      </div>
       ${indices.length > 1 ? `<figcaption>${title}</figcaption>` : ''}
     </figure>`;
   }).join('')}</div>`;
