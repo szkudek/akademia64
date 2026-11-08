@@ -568,3 +568,12 @@ h1, h2, .hero h2 { font-weight: 700; }
 .puzzle-analysis { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
 .puzzle-analysis h3 { margin: 0 0 8px; }
 .puzzle-analysis p, .puzzle-analysis a { font-size: 13px; }
+
+/* Ranking taktyczny */
+.tactic-stats {display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:9px;margin:16px 0 15px;}
+.tactic-stats > span{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0;}
+.tactic-stats small{display:block;color:var(--muted);font-size:11px;line-height:1.3;margin:0 0 7px;}
+.tactic-stats strong{font-size:24px;font-weight:850;letter-spacing:-.035em;line-height:1.15;}
+.tactic-stats strong + small{display:inline;font-size:12px;margin-left:5px;white-space:nowrap;}
+.tactic-result:not(:empty){padding:7px 10px;border:1px solid #708b65;border-radius:8px;margin:0 0 12px;color:var(--text);font-size:13px;font-weight:750;background:rgba(122,161,109,.12);}
+@media(max-width:390px){.tactic-stats{gap:5px}.tactic-stats>span{padding:9px 7px}.tactic-stats strong{font-size:19px}.tactic-stats small{font-size:10px}}
