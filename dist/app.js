@@ -3,7 +3,7 @@ import { accounts } from './accounts.js';
 import { Chess } from './vendor/chess.js';
 import { openingChapter } from './opening-chapter.js';
 import { lichessPuzzles } from './puzzle-bank.js';
-import { ratingFromAttempts, choosePuzzle } from './tactics-rating.js';
+import { ratingFromAttempts, ratePuzzle, choosePuzzle } from './tactics-rating.js';
 import { analyzePuzzle } from './puzzle-analysis.js';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
@@ -236,10 +236,12 @@ function recordTactic(ok){
  }
  const after=ratingFromAttempts(state.tactics).rating;
  const change=after-before;
+ ctx.tileResult={ok,delta:already?0:change,repeat:already};
  const label=already?'Powtórka bez punktów':(change>=0?'+':'')+change+' pkt';
  const status=document.querySelector('#tactic-result');
  if(status)status.textContent=label;
  updateTacticsStats();
+ renderTacticTiles();
  if(!ok)$('#next-puzzle').hidden=false;
 }
 function updateTacticsStats(){
@@ -251,6 +253,31 @@ function updateTacticsStats(){
  document.querySelector('#tactic-rd').textContent='±'+rated.rd;
  document.querySelector('#tactic-count').textContent=String(attempts.length);
  document.querySelector('#tactic-accuracy').textContent=attempts.length?Math.round(100*attempts.filter(a=>a.ok).length/attempts.length)+'%':'—';
+}
+function renderTacticTiles(){
+ const list=document.querySelector('#tactic-tiles');
+ const ctx=context;
+ if(!list||ctx?.kind!=='puzzle')return;
+ const attempts=[...(state.tactics||[])].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id));
+ let rating=null;
+ const history=attempts.map(attempt=>{
+  const next=ratePuzzle(rating,attempt.rating,attempt.ok);
+  const delta=next.rating-(rating?.rating??1500);
+  rating=next;
+  return {id:attempt.id,ok:attempt.ok,delta};
+ });
+ const latest=history.filter(a=>!ctx.tileResult||a.id!==ctx.item.id).slice(-11);
+ const current=ctx.tileResult||null;
+ const tiles=[...latest,{id:ctx.item.id,ok:current?.ok,delta:current?.delta??null,pending:!current,repeat:current?.repeat}];
+ list.replaceChildren();
+ for(const item of tiles){
+  const el=document.createElement('span');
+  el.className='tactic-tile '+(item.pending?'pending':item.ok?'correct':'incorrect');
+  el.textContent=item.pending?'?':(item.delta>0?'+':'')+item.delta;
+  el.setAttribute('title',item.pending?'Bieżące zadanie — oczekiwanie na wynik':(item.ok?'Poprawne':'Błędne')+' · '+(item.delta>0?'+':'')+item.delta+' pkt'+(item.repeat?' · powtórka':''));
+  el.setAttribute('aria-label',el.title);
+  list.append(el);
+ }
 }
 function puzzleList(filter='Wszystkie'){const list=filter==='Wszystkie'?puzzles:puzzles.filter(p=>p.category===filter);main.innerHTML=`<div class="page-intro"><div class="eyebrow">TRENING UWAŻNOŚCI</div><h1>Znajdź ten jeden dobry ruch.</h1><p>Ćwicz rozpoznawanie okazji. Bez zegara, z podpowiedzią, zawsze we własnym tempie.</p></div><div class="filters">${['Wszystkie','Mat w jednym','Podwójny atak','Zdobywanie figur'].map(f=>`<button class="filter ${f===filter?'active':''}" data-filter="${f}">${f}</button>`).join('')}</div><div class="puzzle-cards">${list.map(p=>`<a href="#puzzle/${p.id}" class="puzzle-card"><div class="puzzle-art">${mini(p.fen,[],piece=>puzzlePiece(piece.type,piece.color))}</div><div class="puzzle-body"><div class="eyebrow">${p.category}</div><h3>${p.title}</h3><p>${p.level}</p></div><div class="puzzle-footer"><span>${state.solved.includes(p.id)?'✓ Rozwiązane':'Białe zaczynają'}</span><span>Rozwiąż &nbsp; →</span></div></a>`).join('')}</div>`;document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>puzzleList(b.dataset.filter))}
 function finishPuzzle(){
@@ -305,25 +332,23 @@ function puzzle(id){
    <a href="https://github.com/nmrugg/stockfish.js/tree/v19.0.1">Źródła Stockfish.js 19.0.1 (GPLv3)</a>
   </section>`, 'Pozycja treningowa',white?'Białe · Twój ruch':'Czarne · Twój ruch');
 
- $('#board-host').insertAdjacentHTML('afterend',`
-  <div class="puzzle-drawing-tools" role="group" aria-label="Oznaczenia szachownicy">
-   <button class="btn outline" id="annotation-mode" type="button" aria-pressed="false">Rysowanie</button>
-   <label>Kolor <select id="annotation-color">${Object.entries(puzzleColors).map(([color,name])=>`<option value="${color}">${name}</option>`).join('')}</select></label>
-   <button class="text-link" id="annotation-clear" type="button">Wyczyść oznaczenia</button>
-   <button class="text-link" id="reset-exercise" type="button">Reset pozycji</button>
-   <small>PPM zaznacza pole. Przeciągnij z PPM, aby narysować strzałkę. Shift daje zielony, Ctrl czerwony, a Alt niebieski. Na dotyku włącz Rysowanie.</small>
-  </div>`);
+ const panel=main.querySelector('.lesson-panel');
+ const sidebar=document.createElement('div');
+ sidebar.className='puzzle-sidebar';
+ panel.parentNode.insertBefore(sidebar,panel);
+ sidebar.append(panel);
+ sidebar.insertAdjacentHTML('beforeend',`
+  <section class="tactic-history" aria-label="Historia punktów z ostatnich zadań">
+   <div class="tactic-history-heading">
+    <strong>Ostatnie zadania</strong>
+    <span>Zmiana rankingu</span>
+   </div>
+   <div class="tactic-tiles" id="tactic-tiles" role="list" aria-live="polite"></div>
+  </section>`);
  $('#next-puzzle').onclick=()=>openMixedPuzzle();
  updateTacticsStats();
- $('#annotation-mode').onclick=event=>{
-  drawing.enabled=!drawing.enabled;
-  event.currentTarget.setAttribute('aria-pressed',String(drawing.enabled));
-  $('#board-host .board').classList.toggle('drawing-mode',drawing.enabled);
- };
- $('#annotation-color').onchange=event=>{drawing.color=event.target.value};
- $('#annotation-clear').onclick=()=>boardInput.clearMarks();
+ renderTacticTiles();
  $('#hint').onclick=()=>{context.assisted=true;recordTactic(false);feedback(p.hint+' · Próba rankingowa zakończona, możesz nadal ćwiczyć.');};
- $('#reset-exercise').onclick=()=>puzzle(id);
  $('#show-puzzle-solution').onclick=()=>{
   cancelPromotion?.();
   recordTactic(false);
