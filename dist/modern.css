@@ -296,6 +296,76 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
   padding-top: 20px;
 }
 .opening-section h3 { color: var(--heading); margin-bottom: 14px; }
+.opening-video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.opening-video-feature {
+  max-width: 680px;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.opening-video-copy { padding: 14px; }
+.opening-video-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.opening-video-badges span {
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: var(--reading);
+  font-size: 12px;
+}
+.opening-video-credits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  border-block: 1px solid var(--line);
+  margin: 14px 0 10px;
+  padding: 10px 0;
+}
+.opening-video-credits dt { color: var(--reading); font-size: 12px; }
+.opening-video-credits dd { margin: 2px 0 0; color: var(--heading); font-weight: 700; }
+.opening-video-demo > summary { cursor: pointer; list-style: none; }
+.opening-video-demo > summary::-webkit-details-marker { display: none; }
+.opening-video-demo[open] > summary .opening-video-cover { display: none; }
+.opening-video-cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: repeating-conic-gradient(var(--line) 0% 25%, transparent 0% 50%) 0 0 / 40px 40px;
+}
+.opening-video-play {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--heading);
+  border: 1px solid var(--line);
+}
+.opening-video-player { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
+.opening-video-cover img {
+  display: block;
+  width: min(100%, 128px);
+  height: auto;
+  border-radius: 6px;
+}
+.opening-video-demo-label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-block: 1px solid var(--line);
+  color: var(--heading);
+  font-weight: 700;
+}
 .opening-variants-intro { margin-bottom: 14px; }
 .italian-variant-group > summary { color: var(--heading); font-size: 17px; }
 .italian-variant-group > .opening-plans,

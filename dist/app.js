@@ -613,6 +613,13 @@ async function opening(id){
   const panel=layout.querySelector('.lesson-panel');
   const chapter=document.createElement('div');
   chapter.innerHTML=openingChapter(course,guide,openingDiagram,e);
+  chapter.querySelectorAll('[data-youtube-player]').forEach(player=>{
+   const host=player.querySelector('.opening-video-player-host');
+   player.addEventListener('toggle',()=>{
+    if(player.open) host.replaceChildren(player.querySelector('template').content.cloneNode(true));
+    else host.replaceChildren();
+   });
+  });
   const explorer=document.createElement('details');
   explorer.className='opening-explorer';
   explorer.open=showCourseBoard;

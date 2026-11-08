@@ -1,4 +1,4 @@
-export function italianLesson(diagram, boardLink, variants, e, previews) {
+export function italianLesson(diagram, boardLink, variants, e, previews, videos) {
   const extra = variants.map((variant, index) => ({ variant, index })).filter(({ variant }) => variant.group);
   const groups = new Set(extra.map(({ variant }) => variant.group));
   return `<article class="opening-chapter" aria-labelledby="opening-title">
@@ -8,6 +8,7 @@ export function italianLesson(diagram, boardLink, variants, e, previews) {
       <p>Wyprowadź figury, zabezpiecz króla i zdecyduj, kiedy otworzyć centrum. Po tej lekcji rozpoznasz spokojny plan z d3 oraz pozycje, w których warto szybciej zagrać d4.</p>
       ${boardLink(0, 'Sprawdź debiut')}
     </header>
+    ${videos}
 
     <section class="opening-section">
       <h3>1. Jak powstaje partia włoska?</h3>

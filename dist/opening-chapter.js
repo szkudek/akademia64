@@ -23,6 +23,66 @@ function boardLink(courseId, index, label) {
   return `<a class="btn outline opening-board-link" href="#opening/course-${courseId}-${index}/board">${label} →</a>`;
 }
 
+// Add approved materials here with title, description, author, channel, channelHandle,
+// youtubeId, optional duration and level.
+const videosByCourse = {
+  italian: [{
+    youtubeId: 's6xm8u8M54c',
+    title: 'Partia Włoska w 15 minut!',
+    description: 'Poradnik do partii włoskiej.',
+    author: 'DawidCzerwTV',
+    channel: 'DawidCzerwTV',
+    channelHandle: 'DawidCzerwTV',
+    level: 'Podstawy',
+  }],
+};
+
+function videoCard(video, asset, e) {
+  const id = encodeURIComponent(video.youtubeId);
+  const title = e(video.title);
+  const channel = video.channelHandle
+    ? `<a href="https://www.youtube.com/@${encodeURIComponent(video.channelHandle.replace(/^@/, ''))}" target="_blank" rel="noopener noreferrer">${e(video.channel)}</a>`
+    : e(video.channel);
+  const player = `<template><iframe class="opening-video-player" src="https://www.youtube-nocookie.com/embed/${id}" title="${title}" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></template><div class="opening-video-player-host"></div>`;
+  return `<section class="opening-video-feature">
+    <details class="opening-video-demo" data-youtube-player>
+      <summary>
+        <span class="opening-video-cover">
+          <img src="${asset}.png" alt="" width="192" height="212" loading="lazy">
+          <span class="opening-video-play" aria-hidden="true">▶</span>
+        </span>
+        <span class="opening-video-demo-label">Pokaż odtwarzacz YouTube</span>
+      </summary>
+      ${player}
+    </details>
+    <div class="opening-video-copy">
+      <div class="opening-video-badges">
+        <span>YouTube</span>
+        <span>${e(video.level)}</span>
+        ${video.duration ? `<span>${e(video.duration)}</span>` : ''}
+      </div>
+      <h4>${title}</h4>
+      <p>${e(video.description)}</p>
+      <dl class="opening-video-credits">
+        <div><dt>Autor</dt><dd>${e(video.author)}</dd></div>
+        <div><dt>Kanał YouTube</dt><dd>${channel}</dd></div>
+      </dl>
+      <a class="btn outline" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener noreferrer">Otwórz oryginał na YouTube ↗</a>
+    </div>
+  </section>`;
+}
+
+function videoPreview(course, e) {
+  const asset = e(new URL(`./opening-gifs/${course.id}-0`, import.meta.url).href);
+  const videos = videosByCourse[course.id] ?? [];
+  return `<section class="opening-section opening-videos" aria-labelledby="opening-videos-title">
+    <div class="eyebrow">MATERIAŁY UZUPEŁNIAJĄCE</div>
+    <h3 id="opening-videos-title">Poradniki wideo</h3>
+    ${videos.length ? `<div class="opening-video-grid">${videos.map(video => videoCard(video, asset, e)).join('')}</div>`
+      : '<p>Poradniki wideo do tego debiutu pojawią się tutaj.</p>'}
+  </section>`;
+}
+
 export function openingChapter(course, guide, diagram, e) {
   const previews = (...indices) => `<div class="opening-gif-grid">${indices.map(index => {
     const asset = e(new URL(`./opening-gifs/${course.id}-${index}`, import.meta.url).href);
@@ -35,7 +95,8 @@ export function openingChapter(course, guide, diagram, e) {
       ${indices.length > 1 ? `<figcaption>${title}</figcaption>` : ''}
     </figure>`;
   }).join('')}</div>`;
-  if (course.id === 'italian') return italianLesson(diagram, (index, label) => boardLink(course.id, index, label), course.variants, e, previews);
+  const videos = videoPreview(course, e);
+  if (course.id === 'italian') return italianLesson(diagram, (index, label) => boardLink(course.id, index, label), course.variants, e, previews, videos);
   const { start, example, pitfall } = diagrams[course.id];
   const study = openingStudy[course.id];
   return `<article class="opening-chapter" aria-labelledby="opening-title">
@@ -45,6 +106,7 @@ export function openingChapter(course, guide, diagram, e) {
       <p>${e(guide.takeaway)}</p>
       ${boardLink(course.id, 0, 'Sprawdź debiut')}
     </header>
+    ${videos}
     <section class="opening-section">
       <h3>1. Jak powstaje ten debiut?</h3>
       <div class="opening-position"><div><p>${e(guide.idea)}</p>${previews(0)}</div>${diagram(...start)}</div>

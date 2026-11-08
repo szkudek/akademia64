@@ -11,7 +11,7 @@ export async function createApp({staticRoot=rootDefault}={}){
     res.setHeader('Referrer-Policy','same-origin');
     res.setHeader('X-Frame-Options','DENY');
     const wasmPolicy=req.url==='/vendor/stockfish/stockfish-19-lite-single.js'?" 'wasm-unsafe-eval'":'';
-    res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'" + wasmPolicy + " https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://www.gstatic.com; frame-src https://akademia64-89e49.firebaseapp.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+    res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'" + wasmPolicy + " https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://www.gstatic.com; frame-src https://akademia64-89e49.firebaseapp.com https://www.youtube-nocookie.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
     try{
       if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);res.end();return}
       const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
