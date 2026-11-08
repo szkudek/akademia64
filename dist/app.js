@@ -6,7 +6,7 @@ import { openingChapter } from './opening-chapter.js?v=20261108-caro-videos';
 import { lichessPuzzles } from './puzzle-bank.js';
 import { ratingFromAttempts, rateAttempt, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
 import { analyzePuzzle } from './puzzle-analysis.js';
-import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js';
+import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-all-board-sounds';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
 const icons={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
@@ -77,7 +77,7 @@ $('#dialog .dialog-close').onclick=()=>$('#dialog').close();$('#dialog').onclick
 const soundSettingsButton=$('#chess-sound-settings');
 soundSettingsButton.onclick=()=>openSoundSettings($('#dialog'),$('#dialog-content'));
 for(const event of ['pointerup','click','keydown']){
- document.addEventListener(event,()=>{if(!soundSettingsButton.hidden)unlockChessSound()},{capture:true,passive:true});
+ document.addEventListener(event,unlockChessSound,{capture:true,passive:true});
 }
 $('#help-button').onclick=()=>dialog('Twoja droga do dobrej gry','Zacznij od mapy nauki albo wybierz zadania. Na szachownicy kliknij figurę, a potem pole docelowe. Lekcje i trening są bez limitu czasu. Gra treningowa używa lokalnego przeciwnika komputerowego; rozmowa z trenerem AI nie jest jeszcze dostępna.');
 $('#storage-info').onclick=()=>accounts.showStorageInfo();
@@ -166,9 +166,12 @@ function showBoardPosition(action){
  context.reviewPly=destination===last?null:destination;
  drawBoard();
 }
-function moveOnBoard(move){
+function moveOnBoard(move,sound={}){
  const played=game.move(move);
- if(played)context.positions.push({fen:game.fen(),move:[played.from,played.to]});
+ if(played){
+  context.positions.push({fen:game.fen(),move:[played.from,played.to]});
+  if(sound)soundMove(played,{...sound,mate:game.isCheckmate()});
+ }
  return played;
 }
 function undoBoardMove(){
@@ -217,7 +220,7 @@ if(selected){const from=selected;const moves=game.moves({square:from,verbose:tru
   soundMove(null,{answer:'incorrect'});
   recordTactic(false);feedback('Wybierz właściwą figurę promocji.','error');selected=null;targets=[];drawBoard();return;
  }
- const played=moveOnBoard(move);
+ const played=moveOnBoard(move,null);
  if(!played)return;
  lastMove=[from,sq];selected=null;targets=[];
  if(!ctx.item.line||ctx.step===ctx.item.line.length-1){
@@ -226,7 +229,7 @@ if(selected){const from=selected;const moves=game.moves({square:from,verbose:tru
   success(game.isCheckmate()?'Mat! Pełna kontynuacja rozwiązana.':'Świetnie! Cała kombinacja została rozwiązana.');
  }else{
   ctx.step++;
-  const answer=ctx.item.line[ctx.step],reply=moveOnBoard({from:answer.slice(0,2),to:answer.slice(2,4),promotion:answer[4]||'q'});
+  const answer=ctx.item.line[ctx.step],reply=moveOnBoard({from:answer.slice(0,2),to:answer.slice(2,4),promotion:answer[4]||'q'},null);
   soundMove(played,{reply,answer:'correct',mate:game.isCheckmate()});
   if(!reply){feedback('Błąd danych zadania — odpowiedź przeciwnika jest nielegalna.','error');return}
   lastMove=[reply.from,reply.to];
@@ -235,8 +238,8 @@ if(selected){const from=selected;const moves=game.moves({square:from,verbose:tru
  }
  return;
 }
-if(context.kind==='lesson'){const t=context.item.target;if(from!==t[0]||sq!==t[1]||(context.item.promotion&&promotion!==context.item.promotion)){feedback('To legalny ruch, ale cel ćwiczenia jest inny. Spróbuj jeszcze raz.','error');selected=null;targets=[];drawBoard();return}moveOnBoard(move);lastMove=[from,sq];success(game.isCheckmate()?'Mat! Król przeciwnika nie ma obrony. Doskonały ruch.':'Dobrze! Właśnie udało Ci się zastosować tę zasadę.');return}
-if(context.kind==='opening'){const expected=new Chess(game.fen());const m=expected.move(context.item.line[openingStep]);if(m.from!==from||m.to!==sq||(m.promotion&&promotion!==m.promotion)){soundMove(null,{answer:'incorrect'});feedback('Ten ruch jest legalny, ale ćwiczymy inny wariant. Skorzystaj z podpowiedzi.','error');return}const played=moveOnBoard(move);soundMove(played,{answer:'correct',mate:game.isCheckmate()});openingStep++;lastMove=[from,sq];selected=null;targets=[];drawBoard();updateOpening();return}
+if(context.kind==='lesson'){const t=context.item.target;if(from!==t[0]||sq!==t[1]||(context.item.promotion&&promotion!==context.item.promotion)){soundMove(null,{answer:'incorrect'});feedback('To legalny ruch, ale cel ćwiczenia jest inny. Spróbuj jeszcze raz.','error');selected=null;targets=[];drawBoard();return}moveOnBoard(move,{answer:'correct'});lastMove=[from,sq];success(game.isCheckmate()?'Mat! Król przeciwnika nie ma obrony. Doskonały ruch.':'Dobrze! Właśnie udało Ci się zastosować tę zasadę.');return}
+if(context.kind==='opening'){const expected=new Chess(game.fen());const m=expected.move(context.item.line[openingStep]);if(m.from!==from||m.to!==sq||(m.promotion&&promotion!==m.promotion)){soundMove(null,{answer:'incorrect'});feedback('Ten ruch jest legalny, ale ćwiczymy inny wariant. Skorzystaj z podpowiedzi.','error');return}moveOnBoard(move,{answer:'correct'});openingStep++;lastMove=[from,sq];selected=null;targets=[];drawBoard();updateOpening();return}
 if(context.kind==='play'){moveOnBoard(move);lastMove=[from,sq];selected=null;targets=[];activity();drawBoard();updateGame();if(!game.isGameOver())scheduleAI();return}}
 }
 const p=game.get(sq);if(p&&p.color===game.turn()){selected=sq;targets=game.moves({square:sq,verbose:true}).map(m=>m.to)}else{selected=null;targets=[]}drawBoard()}
@@ -726,9 +729,8 @@ function goToOpeningStep(destination){
  while(openingStep>destination){undoBoardMove();openingStep--}
  const playNext=destination===openingStep+1;
  while(openingStep<destination){
-  const played=moveOnBoard(line[openingStep]);
+  moveOnBoard(line[openingStep],playNext?{}:null);
   openingStep++;
-  if(playNext)soundMove(played,{mate:game.isCheckmate()});
  }
  context.reviewPly=null;
  lastMove=context.positions.at(-1).move;
@@ -786,6 +788,6 @@ function play(){context={kind:'play'};setupBoard('start');gameFinished=false;pra
 
 function updateGame(){const h=game.history();$('#history').innerHTML=h.map((m,i)=>`${i%2===0?`<span>${i/2+1}.</span>`:''}<span>${m}</span>`).join('');$('#history').scrollTop=$('#history').scrollHeight;$('#undo').disabled=h.length===0||gameFinished;$('#game-hint').disabled=game.turn()!=='w'||game.isGameOver();$('#board-top').textContent='Komputer · czarne';$('#board-bottom').textContent=game.turn()==='w'?'Ty · białe · Twój ruch':'Czarne · ruch komputera';if(game.isGameOver()){let message=game.isCheckmate()?(game.turn()==='b'?'Mat! Wygrywasz. Dobra robota.':'Mat. Komputer wygrywa. Każda partia to nowe doświadczenie.'):'Remis. '+(game.isStalemate()?'Król nie jest szachowany i nie ma legalnego ruchu — pat.':game.isInsufficientMaterial()?'Brakuje materiału do mata.':game.isThreefoldRepetition()?'Pozycja powtórzyła się trzykrotnie.':'Osiągnięto limit ruchów bez bicia i ruchu pionem.');feedback(message,'success');$('#board-bottom').textContent='Partia zakończona';if(!gameFinished){gameFinished=true;$('#undo').disabled=true;state.games++;if(!state.done.includes('5-1'))state.done.push('5-1');activity();toast('✧ Pierwsza pełna partia zapisana w postępach.')}}else feedback(game.isCheck()?'Szach! Zadbaj o bezpieczeństwo swojego króla.':game.turn()==='w'?'Twój ruch. Co grozi przeciwnik? Czy wszystkie figury są bezpieczne?':'Komputer przygotowuje odpowiedź.');}
 function achievements(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">ŚLADY TWOJEGO ROZWOJU</div><h1>Umiejętności, z których możesz być dumny.</h1><p>Każda odznaka oznacza ukończony etap. Zbieraj doświadczenia i wracaj do nauki wtedy, kiedy masz ochotę.</p></div><div class="achievements-grid">${units.map((u,i)=>`<div class="achievement ${earned(i)?'earned':''}"><div class="medal">${u.icon}</div><h3>${u.badge}</h3><p>Ukończ etap „${u.title}”.</p><small>${earned(i)?'✓ ZDOBYTA':`${u.lessons.filter((l,j)=>state.done.includes(`${i}-${j}`)).length} / ${u.lessons.length} LEKCJI`}</small></div>`).join('')}</div><div class="empty-note">${state.days.length?`Masz za sobą ${state.days.length} ${state.days.length===1?'dzień':'dni'} aktywnej nauki. `:''}Odznaki zostają z Tobą. Przerwa w nauce nie odbiera żadnego osiągnięcia.</div>`}
-function route(){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating]=(location.hash.slice(1)||'home').split('/');const navPage={lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;soundSettingsButton.hidden=!['puzzles','openings'].includes(navPage);const labels={home:'Moja akademia',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',achievements:'Osiągnięcia'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating),openings:()=>openingsPage(id),opening:()=>opening(id),play,achievements};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
+function route(){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating]=(location.hash.slice(1)||'home').split('/');const navPage={lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',achievements:'Osiągnięcia'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating),openings:()=>openingsPage(id),opening:()=>opening(id),play,achievements};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);route();
 await accounts.start(progress=>{state=progress;route()});

@@ -99,7 +99,7 @@ export function openSoundSettings(dialog, content) {
   content.innerHTML = `
     <div class="eyebrow">AKADEMIA 64</div>
     <h2>Dźwięki szachowe</h2>
-    <p>Wspólne ustawienia dla Zadań i Debiutów.</p>
+    <p>Wspólne ustawienia dla wszystkich szachownic.</p>
     <p><label><input name="enabled" type="checkbox"> Włącz dźwięki</label></p>
     <p><label for="sound-volume">Głośność <output for="sound-volume"></output></label><br>
       <input id="sound-volume" name="volume" type="range" min="0" max="100"></p>
