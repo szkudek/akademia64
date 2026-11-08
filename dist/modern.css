@@ -345,7 +345,14 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
 }
 .opening-video-choice[aria-current] { border-inline-start: 3px solid var(--accent); padding-inline-start: 8px; }
 .opening-video-choice small { display: block; margin-top: 4px; color: var(--reading); }
-.opening-video-number { flex: 0 0 24px; text-align: center; color: var(--reading); font-size: 13px; }
+.opening-video-thumb {
+  flex: 0 0 auto;
+  width: min(36%, 96px);
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 6px;
+}
 @media (max-width: 760px) {
   .opening-video-grid-with-playlist { grid-template-columns: minmax(0, 1fr); }
 }
@@ -376,6 +383,7 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
 .opening-video-credits dt { color: var(--reading); font-size: 12px; }
 .opening-video-credits dd { margin: 2px 0 0; color: var(--heading); font-weight: 700; }
 .opening-video-demo > summary { cursor: pointer; list-style: none; }
+.opening-video-youtube-link { display: block; }
 .opening-video-demo > summary::-webkit-details-marker { display: none; }
 .opening-video-demo[open] > summary .opening-video-cover { display: none; }
 .opening-video-cover {

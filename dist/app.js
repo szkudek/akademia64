@@ -2,7 +2,7 @@ import { createBoardInput } from './board-input.js?v=20261108-board-flip';
 import { accounts } from './accounts.js?v=20261108-rating-reset';
 import { normalizeProgress, pendingCorrections } from './progress.js?v=20261108-rating-reset';
 import { Chess } from './vendor/chess.js';
-import { openingChapter } from './opening-chapter.js';
+import { openingChapter } from './opening-chapter.js?v=20261108-caro-videos';
 import { lichessPuzzles } from './puzzle-bank.js';
 import { ratingFromAttempts, rateAttempt, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
 import { analyzePuzzle } from './puzzle-analysis.js';
@@ -631,7 +631,8 @@ async function opening(id){
     const previous=playlist.querySelector('[aria-current]');
     if(previous!==choice){
      const oldCard=videos.querySelector('#'+previous.getAttribute('aria-controls'));
-     oldCard.querySelector('[data-youtube-player]').open=false;
+     const oldPlayer=oldCard.querySelector('[data-youtube-player]');
+     if(oldPlayer)oldPlayer.open=false;
      oldCard.hidden=true;
      previous.removeAttribute('aria-current');
      choice.setAttribute('aria-current','true');
@@ -639,10 +640,10 @@ async function opening(id){
     const card=videos.querySelector('#'+choice.getAttribute('aria-controls'));
     card.hidden=false;
     const player=card.querySelector('[data-youtube-player]');
-    player.open=true;
+    if(player)player.open=true;
     if(compact.matches){
      playlist.open=false;
-     player.querySelector('summary').focus();
+     card.querySelector('summary, .opening-video-youtube-link').focus();
     }
    });
   }

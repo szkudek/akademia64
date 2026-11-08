@@ -24,7 +24,7 @@ function boardLink(courseId, index, label) {
 }
 
 // Add approved materials here with title, description, author, channel, channelHandle,
-// youtubeId, optional duration and level.
+// youtubeId, level, and optional duration or thumbnail size.
 const videosByCourse = {
   italian: [{
     youtubeId: 's6xm8u8M54c',
@@ -35,28 +35,107 @@ const videosByCourse = {
     channelHandle: 'DawidCzerwTV',
     thumbnail: 'maxresdefault',
     level: 'Podstawy',
+  }, {
+    youtubeId: 'OemMy40ovTQ',
+    title: 'PARTIA WŁOSKA - Debiuty szachowe w 10 minut! Szachy Dla Początkujących | Michał Kanarkiewicz',
+    description: 'Wprowadzenie do partii włoskiej dla początkujących.',
+    author: 'Michał Kanarkiewicz',
+    channel: 'Michał Kanarkiewicz Podcast',
+    channelHandle: 'MichalKanarkiewicz',
+    thumbnail: 'maxresdefault',
+    level: 'Podstawy',
+  }, {
+    youtubeId: 'JK0-YsASkes',
+    title: 'DEBIUTY 2.0 | #1 -  PARTIA WŁOSKA',
+    description: 'Odcinek o partii włoskiej z serii Debiuty 2.0.',
+    author: 'Marianczello Dominoni',
+    channel: 'Marianczello Dominoni',
+    channelHandle: 'MarianczelloDominoni',
+    thumbnail: 'maxresdefault',
+    level: 'Podstawy',
+  }],
+  caro: [{
+    youtubeId: 'WIhh3C-VsTQ',
+    title: 'PROSTE i SKUTECZNE debiuty szachowe - Obrona Caro-Kann #1',
+    description: 'Pierwsza część poradnika AntonChess o obronie Caro-Kann.',
+    author: 'AntonChess',
+    channel: 'AntonChess',
+    channelHandle: 'antonchess',
+    thumbnail: 'maxresdefault',
+    level: 'Podstawy',
+    youtubeOnly: true,
+  }, {
+    youtubeId: 'O4YPLdbXArc',
+    title: 'Szachy z Dawidem: Caro-kann w 15 minut!',
+    description: 'Wprowadzenie do obrony Caro-Kann z serii „Szachy z Dawidem”.',
+    author: 'DawidCzerwTV',
+    channel: 'Chess.com: Polska',
+    channelHandle: 'chesscomPL',
+    level: 'Podstawy',
+    start: 72,
+  }, {
+    youtubeId: 'jWLyBDsefZE',
+    title: 'Sekrety w Caro-Kannie! || Debiut w 30 minut #1',
+    description: 'Pierwszy odcinek serii „Debiut w 30 minut” poświęcony obronie Caro-Kann.',
+    author: 'EliteChessTeam',
+    channel: 'EliteChessTeam',
+    channelHandle: 'EliteChessTeam',
+    thumbnail: 'maxresdefault',
+    level: 'Warianty i plany',
+    start: 30,
+  }, {
+    youtubeId: '0aYYe7lAlgc',
+    title: 'DEBIUTY 2.0 | #9 - Obrona Caro-Kann',
+    description: 'Odcinek o obronie Caro-Kann z serii Debiuty 2.0.',
+    author: 'Marianczello Dominoni',
+    channel: 'Marianczello Dominoni',
+    channelHandle: 'MarianczelloDominoni',
+    thumbnail: 'maxresdefault',
+    level: 'Warianty i plany',
+    start: 149,
+  }, {
+    youtubeId: 'x9V4pzpfXEc',
+    title: 'GRAM OBRONĘ CARO-KANN!',
+    description: 'Przykład gry obroną Caro-Kann w praktyce.',
+    author: 'DawidCzerwTV',
+    channel: 'DawidCzerwTV',
+    channelHandle: 'DawidCzerwTV',
+    thumbnail: 'maxresdefault',
+    level: 'Praktyka',
   }],
 };
 
+function videoThumbnail(video) {
+  const id = encodeURIComponent(video.youtubeId);
+  const size = encodeURIComponent(video.thumbnail ?? 'mqdefault');
+  return `https://i.ytimg.com/vi/${id}/${size}.jpg`;
+}
+
 function videoCard(video, e, index) {
   const id = encodeURIComponent(video.youtubeId);
-  const thumbnail = `https://i.ytimg.com/vi/${id}/${encodeURIComponent(video.thumbnail ?? 'mqdefault')}.jpg`;
   const title = e(video.title);
   const channel = video.channelHandle
     ? `<a href="https://www.youtube.com/@${encodeURIComponent(video.channelHandle.replace(/^@/, ''))}" target="_blank" rel="noopener noreferrer">${e(video.channel)}</a>`
     : e(video.channel);
-  const player = `<template><iframe class="opening-video-player" src="https://www.youtube-nocookie.com/embed/${id}" title="${title}" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></template><div class="opening-video-player-host"></div>`;
+  const start = video.start ? encodeURIComponent(video.start) : '';
+  const watchUrl = `https://www.youtube.com/watch?v=${id}${start ? `&amp;t=${start}s` : ''}`;
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${id}${start ? `?start=${start}` : ''}`;
+  const cover = `<span class="opening-video-cover">
+    <img src="${videoThumbnail(video)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+    <span class="opening-video-play" aria-hidden="true">▶</span>
+  </span>`;
+  const player = `<template><iframe class="opening-video-player" src="${embedUrl}" title="${title}" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></template><div class="opening-video-player-host"></div>`;
   return `<section class="opening-video-feature" id="opening-video-${index}"${index ? ' hidden' : ''}>
-    <details class="opening-video-demo" data-youtube-player>
+    ${video.youtubeOnly ? `<a class="opening-video-youtube-link" href="${watchUrl}" target="_blank" rel="noopener noreferrer">
+      ${cover}
+      <span class="opening-video-demo-label">Obejrzyj na YouTube ↗</span>
+    </a>` : `<details class="opening-video-demo" data-youtube-player>
       <summary>
-        <span class="opening-video-cover">
-          <img src="${thumbnail}" alt="" loading="lazy" referrerpolicy="no-referrer">
-          <span class="opening-video-play" aria-hidden="true">▶</span>
-        </span>
+        ${cover}
         <span class="opening-video-demo-label">Pokaż odtwarzacz YouTube</span>
       </summary>
       ${player}
-    </details>
+    </details>`}
     <div class="opening-video-copy">
       <div class="opening-video-badges">
         <span>YouTube</span>
@@ -69,7 +148,7 @@ function videoCard(video, e, index) {
         <div><dt>Autor</dt><dd>${e(video.author)}</dd></div>
         <div><dt>Kanał YouTube</dt><dd>${channel}</dd></div>
       </dl>
-      <a class="btn outline" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener noreferrer">Otwórz oryginał na YouTube ↗</a>
+      ${video.youtubeOnly ? '' : `<a class="btn outline" href="${watchUrl}" target="_blank" rel="noopener noreferrer">Otwórz oryginał na YouTube ↗</a>`}
     </div>
   </section>`;
 }
@@ -79,7 +158,7 @@ function videoPlaylist(videos, e) {
     <summary>Inne materiały wideo <span>(${videos.length})</span></summary>
     <ol>${videos.map((video, index) => `<li>
       <button type="button" class="opening-video-choice" aria-controls="opening-video-${index}"${index ? '' : ' aria-current="true"'}>
-        <span class="opening-video-number" aria-hidden="true">${index + 1}</span>
+        <img class="opening-video-thumb" src="${videoThumbnail(video)}" alt="" width="96" height="54" loading="lazy" referrerpolicy="no-referrer">
         <span><strong>${e(video.title)}</strong><small>${e(video.channel)}${video.duration ? ` · ${e(video.duration)}` : ''}</small></span>
       </button>
     </li>`).join('')}</ol>
