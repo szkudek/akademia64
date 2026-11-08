@@ -33,12 +33,14 @@ const videosByCourse = {
     author: 'DawidCzerwTV',
     channel: 'DawidCzerwTV',
     channelHandle: 'DawidCzerwTV',
+    thumbnail: 'maxresdefault',
     level: 'Podstawy',
   }],
 };
 
-function videoCard(video, asset, e, index) {
+function videoCard(video, e, index) {
   const id = encodeURIComponent(video.youtubeId);
+  const thumbnail = `https://i.ytimg.com/vi/${id}/${encodeURIComponent(video.thumbnail ?? 'mqdefault')}.jpg`;
   const title = e(video.title);
   const channel = video.channelHandle
     ? `<a href="https://www.youtube.com/@${encodeURIComponent(video.channelHandle.replace(/^@/, ''))}" target="_blank" rel="noopener noreferrer">${e(video.channel)}</a>`
@@ -48,7 +50,7 @@ function videoCard(video, asset, e, index) {
     <details class="opening-video-demo" data-youtube-player>
       <summary>
         <span class="opening-video-cover">
-          <img src="${asset}.png" alt="" width="192" height="212" loading="lazy">
+          <img src="${thumbnail}" alt="" loading="lazy" referrerpolicy="no-referrer">
           <span class="opening-video-play" aria-hidden="true">▶</span>
         </span>
         <span class="opening-video-demo-label">Pokaż odtwarzacz YouTube</span>
@@ -85,13 +87,12 @@ function videoPlaylist(videos, e) {
 }
 
 function videoPreview(course, e) {
-  const asset = e(new URL(`./opening-gifs/${course.id}-0`, import.meta.url).href);
   const videos = videosByCourse[course.id] ?? [];
   return `<section class="opening-section opening-videos" aria-labelledby="opening-videos-title">
     <div class="eyebrow">MATERIAŁY UZUPEŁNIAJĄCE</div>
     <h3 id="opening-videos-title">Poradniki wideo</h3>
     ${videos.length ? `<div class="opening-video-grid${videos.length > 1 ? ' opening-video-grid-with-playlist' : ''}">
-      <div class="opening-video-stage">${videos.map((video, index) => videoCard(video, asset, e, index)).join('')}</div>
+      <div class="opening-video-stage">${videos.map((video, index) => videoCard(video, e, index)).join('')}</div>
       ${videos.length > 1 ? videoPlaylist(videos, e) : ''}
     </div>`
       : '<p>Poradniki wideo do tego debiutu pojawią się tutaj.</p>'}
