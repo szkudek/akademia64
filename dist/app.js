@@ -4,7 +4,6 @@ import { Chess } from './vendor/chess.js';
 import { openingChapter } from './opening-chapter.js';
 import { lichessPuzzles } from './puzzle-bank.js';
 import { ratingFromAttempts, choosePuzzle } from './tactics-rating.js';
-import { svgPiece } from './puzzle-pieces.js';
 import { analyzePuzzle } from './puzzle-analysis.js';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
@@ -13,7 +12,7 @@ const names={k:'król',q:'hetman',r:'wieża',b:'goniec',n:'skoczek',p:'pion'};
 const puzzleColors={orange:'pomarańczowy',green:'zielony',red:'czerwony',blue:'niebieski'};
 let puzzleAnalysis;
 function puzzlePiece(type,color){
- return svgPiece(color==='w'?type.toUpperCase():type);
+ return icons[type];
 }
 const units=[
 {title:'Poznaj szachownicę',icon:'▦',badge:'Pierwszy krok',lessons:[
