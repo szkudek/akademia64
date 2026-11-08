@@ -571,10 +571,8 @@ h1, h2, .hero h2 { font-weight: 700; }
 .tactic-result:not(:empty){padding:7px 10px;border:1px solid #708b65;border-radius:8px;margin:0 0 12px;color:var(--text);font-size:13px;font-weight:750;background:rgba(122,161,109,.12);}
 @media(max-width:390px){.tactic-stats{gap:5px}.tactic-stats>span{padding:9px 7px}.tactic-stats strong{font-size:19px}.tactic-stats small{font-size:10px}}
 
-/* Widok zadań: panel wyników i historia punktów obok szachownicy. */
-.practice-layout > .puzzle-sidebar{display:flex;flex-direction:column;gap:14px;min-width:0;}
-.puzzle-sidebar > .lesson-panel{width:100%;min-width:0;}
-.tactic-history{background:var(--paper);border:1px solid var(--line);border-radius:15px;padding:17px 20px;}
+/* Widok zadań: historia punktów pod szachownicą. */
+.tactic-history{margin-top:14px;background:var(--paper);border:1px solid var(--line);border-radius:15px;padding:17px 20px;}
 .tactic-history-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px 10px;margin-bottom:13px;}
 .tactic-history-heading strong{font-size:14px;font-weight:750;color:var(--heading);}
 .tactic-history-heading span{font-size:11px;color:var(--muted);}

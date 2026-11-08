@@ -332,12 +332,7 @@ function puzzle(id){
    <a href="https://github.com/nmrugg/stockfish.js/tree/v19.0.1">Źródła Stockfish.js 19.0.1 (GPLv3)</a>
   </section>`, 'Pozycja treningowa',white?'Białe · Twój ruch':'Czarne · Twój ruch');
 
- const panel=main.querySelector('.lesson-panel');
- const sidebar=document.createElement('div');
- sidebar.className='puzzle-sidebar';
- panel.parentNode.insertBefore(sidebar,panel);
- sidebar.append(panel);
- sidebar.insertAdjacentHTML('beforeend',`
+ main.querySelector('.board-card').insertAdjacentHTML('beforeend',`
   <section class="tactic-history" aria-label="Historia punktów z ostatnich zadań">
    <div class="tactic-history-heading">
     <strong>Ostatnie zadania</strong>
