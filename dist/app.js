@@ -4,7 +4,7 @@ import { normalizeProgress, pendingCorrections } from './progress.js?v=20261108-
 import { Chess } from './vendor/chess.js';
 import { openingChapter } from './opening-chapter.js?v=20261108-shared-board';
 import { lichessPuzzles } from './puzzle-bank.js';
-import { ratingFromAttempts, rateAttempt, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
+import { ratingFromAttempts, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
 import { analyzePuzzle } from './puzzle-analysis.js?v=20261108-free-analysis';
 import { readGame } from './game-analysis.js';
 import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-recorded-clicks';
@@ -412,6 +412,7 @@ function correctionsPage(){
 function puzzleHref({id,rating}){
  return '#puzzle/'+encodeURIComponent(id)+'/'+rating;
 }
+const sessionTacticResults=[];
 function recordTactic(ok){
  const ctx=context;
  if(!ctx||ctx.kind!=='puzzle'||ctx.recorded)return;
@@ -432,7 +433,9 @@ function recordTactic(ok){
  renderCorrectionLink();
  const after=ratingFromAttempts(state.tactics).rating;
  const change=after-before;
- ctx.tileResult={ok,delta:already?0:change,repeat:already};
+ ctx.tileResult={id,rating,ok,delta:already?0:change,repeat:already};
+ sessionTacticResults.push(ctx.tileResult);
+ if(sessionTacticResults.length>12)sessionTacticResults.shift();
  const label=already?'Powtórka bez punktów':(change>=0?'+':'')+change+' pkt';
  const status=document.querySelector('#tactic-result');
  if(status)status.textContent=label;
@@ -454,20 +457,9 @@ function renderTacticTiles(){
  const list=document.querySelector('#tactic-tiles');
  const ctx=context;
  if(!list||ctx?.kind!=='puzzle')return;
- const attempts=[...(state.tactics||[])].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id));
- const ratings={legacy:null,current:null};
- const history=attempts.map(attempt=>{
-  const archived=attempt.ratingVersion!==RATING_VERSION;
-  const group=archived?'legacy':'current';
-  const previous=ratings[group];
-  const next=rateAttempt(previous,attempt);
-  const delta=next.rating-(previous?.rating??STARTING_RATING);
-  ratings[group]=next;
-  return {id:attempt.id,rating:attempt.rating,ok:attempt.ok,delta,archived};
- });
- const latest=history.filter(a=>!ctx.tileResult||a.id!==ctx.item.id).slice(-11);
- const current=ctx.tileResult||null;
- const tiles=[...latest,{id:ctx.item.id,rating:ctx.item.rating,ok:current?.ok,delta:current?.delta??null,pending:!current,repeat:current?.repeat}];
+ const current=ctx.tileResult;
+ const latest=sessionTacticResults.filter(item=>item!==current).slice(-11);
+ const tiles=[...latest,current??{id:ctx.item.id,rating:ctx.item.rating,pending:true}];
  list.replaceChildren();
  for(const item of tiles){
   const el=document.createElement('a');
@@ -480,7 +472,7 @@ function renderTacticTiles(){
   };
   el.className='tactic-tile '+(item.pending?'pending':item.ok?'correct':'incorrect');
   el.textContent=item.pending?'?':(item.delta>0?'+':'')+item.delta;
-  el.setAttribute('title',item.pending?'Bieżące zadanie — oczekiwanie na wynik':(item.ok?'Poprawne':'Błędne')+' · '+(item.delta>0?'+':'')+item.delta+' pkt'+(item.repeat?' · powtórka':'')+(item.archived?' · przed resetem rankingu':''));
+  el.setAttribute('title',item.pending?'Bieżące zadanie — oczekiwanie na wynik':(item.ok?'Poprawne':'Błędne')+' · '+(item.delta>0?'+':'')+item.delta+' pkt'+(item.repeat?' · powtórka':''));
   el.setAttribute('aria-label','Otwórz zadanie '+item.id+' · '+el.title);
   list.append(el);
  }
