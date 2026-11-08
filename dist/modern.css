@@ -570,3 +570,17 @@ h1, h2, .hero h2 { font-weight: 700; }
 .tactic-stats strong + small{display:inline;font-size:12px;margin-left:5px;white-space:nowrap;}
 .tactic-result:not(:empty){padding:7px 10px;border:1px solid #708b65;border-radius:8px;margin:0 0 12px;color:var(--text);font-size:13px;font-weight:750;background:rgba(122,161,109,.12);}
 @media(max-width:390px){.tactic-stats{gap:5px}.tactic-stats>span{padding:9px 7px}.tactic-stats strong{font-size:19px}.tactic-stats small{font-size:10px}}
+
+/* Widok zadań: panel wyników i historia punktów obok szachownicy. */
+.practice-layout > .puzzle-sidebar{display:flex;flex-direction:column;gap:14px;min-width:0;}
+.puzzle-sidebar > .lesson-panel{width:100%;min-width:0;}
+.tactic-history{background:var(--paper);border:1px solid var(--line);border-radius:15px;padding:17px 20px;}
+.tactic-history-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px 10px;margin-bottom:13px;}
+.tactic-history-heading strong{font-size:14px;font-weight:750;color:var(--heading);}
+.tactic-history-heading span{font-size:11px;color:var(--muted);}
+.tactic-tiles{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+.tactic-tile{display:inline-flex;align-items:center;justify-content:center;min-width:43px;height:37px;padding:0 7px;border:1px solid transparent;border-radius:8px;font-variant-numeric:tabular-nums;font-size:13px;line-height:1;font-weight:800;}
+.tactic-tile.pending{background:#e8bc4c;color:#2d250e;border-color:#f4d579;}
+.tactic-tile.correct{background:#36784c;color:#f3fff1;border-color:#5eae72;}
+.tactic-tile.incorrect{background:#a94447;color:#fff7f5;border-color:#db7478;}
+@media(max-width:500px){.tactic-history{padding:14px}.tactic-tiles{gap:6px}.tactic-tile{min-width:40px;height:35px;font-size:12px}}
