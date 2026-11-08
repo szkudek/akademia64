@@ -24,7 +24,18 @@ function boardLink(courseId, index, label) {
 }
 
 export function openingChapter(course, guide, diagram, e) {
-  if (course.id === 'italian') return italianLesson(diagram, (index, label) => boardLink(course.id, index, label), course.variants, e);
+  const previews = (...indices) => `<div class="opening-gif-grid">${indices.map(index => {
+    const asset = e(new URL(`./opening-gifs/${course.id}-${index}`, import.meta.url).href);
+    const title = e(course.variants[index].title);
+    return `<figure class="opening-gif">
+      <picture>
+        <source media="(prefers-reduced-motion: reduce)" srcset="${asset}.png">
+        <img src="${asset}.gif" alt="Szachownica — ${title}" width="192" height="212" loading="lazy" decoding="async">
+      </picture>
+      ${indices.length > 1 ? `<figcaption>${title}</figcaption>` : ''}
+    </figure>`;
+  }).join('')}</div>`;
+  if (course.id === 'italian') return italianLesson(diagram, (index, label) => boardLink(course.id, index, label), course.variants, e, previews);
   const { start, example, pitfall } = diagrams[course.id];
   const study = openingStudy[course.id];
   return `<article class="opening-chapter" aria-labelledby="opening-title">
@@ -36,7 +47,7 @@ export function openingChapter(course, guide, diagram, e) {
     </header>
     <section class="opening-section">
       <h3>1. Jak powstaje ten debiut?</h3>
-      <div class="opening-position"><p>${e(guide.idea)}</p>${diagram(...start)}</div>
+      <div class="opening-position"><div><p>${e(guide.idea)}</p>${previews(0)}</div>${diagram(...start)}</div>
     </section>
     <section class="opening-section">
       <h3>2. Plany białych i czarnych</h3>
@@ -52,6 +63,7 @@ export function openingChapter(course, guide, diagram, e) {
         <h4>${e(variant.title)}</h4>
         <p>${e(variant.desc)}</p>
         <p><strong>Na co zwrócić uwagę</strong><br>${e(variant.plan)}</p>
+        ${previews(index + 1)}
         ${boardLink(course.id, index + 1, 'Zobacz wariant na szachownicy')}
       </section>`).join('')}</div>
     </section>
@@ -65,6 +77,7 @@ export function openingChapter(course, guide, diagram, e) {
         <h4>${e(title)}</h4>
         <p><strong>Sygnał ostrzegawczy</strong><br>${e(warning)}</p>
         <p><strong>Jak się bronić</strong><br>${e(defense)}</p>
+        ${previews(...links.map(([index]) => index))}
         ${links.map(([index, label]) => boardLink(course.id, index, e(label))).join(' ')}
       </section>`).join('')}</div>
     </section>

@@ -1,4 +1,4 @@
-export function italianLesson(diagram, boardLink, variants, e) {
+export function italianLesson(diagram, boardLink, variants, e, previews) {
   const extra = variants.map((variant, index) => ({ variant, index })).filter(({ variant }) => variant.group);
   const groups = new Set(extra.map(({ variant }) => variant.group));
   return `<article class="opening-chapter" aria-labelledby="opening-title">
@@ -16,6 +16,7 @@ export function italianLesson(diagram, boardLink, variants, e) {
           <p class="opening-line">1. e4 e5 2. Nf3 Nc6 3. Bc4</p>
           <p>Pionki e4 i e5 zajmują centrum. Skoczek z f3 atakuje pionka e5, a skoczek z c6 go broni. Ruch <strong>3.Bc4</strong> wyprowadza gońca i otwiera drogę do krótkiej roszady.</p>
           <p>Goniec c4 celuje w f7, którego broni tylko czarny król. Jednocześnie patrzy na d5, ważne pole dla czarnych. Zaznaczone pola pokazują, dlaczego ta sama figura pomaga zarówno w ataku na króla, jak i w walce o centrum.</p>
+          ${previews(0)}
         </div>
         ${diagram(['e4','e5','Nf3','Nc6','Bc4'], ['c4','d5','f7'], 'Po 3.Bc4 goniec z c4 kontroluje d5 i atakuje f7.')}
       </div>
@@ -44,24 +45,28 @@ export function italianLesson(diagram, boardLink, variants, e) {
           <h4>Giuoco Pianissimo</h4>
           <p class="opening-line">3…Bc5 4.d3 Nf6 5.c3</p>
           <p>Białe najpierw podpierają e4, a potem przygotowują d4. To dobry wariant na początek: można spokojnie zrobić roszadę i dopiero wtedy ocenić, czy otworzyć centrum.</p>
+          ${previews(1)}
           ${boardLink(1, 'Zobacz Pianissimo na szachownicy')}
         </section>
         <section>
           <h4>Giuoco Piano z szybkim d4</h4>
           <p class="opening-line">3…Bc5 4.c3 Nf6 5.d4</p>
           <p>Białe zajmują centrum szybciej. Po 5…exd4 6.cxd4 pion z c3 trafia na d4, ale czarne mogą zagrać 6…Bb4+ i wykorzystać położenie króla na e1.</p>
+          ${previews(2)}
           ${boardLink(2, 'Zobacz Giuoco Piano na szachownicy')}
         </section>
         <section>
           <h4>Obrona dwóch skoczków</h4>
           <p class="opening-line">3…Nf6 4.Ng5 d5</p>
           <p>Skoczek dołącza do gońca w ataku na f7. Czarne odpowiadają w centrum: pion na d5 atakuje jednocześnie gońca c4 i pionka e4.</p>
+          ${previews(3)}
           ${boardLink(3, 'Zobacz obronę dwóch skoczków')}
         </section>
         <section>
           <h4>Gambit Evansa</h4>
           <p class="opening-line">3…Bc5 4.b4 Bxb4 5.c3</p>
           <p>Białe oddają pionka b. Ruch c3 atakuje gońca i przygotowuje d4. W zamian za materiał białe zyskują czas na rozwój i budowę centrum.</p>
+          ${previews(4)}
           ${boardLink(4, 'Zobacz gambit Evansa na szachownicy')}
         </section>
       </div>
@@ -83,6 +88,7 @@ export function italianLesson(diagram, boardLink, variants, e) {
           <h4>Blackburne–Kostić: pion e5 jest przynętą</h4>
           <p><strong>Sygnał dla białych:</strong> 3…Nd4 pozostawia pionka e5 bez obrony. Po 4.Nxe5 Qg5 hetman atakuje e5 i g2, a 5.Nxf7 nie daje szacha.</p>
           <p><strong>Jak się bronić:</strong> 4.Nxd4 usuwa skoczka i omija pułapkę. Po 4…exd4 można zrobić roszadę. Porównaj tę pozycję z linią, w której białe biorą przynętę i dostają mata na f3.</p>
+          ${previews(15, 17)}
           ${boardLink(15, 'Zobacz pułapkę')}
           ${boardLink(17, 'Zobacz obronę 4.Nxd4')}
         </section>
@@ -90,6 +96,7 @@ export function italianLesson(diagram, boardLink, variants, e) {
           <h4>Mat Legala: hetman na d1 jest przynętą</h4>
           <p><strong>Sygnał dla czarnych:</strong> po 3…d6 4.Nc3 Bg4 5.h3 Bh5 6.Nxe5 goniec może zbić hetmana. Jednak po 6…Bxd1 następuje 7.Bxf7+ Ke7 8.Nd5#.</p>
           <p><strong>Jak się bronić:</strong> po 6.Nxe5 zbij skoczkiem: 6…Nxe5. Białe odzyskają figurę przez 7.Qxh5 i zostaną z dodatkowym pionkiem. Pułapce można zapobiec wcześniej, grając 5…Bxf3 zamiast 5…Bh5.</p>
+          ${previews(18, 19)}
           ${boardLink(18, 'Zobacz mata Legala')}
           ${boardLink(19, 'Zobacz obronę 6…Nxe5')}
         </section>
@@ -97,6 +104,7 @@ export function italianLesson(diagram, boardLink, variants, e) {
           <h4>Atak smażonej wątróbki: uważaj na 5…Nxd5</h4>
           <p><strong>Sygnał dla czarnych:</strong> po 4.Ng5 d5 5.exd5 naturalne odbicie skoczkiem pozwala na 6.Nxf7. Po przyjęciu ofiary hetman daje szacha z f3 i atakuje skoczka d5.</p>
           <p><strong>Jak się bronić:</strong> wybierz 5…Na5, atakując gońca c4. Po 6.Bb5+ c6 7.dxc6 bxc6 czarne mają otwarte linie i mogą rozwijać figury z tempem, mimo straty pionka.</p>
+          ${previews(7, 3)}
           ${boardLink(7, 'Zobacz atak 6.Nxf7')}
           ${boardLink(3, 'Zobacz obronę 5…Na5')}
         </section>
@@ -104,6 +112,7 @@ export function italianLesson(diagram, boardLink, variants, e) {
           <h4>Traxler: sprawdź szacha na f2 przed biciem</h4>
           <p><strong>Sygnał dla białych:</strong> po 4.Ng5 Bc5 bicie 5.Nxf7 grozi hetmanowi i wieży. Czarne mogą odpowiedzieć 5…Bxf2+ i prowadzić atak z szachami.</p>
           <p><strong>Jak się bronić:</strong> rozważ 5.Bxf7+. Szach zmusza czarne do reakcji. Po 5…Ke7 można wycofać gońca na b3. Przed kolejnym ruchem oceń nacisk na f2.</p>
+          ${previews(9, 20)}
           ${boardLink(9, 'Zobacz kontratak po 5.Nxf7')}
           ${boardLink(20, 'Zobacz odpowiedź 5.Bxf7+')}
         </section>
@@ -111,6 +120,7 @@ export function italianLesson(diagram, boardLink, variants, e) {
           <h4>Gambit Jerome’a: zasłoń szacha hetmana</h4>
           <p><strong>Sygnał dla czarnych:</strong> po 3…Bc5 4.Bxf7+ Kxf7 5.Nxe5+ białe próbują ściągnąć króla na otwartą przekątną.</p>
           <p><strong>Jak się bronić:</strong> 5…Nxe5 zbija szachującego skoczka. Po 6.Qh5+ odpowiedź 6…Ng6 zasłania przekątną. Pion h7 broni skoczka, więc przed biciem na g6 białe muszą policzyć …hxg6.</p>
+          ${previews(21)}
           ${boardLink(21, 'Zobacz obronę gambitu Jerome’a')}
         </section>
       </div>
@@ -149,6 +159,7 @@ export function italianLesson(diagram, boardLink, variants, e) {
           <h4>${e(variant.title)}</h4>
           <p>${e(variant.desc)}</p>
           <p><strong>Na co zwrócić uwagę</strong><br>${e(variant.plan)}</p>
+          ${previews(index)}
           ${boardLink(index, 'Przejdź do przykładu')}
         </section>`).join('')}</div>
       </details>`).join('')}

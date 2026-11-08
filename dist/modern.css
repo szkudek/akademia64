@@ -207,6 +207,26 @@ main,footer{max-width:1760px;width:100%}main{padding:32px 40px 48px}body{font-si
 .opening-chapter p { color: var(--reading); font-size: 16px; }
 .opening-chapter p + p { margin-top: 10px; }
 .opening-chapter .opening-board-link { margin-top: 12px; }
+.opening-gif-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: 10px;
+  margin-top: 12px;
+}
+.opening-gif {
+  flex: 1 1 124px;
+  min-width: 0;
+  max-width: 160px;
+  margin: 0;
+}
+.opening-gif img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.opening-gif figcaption { margin-top: 4px; color: var(--reading); font-size: 12px; line-height: 1.4; }
 .opening-chapter h4 {
   margin: 0 0 8px;
   color: var(--heading);

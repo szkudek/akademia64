@@ -17,7 +17,7 @@ export async function createApp({staticRoot=rootDefault}={}){
       if(pathname.split('/').some(p=>p.startsWith('.'))||pathname.includes('\\'))throw Error();
       const path=resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
       if(!path.startsWith(root+sep)||!(await stat(path)).isFile())throw Error();
-      const bytes=await readFile(path);const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.txt':'text/plain; charset=utf-8'};
+      const bytes=await readFile(path);const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.txt':'text/plain; charset=utf-8','.gif':'image/gif','.png':'image/png'};
       res.writeHead(200,{'Content-Type':types[extname(path)]||'application/octet-stream','Cache-Control':'no-cache'});res.end(req.method==='HEAD'?undefined:bytes);
     }catch{res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'});res.end('Nie znaleziono strony.')}
   });
