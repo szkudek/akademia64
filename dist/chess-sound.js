@@ -1,15 +1,27 @@
 const storageKey = 'akademia64.chessSound';
-const defaults = { enabled: false, volume: 45, moves: true, feedback: true };
+const defaults = { enabled: true, volume: 45, moves: true, feedback: true };
 
-// Each note describes its pitch, duration and strength.
+// Short, inharmonic resonances model the board and the softer felt mallet.
+const wood = {
+  modes: [[1, .65, .016], [2.17, .34, .008], [4.61, .21, .004]],
+  noise: .54,
+  decay: .004,
+};
+const mallet = {
+  modes: [[1, .72, .048], [2.01, .18, .020], [3.92, .07, .008]],
+  noise: .14,
+  decay: .006,
+};
+
+// Each strike specifies its material, onset, resonance, length and peak.
 const sounds = {
-  move: [[190, .047, .27]],
-  capture: [[135, .075, .38]],
-  castle: [[190, .045, .27], [155, .055, .24]],
-  promotion: [[330, .055, .22], [494, .085, .23]],
-  correct: [[440, .055, .23], [587, .09, .23]],
-  incorrect: [[260, .065, .22], [207, .085, .22]],
-  mate: [[392, .065, .22], [523, .075, .22], [659, .12, .24]],
+  move: [[wood, 0, 306, .072, .28]],
+  capture: [[wood, 0, 490, .045, .19], [wood, .017, 229, .091, .35]],
+  castle: [[wood, 0, 278, .072, .28], [wood, .065, 339, .066, .24]],
+  promotion: [[wood, 0, 306, .072, .27], [mallet, .052, 587, .135, .18]],
+  correct: [[mallet, 0, 440, .115, .18], [mallet, .071, 554, .143, .17]],
+  incorrect: [[wood, 0, 207, .077, .19], [wood, .047, 168, .093, .14]],
+  mate: [[mallet, 0, 349, .138, .19], [mallet, .074, 440, .145, .17], [mallet, .147, 523, .172, .17]],
 };
 
 function loadSettings() {
@@ -28,6 +40,40 @@ function loadSettings() {
 
 let settings = loadSettings();
 let audio, master, channels;
+const buffers = new Map();
+
+function soundBuffer(name) {
+  if (buffers.has(name)) return buffers.get(name);
+  const strikes = sounds[name];
+  const rate = audio.sampleRate;
+  const duration = Math.max(...strikes.map(([, onset, , length]) => onset + length));
+  const buffer = audio.createBuffer(1, Math.ceil(duration * rate), rate);
+  const samples = buffer.getChannelData(0);
+  let seed = 64;
+  for (const [material, onset, pitch, length, strength] of strikes) {
+    const start = Math.round(onset * rate);
+    const strike = new Float32Array(Math.floor(length * rate));
+    let peak = 0;
+    let noise = 0;
+    for (let i = 0; i < strike.length; i++) {
+      const time = i / rate;
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      noise += .28 * (seed / 2147483648 - 1 - noise);
+      let sample = noise * material.noise * Math.exp(-time / material.decay);
+      for (const [ratio, gain, decay] of material.modes) {
+        sample += Math.sin(2 * Math.PI * pitch * ratio * time) * gain * Math.exp(-time / decay);
+      }
+      sample *= Math.min(1, time / .0015, (length - time) / .016);
+      strike[i] = sample;
+      peak = Math.max(peak, Math.abs(sample));
+    }
+    for (let i = 0; i < strike.length && start + i < samples.length; i++) {
+      samples[start + i] += strike[i] * strength / peak;
+    }
+  }
+  buffers.set(name, buffer);
+  return buffer;
+}
 
 function applyLevels() {
   if (!master) return;
@@ -61,23 +107,12 @@ function playSequence(events) {
     let time = audio.currentTime + .005;
     for (const [name, group] of events) {
       if (!settings[group]) continue;
-      for (const [pitch, duration, strength] of sounds[name]) {
-        const tone = audio.createOscillator();
-        const envelope = audio.createGain();
-        tone.type = group === 'moves' ? 'triangle' : 'sine';
-        tone.frequency.setValueAtTime(pitch, time);
-        tone.frequency.exponentialRampToValueAtTime(pitch * .8, time + duration);
-        envelope.gain.setValueAtTime(.001, time);
-        envelope.gain.exponentialRampToValueAtTime(strength, time + .006);
-        envelope.gain.exponentialRampToValueAtTime(.001, time + duration);
-        tone.connect(envelope);
-        envelope.connect(channels[group]);
-        tone.onended = () => { tone.disconnect(); envelope.disconnect(); };
-        tone.start(time);
-        tone.stop(time + duration);
-        time += duration + .012;
-      }
-      time += .025;
+      const source = audio.createBufferSource();
+      source.buffer = soundBuffer(name);
+      source.connect(channels[group]);
+      source.onended = () => source.disconnect();
+      source.start(time);
+      time += source.buffer.duration + .018;
     }
   } catch {
     // A browser can suspend or disable audio independently of the settings.

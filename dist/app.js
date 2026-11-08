@@ -6,7 +6,7 @@ import { openingChapter } from './opening-chapter.js?v=20261108-caro-videos';
 import { lichessPuzzles } from './puzzle-bank.js';
 import { ratingFromAttempts, rateAttempt, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
 import { analyzePuzzle } from './puzzle-analysis.js';
-import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-all-board-sounds';
+import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-wood-sounds';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
 const icons={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
@@ -74,10 +74,8 @@ function activity(){if(!state.days.includes(today()))state.days.push(today());sa
 function toast(text){$('#toast').textContent=text;$('#toast').classList.add('visible');setTimeout(()=>$('#toast').classList.remove('visible'),3500)}
 function dialog(title,text){$('#dialog-content').innerHTML=`<div class="eyebrow">AKADEMIA 64</div><h2>${title}</h2><p>${text}</p><button class="btn" id="dialog-ok">Rozumiem <span>→</span></button>`;$('#dialog').showModal();$('#dialog-ok').onclick=()=>$('#dialog').close()}
 $('#dialog .dialog-close').onclick=()=>$('#dialog').close();$('#dialog').onclick=e=>{if(e.target===$('#dialog'))$('#dialog').close()};
-const soundSettingsButton=$('#chess-sound-settings');
-soundSettingsButton.onclick=()=>openSoundSettings($('#dialog'),$('#dialog-content'));
 for(const event of ['pointerup','click','keydown']){
- document.addEventListener(event,unlockChessSound,{capture:true,passive:true});
+ document.addEventListener(event,()=>{if($('#board-host'))unlockChessSound()},{capture:true,passive:true});
 }
 $('#help-button').onclick=()=>dialog('Twoja droga do dobrej gry','Zacznij od mapy nauki albo wybierz zadania. Na szachownicy kliknij figurę, a potem pole docelowe. Lekcje i trening są bez limitu czasu. Gra treningowa używa lokalnego przeciwnika komputerowego; rozmowa z trenerem AI nie jest jeszcze dostępna.');
 $('#storage-info').onclick=()=>accounts.showStorageInfo();
@@ -127,9 +125,10 @@ const boardNavigation=[
 ];
 function boardControls(){
  const navigation=boardNavigation.map(([action,label,path])=>`<button class="board-control-button" type="button" data-board-nav="${action}" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="${path}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`).join('');
- return `<div class="board-controls" role="group" aria-label="Sterowanie szachownicą">${navigation}<button class="board-control-button" id="flip-board" type="button" aria-label="Odwróć szachownicę" aria-pressed="false" title="Odwróć szachownicę"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4 9a8 8 0 0 1 13.7-3.8L20 7.5M20 3v4.5h-4.5M20 15a8 8 0 0 1-13.7 3.8L4 16.5M4 21v-4.5h4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="8" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.25"/><path d="M8 8h4v4H8zm4 4h4v4h-4z" fill="currentColor"/></svg></button></div>`;
+ return `<div class="board-controls" role="group" aria-label="Sterowanie szachownicą">${navigation}<button class="board-control-button" id="flip-board" type="button" aria-label="Odwróć szachownicę" aria-pressed="${Boolean(context.flipped)}" title="Odwróć szachownicę"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4 9a8 8 0 0 1 13.7-3.8L20 7.5M20 3v4.5h-4.5M20 15a8 8 0 0 1-13.7 3.8L4 16.5M4 21v-4.5h4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="8" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.25"/><path d="M8 8h4v4H8zm4 4h4v4h-4z" fill="currentColor"/></svg></button><button class="board-control-button" id="chess-sound-settings" type="button" aria-label="Ustawienia dźwięku" title="Ustawienia dźwięku" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Zm12 0a4 4 0 0 1 0 6m2.5-8.5a7.5 7.5 0 0 1 0 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>`;
 }
 function bindBoardControls(){
+ $('#chess-sound-settings').onclick=()=>openSoundSettings($('#dialog'),$('#dialog-content'));
  for(const [action] of boardNavigation){
   $('[data-board-nav="'+action+'"]').onclick=()=>showBoardPosition(action);
  }
@@ -497,9 +496,10 @@ function puzzle(id){
  }
  context.puzzleStartFen=game.fen();
  context.positions=[{fen:context.puzzleStartFen,move:lastMove}];
- context.turnLabel=game.turn()==='w'?'Białe · Twój ruch':'Czarne · Twój ruch';
- const index=puzzles.indexOf(p);
  const white=game.turn()==='w';
+ context.flipped=!white;
+ context.turnLabel=white?'Białe · Twój ruch':'Czarne · Twój ruch';
+ const index=puzzles.indexOf(p);
  practiceShell(`
   <div class="puzzle-task-heading"><span class="eyebrow">MISZMASZ · ${p.category}</span><span><span data-puzzle-count data-prefix="Baza "></span><span> · ranking ${p.rating}</span></span></div>
   <div class="tactic-stats" aria-label="Ranking taktyczny"><span><small>Twój ranking Glicko-2</small><strong id="tactic-rating">${STARTING_RATING}</strong> <small id="tactic-rd">±350</small></span><span><small>Ocenione próby</small><strong id="tactic-count">0</strong></span><span><small>Skuteczność</small><strong id="tactic-accuracy">—</strong></span></div>
