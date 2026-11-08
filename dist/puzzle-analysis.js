@@ -48,7 +48,8 @@ export function analyzePuzzle(fen, {signal, onResult, onError, startFen=fen, mov
    : kind==='mate'
    ? (value>0?`Mat w ${value}`:`Przeciwnik matuje w ${Math.abs(value)}`)
    : new Intl.NumberFormat('pl',{signDisplay:'exceptZero',maximumFractionDigits:2}).format(value/100);
-  onResult(`${evaluation} · głębokość ${depth}. Linia: ${lineMoves.join(' ')}.`);
+  const best=/^bestmove ([a-h][1-8])([a-h][1-8])/.exec(data);
+  onResult(`${evaluation} · głębokość ${depth}. Linia: ${lineMoves.join(' ')}.`,best&&{from:best[1],to:best[2]});
  };
  worker.postMessage('uci');
 }

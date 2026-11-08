@@ -34,16 +34,16 @@ export function arrowPoints(from,to){
  return Math.abs(dx)*Math.abs(dy)===2?[a,Math.abs(dx)>Math.abs(dy)?[b[0],a[1]]:[a[0],b[1]],b]:[a,b];
 }
 export function createBoardInput(){
- let marks=[],key=null,cleanup=()=>{},clearMarks=()=>{};
+ let marks=[],key=null,cleanup=()=>{},clearMarks=()=>{},setSuggestion=()=>{};
  const reset=()=>{cleanup();marks=[];key=null};
- function attach(board,{position,canDrag,move,click,pieceAt=()=>null,playerColor='w',drawing,flipped=false}){
+ function attach(board,{position,canDrag,move,click,pieceAt=()=>null,playerColor='w',drawing,flipped=false,suggestion=null}){
   cleanup();if(key!==position){marks=[];key=position}
   const abort=new AbortController(),signal=abort.signal;let gesture=null,suppressClick=false;
   const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 8 8');svg.setAttribute('class','board-annotations');svg.setAttribute('aria-hidden','true');board.append(svg);
   const node=(tag,attrs)=>{const el=document.createElementNS(NS,tag);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,v);svg.append(el);return el};
   function paint(preview){
    const orient=([x,y])=>flipped?[8-x,8-y]:[x,y];
-   svg.replaceChildren();for(const m of [...marks,...(preview?[preview]:[])]){
+   svg.replaceChildren();for(const m of [...(suggestion?[suggestion]:[]),...marks,...(preview?[preview]:[])]){
     const color=(drawing?drawingColors:colors)[m.color],a=orient(center(m.from));
     if(m.from===m.to){
      if(drawing)node('rect',{x:a[0]-.5,y:a[1]-.5,width:1,height:1,fill:color,opacity:.42});
@@ -56,6 +56,7 @@ export function createBoardInput(){
     node('polygon',{points:[tip,[base[0]-.23*uy,base[1]+.23*ux],[base[0]+.23*uy,base[1]-.23*ux]].map(p=>p.join(',')).join(' '),fill:color,opacity:.9});
    }
   }
+  setSuggestion=move=>{suggestion=move;paint()};
   clearMarks=()=>{clearGesture();marks=[];paint()};
   function annotation(g,to,e){
    if(!to)return null;
@@ -68,7 +69,7 @@ export function createBoardInput(){
   }
   const hit=e=>squareAt(board.getBoundingClientRect(),e.clientX,e.clientY,flipped);
   function clearGesture(){if(gesture){gesture.ghost?.remove();gesture.source?.classList.remove('drag-origin');board.querySelector('.drop-hover')?.classList.remove('drop-hover');try{board.releasePointerCapture(gesture.id)}catch{}gesture=null}board.classList.remove('dragging')}
-  cleanup=()=>{clearGesture();abort.abort();clearMarks=()=>{}};
+  cleanup=()=>{clearGesture();abort.abort();clearMarks=()=>{};setSuggestion=()=>{}};
   board.addEventListener('contextmenu',e=>e.preventDefault(),{signal});board.addEventListener('dragstart',e=>e.preventDefault(),{signal});
   board.addEventListener('pointerdown',e=>{
    if(gesture||![0,2].includes(e.button))return;const from=hit(e);if(!from)return;
@@ -119,5 +120,5 @@ export function createBoardInput(){
    click(sq);
   },{signal});paint();
  }
- return {attach,reset,clearMarks:()=>clearMarks(),dispose:()=>cleanup()};
+ return {attach,reset,clearMarks:()=>clearMarks(),setSuggestion:move=>setSuggestion(move),dispose:()=>cleanup()};
 }

@@ -728,3 +728,5 @@ h1, h2, .hero h2 { font-weight: 700; }
 .analysis-moves [aria-current]{outline:2px solid currentColor;outline-offset:-2px;}
 #analysis-file{max-width:100%;}
 #analysis-import-status{overflow-wrap:anywhere;}
+#analysis-reset{margin-bottom:12px;}
+.analysis-replay .square:disabled{opacity:1;}
