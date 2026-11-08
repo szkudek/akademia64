@@ -2,6 +2,8 @@ import { createBoardInput } from './board-input.js';
 import { accounts } from './accounts.js';
 import { Chess } from './vendor/chess.js';
 import { openingChapter } from './opening-chapter.js';
+import { lichessPuzzles } from './puzzle-bank.js';
+import { ratingFromAttempts, choosePuzzle } from './tactics-rating.js';
 import { svgPiece } from './puzzle-pieces.js';
 import { analyzePuzzle } from './puzzle-analysis.js';
 const boardInput=createBoardInput();
@@ -48,11 +50,23 @@ const puzzles=[
 {id:'promotion',title:'Pion z wielkim planem',category:'Zdobywanie figur',level:'Początkujący',fen:'7k/P7/8/8/8/8/8/7K w - - 0 1',target:['a7','a8'],text:'Zamień przewagę piona w hetmana. Doprowadź go do końca planszy.',hint:'Przesuń pion na a8 i wybierz hetmana.',promotion:'q'},
 {id:'bishop',title:'Przekątna okazja',category:'Zdobywanie figur',level:'Początkujący',fen:'7k/8/6r1/8/8/3B4/8/K7 w - - 0 1',target:['d3','g6'],text:'Znajdź niechronioną wieżę i zdobądź ją gońcem.',hint:'Z d3 przekątna biegnie przez e4 i f5 do g6.'}
 ];
+const originalPuzzles=puzzles.slice();
+for(const [i,p] of originalPuzzles.entries())p.rating=900+i*80;
+const themesPL={mate:'Mat',mateIn1:'Mat w 1',mateIn2:'Mat w 2',mateIn3:'Mat w 3',fork:'Widełki',pin:'Związanie',skewer:'Rentgen',discoveredAttack:'Atak z odsłony',endgame:'Końcówka',sacrifice:'Poświęcenie',hangingPiece:'Niebroniona figura',defensiveMove:'Obrona',promotion:'Promocja',trappedPiece:'Uwięziona figura',backRankMate:'Mat na ostatniej linii',doubleCheck:'Podwójny szach'};
+for(const row of lichessPuzzles){
+ puzzles.push({
+  id:'li_'+row.id,source:'lichess',title:'Znajdź najlepszą kontynuację',
+  category:row.themes.map(t=>themesPL[t]).find(Boolean)||'Taktyka',
+  rating:row.rating,fen:row.fen,line:row.line,
+  text:'Znajdź i wykonaj całą taktyczną kontynuację. Po Twoim ruchu przeciwnik odpowie automatycznie.',
+  hint:'Sprawdź szachy, bicia i groźby. Przyjrzyj się niebronionym figurom.'
+ });
+}
 const openings=[{id:'italian',title:'Partia włoska',tag:'Otwarta gra · białe',pieces:'♝♞',desc:'Szybki rozwój figur i spojrzenie na słabe pole f7.',line:['e4','e5','Nf3','Nc6','Bc4','Bc5'],notes:['Zajmujesz centrum i otwierasz przekątną gońcowi.','Czarne również zajmują centrum.','Skoczek rozwija się i atakuje piona e5.','Czarne rozwijają skoczka i bronią piona e5.','Goniec patrzy na f7. To charakterystyczny ruch partii włoskiej.','Czarne rozwijają gońca. Dalej warto przygotować roszadę i walczyć o centrum.']},
 {id:'queens',title:'Gambit hetmański',tag:'Zamknięta gra · białe',pieces:'♛♟',desc:'Walcz o centrum i buduj solidną pozycję.',line:['d4','d5','c4','e6','Nc3','Nf6'],notes:['Zajmujesz centrum i otwierasz drogę gońcowi.','Czarne odpowiadają symetrycznie.','Pion c4 naciska na d5. Tak powstaje gambit hetmański.','Czarne wzmacniają d5: to gambit hetmański nieprzyjęty.','Skoczek wywiera nacisk na centrum.','Czarne rozwijają figurę i kontrolują e4. Przygotuj rozwój gońca i roszadę.']},
 {id:'sicilian',title:'Obrona sycylijska',tag:'Asymetryczna gra · czarne',pieces:'♞♟',desc:'Poznaj aktywną odpowiedź czarnych na pierwszy ruch e4.',line:['e4','c5','Nf3','d6','d4','cxd4','Nxd4','Nf6'],notes:['Białe zajmują centrum.','Czarne naciskają na d4 pionem z kolumny c. To obrona sycylijska.','Białe rozwijają skoczka.','Czarne wspierają centrum i otwierają drogę gońcowi.','Białe otwierają centrum.','Czarne wymieniają piona c na centralnego piona d.','Skoczek odbija piona i zajmuje aktywne pole.','Czarne atakują e4. Powstaje dynamiczna, asymetryczna pozycja.']}];
 let state;try{state=JSON.parse(localStorage.getItem('akademia64-v1')||'{}')}catch{state={}}
-state={done:[],solved:[],days:[],games:0,...state};for(const key of ['done','solved','days'])if(!Array.isArray(state[key]))state[key]=[];
+state={done:[],solved:[],days:[],games:0,tactics:[],...state};for(const key of ['done','solved','days','tactics'])if(!Array.isArray(state[key]))state[key]=[];
 function save(){if(!accounts.saveProgress(state))toast('Przeglądarka nie pozwala zapisać postępów.');updateLevel()}
 function today(){return new Date().toLocaleDateString('sv-SE')}
 function activity(){if(!state.days.includes(today()))state.days.push(today());save()}
@@ -113,27 +127,71 @@ function promotionFor(from,to){
 async function clickSquare(sq){if(cancelPromotion)return;if(solvedNow||!game)return;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return;
 if(context.item?.type==='square'){if(sq===context.item.target)success('Dokładnie! h1 to jasny prawy dolny narożnik.');else feedback('Sprawdź literę kolumny i numer rzędu. Poszukaj pola h1.','error');return}
 if(context.kind==='lesson'&&['quiz','game'].includes(context.item.type))return;
-if(selected){const from=selected;const moves=game.moves({square:from,verbose:true});if(moves.some(m=>m.to===sq)){const activeGame=game,activeContext=context;const promotion=await promotionFor(from,sq);if(game!==activeGame||context!==activeContext)return;if(promotion===null)return;const move={from,to:sq,promotion};if(context.kind==='lesson'||context.kind==='puzzle'){const t=context.item.target;if(from!==t[0]||sq!==t[1]||(context.item.promotion&&promotion!==context.item.promotion)){feedback('To legalny ruch, ale cel ćwiczenia jest inny. Spróbuj jeszcze raz.','error');selected=null;targets=[];drawBoard();return}game.move(move);lastMove=[from,sq];success(game.isCheckmate()?'Mat! Król przeciwnika nie ma obrony. Doskonały ruch.':'Dobrze! Właśnie udało Ci się zastosować tę zasadę.');return}
+if(selected){const from=selected;const moves=game.moves({square:from,verbose:true});if(moves.some(m=>m.to===sq)){const activeGame=game,activeContext=context;const promotion=await promotionFor(from,sq);if(game!==activeGame||context!==activeContext)return;if(promotion===null)return;const move={from,to:sq,promotion};if(context.kind==='puzzle'){
+ const ctx=context, expected=ctx.item.line?ctx.item.line[ctx.step]:ctx.item.target.join('')+(ctx.item.promotion||'');
+ const uci=from+sq+(promotion||'');
+ if(uci!==expected&&uci.slice(0,4)!==expected.slice(0,4)){
+  recordTactic(false);
+  feedback('Ten ruch nie jest rozwiązaniem. Ranking został rozliczony; możesz ćwiczyć dalej lub przejść do kolejnego zadania.','error');
+  selected=null;targets=[];drawBoard();return;
+ }
+ if(expected.length===5&&promotion!==expected[4]){
+  recordTactic(false);feedback('Wybierz właściwą figurę promocji.','error');selected=null;targets=[];drawBoard();return;
+ }
+ const played=game.move(move);
+ if(!played)return;
+ lastMove=[from,sq];selected=null;targets=[];
+ if(!ctx.item.line||ctx.step===ctx.item.line.length-1){
+  recordTactic(!ctx.assisted&&!ctx.failed);
+  success(game.isCheckmate()?'Mat! Pełna kontynuacja rozwiązana.':'Świetnie! Cała kombinacja została rozwiązana.');
+ }else{
+  ctx.step++;
+  const answer=ctx.item.line[ctx.step],reply=game.move({from:answer.slice(0,2),to:answer.slice(2,4),promotion:answer[4]||'q'});
+  if(!reply){feedback('Błąd danych zadania — odpowiedź przeciwnika jest nielegalna.','error');return}
+  lastMove=[reply.from,reply.to];ctx.step++;drawBoard();
+  feedback('Dobrze! Przeciwnik odpowiedział '+reply.san+'. Znajdź kolejny ruch.');
+ }
+ return;
+}
+if(context.kind==='lesson'){const t=context.item.target;if(from!==t[0]||sq!==t[1]||(context.item.promotion&&promotion!==context.item.promotion)){feedback('To legalny ruch, ale cel ćwiczenia jest inny. Spróbuj jeszcze raz.','error');selected=null;targets=[];drawBoard();return}game.move(move);lastMove=[from,sq];success(game.isCheckmate()?'Mat! Król przeciwnika nie ma obrony. Doskonały ruch.':'Dobrze! Właśnie udało Ci się zastosować tę zasadę.');return}
 if(context.kind==='opening'){const expected=new Chess(game.fen());const m=expected.move(context.item.line[openingStep]);if(m.from!==from||m.to!==sq||(m.promotion&&promotion!==m.promotion)){feedback('Ten ruch jest legalny, ale ćwiczymy inny wariant. Skorzystaj z podpowiedzi.','error');return}game.move(move);openingStep++;lastMove=[from,sq];selected=null;targets=[];drawBoard();updateOpening();return}
 if(context.kind==='play'){game.move(move);lastMove=[from,sq];selected=null;targets=[];activity();drawBoard();updateGame();if(!game.isGameOver())scheduleAI();return}}
 }
 const p=game.get(sq);if(p&&p.color===game.turn()){selected=sq;targets=game.moves({square:sq,verbose:true}).map(m=>m.to)}else{selected=null;targets=[]}drawBoard()}
-let mixedPuzzleQueue=[];
-let lastMixedPuzzleId=null;
+let recentlySeenPuzzles=[];
 function nextMixedPuzzle(){
- if(!mixedPuzzleQueue.length){
-  mixedPuzzleQueue=puzzles.map(p=>p.id);
-  for(let i=mixedPuzzleQueue.length-1;i>0;i--){
-   const j=Math.floor(Math.random()*(i+1));
-   [mixedPuzzleQueue[i],mixedPuzzleQueue[j]]=[mixedPuzzleQueue[j],mixedPuzzleQueue[i]];
-  }
-  if(mixedPuzzleQueue.length>1&&mixedPuzzleQueue[0]===lastMixedPuzzleId){
-   [mixedPuzzleQueue[0],mixedPuzzleQueue[1]]=[mixedPuzzleQueue[1],mixedPuzzleQueue[0]];
-  }
+ const p=choosePuzzle(puzzles,state.tactics,recentlySeenPuzzles);
+ recentlySeenPuzzles.push(p.id);
+ if(recentlySeenPuzzles.length>25)recentlySeenPuzzles.shift();
+ return p.id;
+}
+function recordTactic(ok){
+ const ctx=context;
+ if(!ctx||ctx.kind!=='puzzle'||ctx.recorded)return;
+ ctx.recorded=true;ctx.failed=!ok;
+ const already=state.tactics.some(a=>a.id===ctx.item.id);
+ const before=ratingFromAttempts(state.tactics).rating;
+ if(!already){
+  state.tactics.push({id:ctx.item.id,rating:ctx.item.rating,ok,at:Date.now()});
+  save();
  }
- const id=mixedPuzzleQueue.shift();
- lastMixedPuzzleId=id;
- return id;
+ const after=ratingFromAttempts(state.tactics).rating;
+ const change=after-before;
+ const label=already?'Powtórka bez punktów':(change>=0?'+':'')+change+' pkt';
+ const status=document.querySelector('#tactic-result');
+ if(status)status.textContent=label;
+ updateTacticsStats();
+ if(!ok)$('#next-puzzle').hidden=false;
+}
+function updateTacticsStats(){
+ const attempts=state.tactics||[];
+ const rated=ratingFromAttempts(attempts);
+ const score=document.querySelector('#tactic-rating');
+ if(!score)return;
+ score.textContent=rated.rating;
+ document.querySelector('#tactic-rd').textContent='±'+rated.rd;
+ document.querySelector('#tactic-count').textContent=String(attempts.length);
+ document.querySelector('#tactic-accuracy').textContent=attempts.length?Math.round(100*attempts.filter(a=>a.ok).length/attempts.length)+'%':'—';
 }
 function puzzleList(filter='Wszystkie'){const list=filter==='Wszystkie'?puzzles:puzzles.filter(p=>p.category===filter);main.innerHTML=`<div class="page-intro"><div class="eyebrow">TRENING UWAŻNOŚCI</div><h1>Znajdź ten jeden dobry ruch.</h1><p>Ćwicz rozpoznawanie okazji. Bez zegara, z podpowiedzią, zawsze we własnym tempie.</p></div><div class="filters">${['Wszystkie','Mat w jednym','Podwójny atak','Zdobywanie figur'].map(f=>`<button class="filter ${f===filter?'active':''}" data-filter="${f}">${f}</button>`).join('')}</div><div class="puzzle-cards">${list.map(p=>`<a href="#puzzle/${p.id}" class="puzzle-card"><div class="puzzle-art">${mini(p.fen,[],piece=>puzzlePiece(piece.type,piece.color))}</div><div class="puzzle-body"><div class="eyebrow">${p.category}</div><h3>${p.title}</h3><p>${p.level}</p></div><div class="puzzle-footer"><span>${state.solved.includes(p.id)?'✓ Rozwiązane':'Białe zaczynają'}</span><span>Rozwiąż &nbsp; →</span></div></a>`).join('')}</div>`;document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>puzzleList(b.dataset.filter))}
 function finishPuzzle(){
@@ -141,13 +199,14 @@ function finishPuzzle(){
  $('#next-puzzle').hidden=false;
  $('#show-puzzle-solution').disabled=true;
  $('#hint').disabled=true;
- const initial=new Chess(p.fen);
- const answer=initial.move({from:p.target[0],to:p.target[1],promotion:p.promotion});
- $('#puzzle-answer').textContent='Rozwiązanie · '+answer.san;
+ const initial=new Chess(context.puzzleStartFen);
+ const uci=p.line?p.line[1]:p.target.join('')+(p.promotion||'');
+ const answer=initial.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]||p.promotion||'q'});
+ $('#puzzle-answer').textContent=answer?'Rozwiązanie · '+answer.san:'Rozwiązanie zakończone';
  const result=$('#stockfish-result');
  result.textContent='Stockfish analizuje pozycję wyjściową…';
  puzzleAnalysis=new AbortController();
- analyzePuzzle(p.fen,{
+ analyzePuzzle(context.puzzleStartFen,{
   signal:puzzleAnalysis.signal,
   onResult:line=>{result.textContent='Stockfish · '+line},
   onError:()=>{result.textContent='Nie udało się uruchomić analizy Stockfish.'}
@@ -158,12 +217,20 @@ function puzzle(id){
  const p=puzzles.find(item=>item.id===id);
  if(!p){location.hash='puzzles';return}
  const drawing={enabled:false,color:'orange'};
- context={kind:'puzzle',item:p,drawing};
+ context={kind:'puzzle',item:p,drawing,step:1,recorded:false,failed:false,assisted:false};
  setupBoard(p.fen);
+ if(p.line){
+  const u=p.line[0],openingMove=game.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u[4]||'q'});
+  if(!openingMove){main.innerHTML='<p role="alert">Nie udało się wczytać tego zadania. <a href="#puzzles">Wylosuj kolejne</a></p>';return}
+  lastMove=[openingMove.from,openingMove.to];
+ }
+ context.puzzleStartFen=game.fen();
  const index=puzzles.indexOf(p);
  const white=game.turn()==='w';
  practiceShell(`
-  <div class="puzzle-task-heading"><span class="eyebrow">MISZMASZ · ${p.category}</span><span>Zadanie ${index+1} / ${puzzles.length}</span></div>
+  <div class="puzzle-task-heading"><span class="eyebrow">MISZMASZ · ${p.category}</span><span>Zadanie ${index+1} / ${puzzles.length} · ranking ${p.rating}</span></div>
+  <div class="tactic-stats" aria-label="Ranking taktyczny"><span><small>Twój ranking Glicko-2</small><strong id="tactic-rating">1500</strong> <small id="tactic-rd">±350</small></span><span><small>Ocenione próby</small><strong id="tactic-count">0</strong></span><span><small>Skuteczność</small><strong id="tactic-accuracy">—</strong></span></div>
+  <div class="tactic-result" id="tactic-result" role="status"></div>
   <h2>${p.title}</h2>
   <div class="instruction puzzle-turn"><span class="turn-pawn ${white?'white':'black'}" aria-hidden="true">♟</span><span>${white?'Ruch białych':'Ruch czarnych'}<br>${p.text}</span></div>
   <div id="feedback" class="feedback" aria-live="polite">${state.solved.includes(id)?'To zadanie masz już rozwiązane. Powtórz je dla utrwalenia.':'Wybierz figurę i wskaż pole docelowe.'}</div>
@@ -188,6 +255,7 @@ function puzzle(id){
    <small>PPM zaznacza pole. Przeciągnij z PPM, aby narysować strzałkę. Shift daje zielony, Ctrl czerwony, a Alt niebieski. Na dotyku włącz Rysowanie.</small>
   </div>`);
  $('#next-puzzle').onclick=()=>puzzle(nextMixedPuzzle());
+ updateTacticsStats();
  $('#annotation-mode').onclick=event=>{
   drawing.enabled=!drawing.enabled;
   event.currentTarget.setAttribute('aria-pressed',String(drawing.enabled));
@@ -195,16 +263,25 @@ function puzzle(id){
  };
  $('#annotation-color').onchange=event=>{drawing.color=event.target.value};
  $('#annotation-clear').onclick=()=>boardInput.clearMarks();
- $('#hint').onclick=()=>feedback(p.hint);
+ $('#hint').onclick=()=>{context.assisted=true;recordTactic(false);feedback(p.hint+' · Próba rankingowa zakończona, możesz nadal ćwiczyć.');};
  $('#reset-exercise').onclick=()=>puzzle(id);
  $('#show-puzzle-solution').onclick=()=>{
   cancelPromotion?.();
-  const [from,to]=p.target;
-  game.move({from,to,promotion:p.promotion});
-  lastMove=[from,to];
+  recordTactic(false);
+  const initial=new Chess(context.puzzleStartFen);
+  const solution=(p.line?p.line.slice(1):[p.target.join('')+(p.promotion||'')]);
+  const moves=[];
+  for(const u of solution){
+   const m=initial.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u[4]||'q'});
+   if(!m)break;
+   moves.push(m.san);
+  }
+  game=initial;
+  const last=solution.at(-1);
+  if(last)lastMove=[last.slice(0,2),last.slice(2,4)];
   selected=null;targets=[];solvedNow=true;
   drawBoard();
-  feedback('Wyświetlono rozwiązanie. Możesz zresetować pozycję i spróbować samodzielnie.');
+  feedback('Rozwiązanie: '+moves.join(' ')+' · Nie przyznano punktów za tę próbę.');
   finishPuzzle();
  };
 }
