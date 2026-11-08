@@ -531,3 +531,40 @@ h1, h2, .hero h2 { font-weight: 700; }
 [data-palette="gray"] .board .square .coord { color: #202226; }
 [data-palette="gray"] .board .square.dark .coord { color: #fff; }
 [data-palette="gray"] dialog::backdrop { background: #111214b0; }
+
+.puzzle-board, .puzzle-art .mini-board {
+  --board-light: #e7e6d8;
+  --board-dark: #869981;
+}
+.puzzle-board .square, .puzzle-art .mini-board > span { background: var(--board-light); }
+.puzzle-board .square.dark, .puzzle-art .mini-board > span.dark { background: var(--board-dark); }
+[data-theme] .puzzle-board .square.selected { background: #f3da83; }
+.puzzle-board .square.last { box-shadow: inset 0 0 0 999px #d5c36766; }
+.puzzle-board .square .piece {
+  display: block;
+  width: 88%;
+  height: 88%;
+  filter: drop-shadow(0 2px 1px #151b1b55);
+}
+.puzzle-board .promotion-choice .piece { display: block; width: 88%; height: 88%; }
+.puzzle-board .piece svg, .drag-piece svg { display: block; width: 100%; height: 100%; }
+.puzzle-art .mini-board svg { display: block; width: 88%; height: 88%; }
+.puzzle-board.drawing-mode .square { cursor: crosshair; }
+.puzzle-drawing-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.puzzle-drawing-tools label { display: flex; align-items: center; gap: 6px; }
+.puzzle-drawing-tools select {
+  max-width: 100%;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--soft);
+  color: inherit;
+  font: inherit;
+}
+.puzzle-drawing-tools [aria-pressed="true"] { background: #b5c99e; color: #1e281f; }
+.puzzle-drawing-tools small { flex-basis: 100%; color: var(--muted); line-height: 1.5; }
+.puzzle-task-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.puzzle-task-heading > :last-child { font-size: 12px; color: var(--muted); }
+.puzzle-analysis { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+.puzzle-analysis h3 { margin: 0 0 8px; }
+.puzzle-analysis p, .puzzle-analysis a { font-size: 13px; }

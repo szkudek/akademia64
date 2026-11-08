@@ -50,5 +50,24 @@ test('right-button gestures render arrows, toggle circles and clear without maki
   fire('pointerdown',350,450);fire('pointerup',350,450);assert.equal(svg.children.length,3);
   fire('pointerdown',350,450);fire('pointerup',350,450);assert.equal(svg.children.length,2);
   fire('pointerdown',450,450,0);assert.equal(svg.children.length,0);assert.equal(moves,0);assert.equal(clicks,0);
+
+  const puzzleBoard=new El(),drawing={enabled:false,color:'blue'};
+  input.attach(puzzleBoard,{position:'puzzle',drawing,pieceAt:()=>({type:'p',color:'w'}),canDrag:()=>false,move:()=>moves++,click:()=>clicks++});
+  const draw=(type,x,y,props)=>puzzleBoard.dispatchEvent(Object.assign(new Event(type,{cancelable:true}),{
+   clientX:x,clientY:y,pointerId:1,button:2,...props
+  }));
+  const overlay=puzzleBoard.children[0];
+  draw('pointerdown',450,650);draw('pointermove',50,450,{shiftKey:true});draw('pointerup',50,450,{shiftKey:true});
+  assert.equal(overlay.children[0].attrs.stroke,'#58b56f');
+  draw('pointerdown',450,650);draw('pointerup',50,450,{ctrlKey:true});
+  assert.equal(overlay.children[0].attrs.stroke,'#e66a64');
+  draw('pointerdown',450,650);draw('pointerup',50,450,{altKey:true});
+  assert.equal(overlay.children[0].attrs.stroke,'#5ba7e6');
+  drawing.enabled=true;
+  draw('pointerdown',350,450,{button:0,pointerType:'touch'});draw('pointerup',350,450,{button:0,pointerType:'touch'});
+  assert.equal(overlay.children.at(-1).attrs.fill,'#5ba7e6');
+  assert.equal(moves,0);assert.equal(clicks,0);
+  input.clearMarks();
+  assert.equal(overlay.children.length,0);
  }finally{input.dispose();globalThis.document=previousDoc;globalThis.window=previousWindow}
 });
