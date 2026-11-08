@@ -37,14 +37,14 @@ const videosByCourse = {
   }],
 };
 
-function videoCard(video, asset, e) {
+function videoCard(video, asset, e, index) {
   const id = encodeURIComponent(video.youtubeId);
   const title = e(video.title);
   const channel = video.channelHandle
     ? `<a href="https://www.youtube.com/@${encodeURIComponent(video.channelHandle.replace(/^@/, ''))}" target="_blank" rel="noopener noreferrer">${e(video.channel)}</a>`
     : e(video.channel);
   const player = `<template><iframe class="opening-video-player" src="https://www.youtube-nocookie.com/embed/${id}" title="${title}" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></template><div class="opening-video-player-host"></div>`;
-  return `<section class="opening-video-feature">
+  return `<section class="opening-video-feature" id="opening-video-${index}"${index ? ' hidden' : ''}>
     <details class="opening-video-demo" data-youtube-player>
       <summary>
         <span class="opening-video-cover">
@@ -72,13 +72,28 @@ function videoCard(video, asset, e) {
   </section>`;
 }
 
+function videoPlaylist(videos, e) {
+  return `<details class="opening-video-playlist" open>
+    <summary>Inne materiały wideo <span>(${videos.length})</span></summary>
+    <ol>${videos.map((video, index) => `<li>
+      <button type="button" class="opening-video-choice" aria-controls="opening-video-${index}"${index ? '' : ' aria-current="true"'}>
+        <span class="opening-video-number" aria-hidden="true">${index + 1}</span>
+        <span><strong>${e(video.title)}</strong><small>${e(video.channel)}${video.duration ? ` · ${e(video.duration)}` : ''}</small></span>
+      </button>
+    </li>`).join('')}</ol>
+  </details>`;
+}
+
 function videoPreview(course, e) {
   const asset = e(new URL(`./opening-gifs/${course.id}-0`, import.meta.url).href);
   const videos = videosByCourse[course.id] ?? [];
   return `<section class="opening-section opening-videos" aria-labelledby="opening-videos-title">
     <div class="eyebrow">MATERIAŁY UZUPEŁNIAJĄCE</div>
     <h3 id="opening-videos-title">Poradniki wideo</h3>
-    ${videos.length ? `<div class="opening-video-grid">${videos.map(video => videoCard(video, asset, e)).join('')}</div>`
+    ${videos.length ? `<div class="opening-video-grid${videos.length > 1 ? ' opening-video-grid-with-playlist' : ''}">
+      <div class="opening-video-stage">${videos.map((video, index) => videoCard(video, asset, e, index)).join('')}</div>
+      ${videos.length > 1 ? videoPlaylist(videos, e) : ''}
+    </div>`
       : '<p>Poradniki wideo do tego debiutu pojawią się tutaj.</p>'}
   </section>`;
 }

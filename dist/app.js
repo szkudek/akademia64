@@ -620,6 +620,32 @@ async function opening(id){
     else host.replaceChildren();
    });
   });
+  const playlist=chapter.querySelector('.opening-video-playlist');
+  if(playlist){
+   const videos=playlist.closest('.opening-videos');
+   const compact=matchMedia('(max-width: 760px)');
+   playlist.open=!compact.matches;
+   playlist.addEventListener('click',event=>{
+    const choice=event.target.closest('.opening-video-choice');
+    if(!choice)return;
+    const previous=playlist.querySelector('[aria-current]');
+    if(previous!==choice){
+     const oldCard=videos.querySelector('#'+previous.getAttribute('aria-controls'));
+     oldCard.querySelector('[data-youtube-player]').open=false;
+     oldCard.hidden=true;
+     previous.removeAttribute('aria-current');
+     choice.setAttribute('aria-current','true');
+    }
+    const card=videos.querySelector('#'+choice.getAttribute('aria-controls'));
+    card.hidden=false;
+    const player=card.querySelector('[data-youtube-player]');
+    player.open=true;
+    if(compact.matches){
+     playlist.open=false;
+     player.querySelector('summary').focus();
+    }
+   });
+  }
   const explorer=document.createElement('details');
   explorer.className='opening-explorer';
   explorer.open=showCourseBoard;
