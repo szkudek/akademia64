@@ -576,9 +576,9 @@ h1, h2, .hero h2 { font-weight: 700; }
 .tactic-history-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px 10px;margin-bottom:13px;}
 .tactic-history-heading strong{font-size:14px;font-weight:750;color:var(--heading);}
 .tactic-history-heading span{font-size:11px;color:var(--muted);}
-.tactic-tiles{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
-.tactic-tile{display:inline-flex;align-items:center;justify-content:center;min-width:43px;height:37px;padding:0 7px;border:1px solid transparent;border-radius:8px;font-variant-numeric:tabular-nums;font-size:13px;line-height:1;font-weight:800;}
+.tactic-tiles{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.tactic-tile{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 3px;border:1px solid transparent;border-radius:5px;font-variant-numeric:tabular-nums;font-size:11px;line-height:1;font-weight:800;}
 .tactic-tile.pending{background:#e8bc4c;color:#2d250e;border-color:#f4d579;}
 .tactic-tile.correct{background:#36784c;color:#f3fff1;border-color:#5eae72;}
 .tactic-tile.incorrect{background:#a94447;color:#fff7f5;border-color:#db7478;}
-@media(max-width:500px){.tactic-history{padding:14px}.tactic-tiles{gap:6px}.tactic-tile{min-width:40px;height:35px;font-size:12px}}
+@media(max-width:500px){.tactic-history{padding:14px}}
