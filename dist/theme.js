@@ -1,22 +1,17 @@
 // Apply the saved theme before styles load, preventing a bright initial flash.
 (() => {
-  const key = 'akademia64-theme';
-  const allowed = ['light', 'dark', 'system'];
-  const system = window.matchMedia('(prefers-color-scheme: dark)');
+  const key = 'akademia64-dark-palette';
   const root = document.documentElement;
-  const normalize = value => allowed.includes(value) ? value : 'system';
-  let preference = 'system';
+  const normalize = value => value === 'dark' ? 'dark' : 'gray';
+  let preference = 'gray';
   try { preference = normalize(localStorage.getItem(key)); } catch {}
 
   function apply() {
-    const dark = preference === 'dark' || (preference === 'system' && system.matches);
-    root.dataset.theme = dark ? 'dark' : 'light';
-    root.style.colorScheme = dark ? 'dark' : 'light';
+    root.dataset.palette = preference;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = dark ? '#101a29' : '#e4ecf3';
+    if (meta) meta.content = preference === 'gray' ? '#191a1c' : '#101a29';
   }
   apply();
-  system.addEventListener('change', () => { if (preference === 'system') apply(); });
   window.addEventListener('storage', event => {
     if (event.key !== key && event.key !== null) return;
     preference = normalize(event.newValue);
