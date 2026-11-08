@@ -722,3 +722,9 @@ h1, h2, .hero h2 { font-weight: 700; }
 .tactic-tile.correct{background:#36784c;color:#f3fff1;border-color:#5eae72;}
 .tactic-tile.incorrect{background:#a94447;color:#fff7f5;border-color:#db7478;}
 @media(max-width:500px){.tactic-history{padding:14px}}
+
+.analysis-moves{display:flex;flex-wrap:wrap;gap:6px;max-height:14rem;overflow:auto;padding:4px;}
+.analysis-moves .btn{min-height:36px;padding:6px 10px;}
+.analysis-moves [aria-current]{outline:2px solid currentColor;outline-offset:-2px;}
+#analysis-file{max-width:100%;}
+#analysis-import-status{overflow-wrap:anywhere;}

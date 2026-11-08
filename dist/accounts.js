@@ -48,12 +48,21 @@ function shell(title,description){$('#account-content').innerHTML=`<div class="e
 function field(label,name,type,autocomplete,extra=''){return `<label class="account-field"><span>${label}</span><input name="${name}" type="${type}" autocomplete="${autocomplete}" required ${extra}></label>`}
 function busy(value){formBusy=value;$('#account-dialog .dialog-close').disabled=value;if(value){busyElements=[...document.querySelectorAll('#account-content button,#account-content input')].map(el=>[el,el.disabled]);for(const [el] of busyElements)el.disabled=true}else{for(const [el,disabled] of busyElements)if(el.isConnected)el.disabled=disabled;busyElements=[]}}
 async function submit(action){busy(true);try{await action()}catch(error){notify(firebaseMessage(error))}finally{busy(false);if(deferredAuth!==undefined){const next=deferredAuth;deferredAuth=undefined;observed(next)}}}
+function addProfileLink(){
+  const link=document.createElement('a');
+  link.className='text-link';
+  link.href='#profile';
+  link.textContent='Profil gracza · Osiągnięcia';
+  link.onclick=event=>{if(formBusy){event.preventDefault();return}close()};
+  $('#account-body').append(link);
+}
 function form(mode='login'){
   if(user&&mode==='login')return profile();
-  if(!service){shell('Nauka bez przeszkód','Możesz korzystać ze wszystkich lekcji i zadań jako gość.');$('#account-body').innerHTML='<div class="instruction">Nie udało się połączyć z usługą logowania. Sprawdź połączenie i spróbuj ponownie.</div><button class="btn" id="retry-accounts">Spróbuj ponownie</button><button class="text-link" id="continue-guest">Kontynuuj jako gość</button>';$('#continue-guest').onclick=close;$('#retry-accounts').onclick=()=>submit(async()=>{await connect();form('login')});return}
+  if(!service){shell('Nauka bez przeszkód','Możesz korzystać ze wszystkich lekcji i zadań jako gość.');$('#account-body').innerHTML='<div class="instruction">Nie udało się połączyć z usługą logowania. Sprawdź połączenie i spróbuj ponownie.</div><button class="btn" id="retry-accounts">Spróbuj ponownie</button><button class="text-link" id="continue-guest">Kontynuuj jako gość</button>';addProfileLink();$('#continue-guest').onclick=close;$('#retry-accounts').onclick=()=>submit(async()=>{await connect();form('login')});return}
   const register=mode==='register',reset=mode==='reset';
   shell(reset?'Odzyskaj dostęp':register?'Rozpocznij swoją podróż.':'Dobrze Cię znów widzieć.',reset?'Podaj adres swojego konta. Wyślemy link do ustawienia nowego hasła.':register?'Jedno konto, Twoje lekcje i osiągnięcia. Ucz się dalej na dowolnym urządzeniu.':'Zaloguj się, aby wrócić do swoich lekcji i postępów.');
   $('#account-body').innerHTML=`${!reset?`<div class="account-tabs" role="group" aria-label="Dostęp do konta"><button type="button" class="${!register?'active':''}" id="tab-login">Logowanie</button><button type="button" class="${register?'active':''}" id="tab-register">Załóż konto</button></div>`:''}<form id="account-form">${register?field('Jak mamy się do Ciebie zwracać?','name','text','nickname','minlength="2" maxlength="40"'):''}${field('Adres e-mail','email','email','email','maxlength="254"')}${!reset?`${field('Hasło','password','password',register?'new-password':'current-password',register?'minlength="12" maxlength="256"':'maxlength="256"')}<label class="account-check"><input type="checkbox" id="show-password"> Pokaż hasło</label>`:''}${register?`<p class="field-help">Minimum 12 znaków. Możesz używać spacji i długiej frazy.</p>${field('Powtórz hasło','passwordConfirm','password','new-password','minlength="12" maxlength="256"')}`:''}<button class="btn account-submit" type="submit">${reset?'Wyślij link do zmiany hasła':register?'Utwórz konto':'Zaloguj się'} <span>→</span></button></form>${!register&&!reset?'<button class="text-link" id="forgot-password">Nie pamiętam hasła</button>':''}<p class="account-footnote">${register?'Po rejestracji potwierdź swój adres e-mail, aby włączyć zapis postępów na koncie.':'Możesz też uczyć się bez konta. Postępy gościa są przechowywane osobno.'}</p><button class="text-link" id="guest-back">${reset?'← Wróć do logowania':'Kontynuuj bez logowania'}</button>`;
+  if(!reset)addProfileLink();
   if(!reset){$('#tab-login').onclick=()=>form('login');$('#tab-register').onclick=()=>form('register')}
   $('#guest-back').onclick=()=>reset?form('login'):close();if($('#forgot-password'))$('#forgot-password').onclick=()=>form('reset');
   if($('#show-password'))$('#show-password').onchange=e=>{document.querySelectorAll('#account-form input[name^="password"]').forEach(i=>i.type=e.target.checked?'text':'password')};
@@ -70,6 +79,7 @@ function form(mode='login'){
 function profile(){
   shell('Twoja akademia.','Twoje konto, Twoje tempo nauki.');
   $('#account-body').innerHTML='<div class="account-profile"><div class="avatar" id="profile-avatar"></div><div><strong id="profile-name"></strong><span id="profile-email"></span></div></div><div id="verification-panel"></div><div class="instruction" id="account-sync"></div><button class="btn outline" id="refresh-progress">Odśwież zapis</button><div id="guest-import"></div><div class="account-profile-actions"><button class="btn" id="account-continue">Wróć do nauki →</button><button class="text-link" id="account-logout">Wyloguj się</button></div><div class="account-danger"><button class="text-link" id="delete-account">Usuń konto</button></div>';
+  addProfileLink();
   $('#profile-name').textContent=user.name;$('#profile-email').textContent=user.email;$('#profile-avatar').textContent=[...user.name][0].toUpperCase();updateUI();
   if(!user.verified){
     $('#verification-panel').innerHTML='<div class="account-verification"><h3>Potwierdź swój e-mail.</h3><p>Aby zapisywać postępy na koncie, otwórz link w wiadomości weryfikacyjnej. Do tego czasu możesz uczyć się dalej — postępy zostają na tym urządzeniu.</p><button class="btn outline" id="send-verification">Wyślij link potwierdzający</button><button class="text-link" id="check-verification">Adres już potwierdzony — sprawdź</button><p id="verification-message" role="status"></p></div>';

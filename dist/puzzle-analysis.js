@@ -1,6 +1,7 @@
 import { Chess } from './vendor/chess.js';
 
-export function analyzePuzzle(fen, {signal, onResult, onError}){
+export function analyzePuzzle(fen, {signal, onResult, onError, startFen=fen, moves=[], whitePerspective=false}){
+ if(signal.aborted)return;
  let worker;
  try{
   worker=new Worker(new URL('./vendor/stockfish/stockfish-19-lite-single.js',import.meta.url));
@@ -22,7 +23,7 @@ export function analyzePuzzle(fen, {signal, onResult, onError}){
  let analysis;
  worker.onmessage=({data})=>{
   if(data==='uciok'){
-   worker.postMessage('position fen '+fen);
+   worker.postMessage('position fen '+startFen+(moves.length?' moves '+moves.join(' '):''));
    worker.postMessage('go depth 15 movetime 1500');
    return;
   }
@@ -33,18 +34,21 @@ export function analyzePuzzle(fen, {signal, onResult, onError}){
   if(!analysis){onError();return}
 
   const [,depth,kind,score,pv]=analysis;
-  const replay=new Chess(fen),moves=[];
+  const replay=new Chess(fen),lineMoves=[];
   for(const uci of pv.trim().split(/\s+/).slice(0,6)){
    try{
-    moves.push(replay.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]}).san);
+    lineMoves.push(replay.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]}).san);
    }catch{break}
   }
-  if(!moves.length){onError();return}
+  if(!lineMoves.length){onError();return}
   const value=Number(score);
-  const evaluation=kind==='mate'
+  const whiteScore=value*(fen.split(' ')[1]==='w'?1:-1);
+  const evaluation=whitePerspective
+   ? (kind==='mate'?`Mat dla ${whiteScore>0?'białych':'czarnych'} w ${Math.abs(value)}`:new Intl.NumberFormat('pl',{signDisplay:'exceptZero',maximumFractionDigits:2}).format(whiteScore/100))
+   : kind==='mate'
    ? (value>0?`Mat w ${value}`:`Przeciwnik matuje w ${Math.abs(value)}`)
    : new Intl.NumberFormat('pl',{signDisplay:'exceptZero',maximumFractionDigits:2}).format(value/100);
-  onResult(`${evaluation} · głębokość ${depth}. Linia: ${moves.join(' ')}.`);
+  onResult(`${evaluation} · głębokość ${depth}. Linia: ${lineMoves.join(' ')}.`);
  };
  worker.postMessage('uci');
 }
