@@ -7,9 +7,10 @@ function modifierColor(e, fallback){
  if(e.altKey)return 'blue';
  return fallback;
 }
-export function squareAt(rect,x,y){
+export function squareAt(rect,x,y,flipped=false){
  if(x<rect.left||y<rect.top||x>=rect.right||y>=rect.bottom)return null;
- return 'abcdefgh'[Math.floor((x-rect.left)/rect.width*8)]+(8-Math.floor((y-rect.top)/rect.height*8));
+ const col=Math.floor((x-rect.left)/rect.width*8),row=Math.floor((y-rect.top)/rect.height*8);
+ return 'abcdefgh'[flipped?7-col:col]+(flipped?row+1:8-row);
 }
 export function pieceArrowAllowed(piece,from,to){
  if(!piece||from===to)return true;
@@ -35,20 +36,21 @@ export function arrowPoints(from,to){
 export function createBoardInput(){
  let marks=[],key=null,cleanup=()=>{},clearMarks=()=>{};
  const reset=()=>{cleanup();marks=[];key=null};
- function attach(board,{position,canDrag,move,click,pieceAt=()=>null,playerColor='w',drawing}){
+ function attach(board,{position,canDrag,move,click,pieceAt=()=>null,playerColor='w',drawing,flipped=false}){
   cleanup();if(key!==position){marks=[];key=position}
   const abort=new AbortController(),signal=abort.signal;let gesture=null,suppressClick=false;
   const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 8 8');svg.setAttribute('class','board-annotations');svg.setAttribute('aria-hidden','true');board.append(svg);
   const node=(tag,attrs)=>{const el=document.createElementNS(NS,tag);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,v);svg.append(el);return el};
   function paint(preview){
+   const orient=([x,y])=>flipped?[8-x,8-y]:[x,y];
    svg.replaceChildren();for(const m of [...marks,...(preview?[preview]:[])]){
-    const color=(drawing?drawingColors:colors)[m.color],a=center(m.from);
+    const color=(drawing?drawingColors:colors)[m.color],a=orient(center(m.from));
     if(m.from===m.to){
      if(drawing)node('rect',{x:a[0]-.5,y:a[1]-.5,width:1,height:1,fill:color,opacity:.42});
      else node('circle',{cx:a[0],cy:a[1],r:.39,fill:'none',stroke:color,'stroke-width':.095,opacity:.88});
      continue;
     }
-    const pts=drawing?[a,center(m.to)]:arrowPoints(m.from,m.to),b=pts.at(-1),prev=pts.at(-2),angle=Math.atan2(b[1]-prev[1],b[0]-prev[0]),ux=Math.cos(angle),uy=Math.sin(angle),tip=[b[0]-.05*ux,b[1]-.05*uy],base=[b[0]-.38*ux,b[1]-.38*uy];
+    const pts=(drawing?[center(m.from),center(m.to)]:arrowPoints(m.from,m.to)).map(orient),b=pts.at(-1),prev=pts.at(-2),angle=Math.atan2(b[1]-prev[1],b[0]-prev[0]),ux=Math.cos(angle),uy=Math.sin(angle),tip=[b[0]-.05*ux,b[1]-.05*uy],base=[b[0]-.38*ux,b[1]-.38*uy];
     const path=[...pts.slice(0,-1),base].map((p,i)=>`${i?'L':'M'}${p[0]} ${p[1]}`).join(' ');
     node('path',{d:path,fill:'none',stroke:color,'stroke-width':.16,'stroke-linecap':'round','stroke-linejoin':'round',opacity:.85});
     node('polygon',{points:[tip,[base[0]-.23*uy,base[1]+.23*ux],[base[0]+.23*uy,base[1]-.23*ux]].map(p=>p.join(',')).join(' '),fill:color,opacity:.9});
@@ -64,7 +66,7 @@ export function createBoardInput(){
    if(!pieceArrowAllowed(g.piece,g.from,to))return null;
    return {from:g.from,to,color:pieceAnnotationColor(g.piece,playerColor,to===g.from)};
   }
-  const hit=e=>squareAt(board.getBoundingClientRect(),e.clientX,e.clientY);
+  const hit=e=>squareAt(board.getBoundingClientRect(),e.clientX,e.clientY,flipped);
   function clearGesture(){if(gesture){gesture.ghost?.remove();gesture.source?.classList.remove('drag-origin');board.querySelector('.drop-hover')?.classList.remove('drop-hover');try{board.releasePointerCapture(gesture.id)}catch{}gesture=null}board.classList.remove('dragging')}
   cleanup=()=>{clearGesture();abort.abort();clearMarks=()=>{}};
   board.addEventListener('contextmenu',e=>e.preventDefault(),{signal});board.addEventListener('dragstart',e=>e.preventDefault(),{signal});
