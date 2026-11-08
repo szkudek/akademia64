@@ -97,14 +97,48 @@ function home(){
 function earned(i){return units[i].lessons.every((l,j)=>state.done.includes(`${i}-${j}`))}function earnedCount(){return units.filter((u,i)=>earned(i)).length}
 function learn(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">TWOJA ŚCIEŻKA</div><h1>Małe kroki. Solidne podstawy.</h1><p>Od pierwszego ruchu do samodzielnej partii. Idź po kolei lub wybierz temat, który Cię ciekawi.</p></div><div class="map-summary"><div><h3>Od zera do pierwszej partii</h3><p>${state.done.length} z ${all.length} lekcji · ${units.length} etapów</p></div><div><div class="progress-label"><span>Twój postęp</span><span>${progress()}%</span></div><div class="progress"><span style="width:${progress()}%"></span></div></div></div><div class="units">${units.map((u,i)=>`<section class="unit"><div class="unit-header"><div class="unit-emblem">${u.icon}</div><div><div class="eyebrow">ETAP 0${i+1}</div><h2>${u.title}</h2></div></div>${u.lessons.map((l,j)=>`<a class="lesson-link ${state.done.includes(`${i}-${j}`)?'done':''}" href="#lesson/${i}-${j}"><span class="lesson-status">${state.done.includes(`${i}-${j}`)?'✓':j+1}</span><span>${l.title}</span><small>${l.type==='game'?'Partia':'5–8 min'} &nbsp; →</small></a>`).join('')}<div class="badge-row">✧ &nbsp; ${earned(i)?'Zdobyta odznaka:':'Odznaka etapu:'} ${u.badge}</div></section>`).join('')}</div>`}
 let game=null,selected=null,targets=[],lastMove=null,context=null,solvedNow=false,aiTimer=null,gameToken=0,openingStep=0,openingMode='show',hintCount=0;
-function boardHTML(g){
+function boardHTML(g,highlight=lastMove){
 const flipped=context?.flipped;
 const position=g.board();
-return `<div class="board ${context?.kind==='puzzle'?'puzzle-board':''}" role="group" aria-label="Interaktywna szachownica">${position.flatMap((row,viewRow)=>row.map((_,viewCol)=>{const r=flipped?7-viewRow:viewRow,c=flipped?7-viewCol:viewCol,p=position[r][c];const sq='abcdefgh'[c]+(8-r);return `<button class="square ${(r+c)%2?'dark':''} ${selected===sq?'selected':''} ${targets.includes(sq)&&(context?.kind!=='play'||$('#show-targets')?.checked!==false)?'target':''} ${lastMove?.includes(sq)?'last':''}" data-square="${sq}" aria-label="${sq}${p?`, ${p.color==='w'?'biały':'czarny'} ${names[p.type]}`:', puste pole'}">${p?`<span class="piece ${p.color==='w'?'white':''}">${context?.kind==='puzzle'?puzzlePiece(p.type,p.color):icons[p.type]}</span>`:''}${viewCol===0?`<span class="coord rank">${8-r}</span>`:''}${viewRow===7?`<span class="coord">${'abcdefgh'[c]}</span>`:''}</button>`})).join('')}</div>`}
-function canDragPiece(sq){if(solvedNow||!game||!context)return false;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return false;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return false;if(context.kind==='lesson'&&['square','quiz','game'].includes(context.item.type))return false;return game.get(sq)?.color===game.turn()}
-function drawBoard(){if(!$('#board-host'))return;$('#board-host').innerHTML=boardHTML(game);boardInput.attach($('#board-host .board'),{position:game.fen(),flipped:context?.flipped,drawing:context?.drawing,pieceAt:sq=>game.get(sq),playerColor:context?.kind==='play'?'w':game.turn(),canDrag:canDragPiece,click:clickSquare,move:(from,to)=>{if(!canDragPiece(from))return;selected=from;targets=game.moves({square:from,verbose:true}).map(m=>m.to);clickSquare(to)}})}
+return `<div class="board ${context?.kind==='puzzle'?'puzzle-board':''}" role="group" aria-label="Interaktywna szachownica">${position.flatMap((row,viewRow)=>row.map((_,viewCol)=>{const r=flipped?7-viewRow:viewRow,c=flipped?7-viewCol:viewCol,p=position[r][c];const sq='abcdefgh'[c]+(8-r);return `<button class="square ${(r+c)%2?'dark':''} ${selected===sq?'selected':''} ${targets.includes(sq)&&(context?.kind!=='play'||$('#show-targets')?.checked!==false)?'target':''} ${highlight?.includes(sq)?'last':''}" data-square="${sq}" aria-label="${sq}${p?`, ${p.color==='w'?'biały':'czarny'} ${names[p.type]}`:', puste pole'}">${p?`<span class="piece ${p.color==='w'?'white':''}">${context?.kind==='puzzle'?puzzlePiece(p.type,p.color):icons[p.type]}</span>`:''}${viewCol===0?`<span class="coord rank">${8-r}</span>`:''}${viewRow===7?`<span class="coord">${'abcdefgh'[c]}</span>`:''}</button>`})).join('')}</div>`}
+function canDragPiece(sq){if(solvedNow||!game||!context||context.reviewPly!=null)return false;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return false;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return false;if(context.kind==='lesson'&&['square','quiz','game'].includes(context.item.type))return false;return game.get(sq)?.color===game.turn()}
+function drawBoard(){
+ if(!$('#board-host'))return;
+ const preview=context?.positions?.[context.reviewPly];
+ const boardGame=preview?new Chess(preview.fen):game;
+ $('#board-host').innerHTML=preview?boardHTML(boardGame,preview.move):boardHTML(boardGame);
+ if(context?.kind==='puzzle')updatePuzzleNavigation();
+ boardInput.attach($('#board-host .board'),{position:boardGame.fen(),flipped:context?.flipped,drawing:context?.drawing,pieceAt:sq=>boardGame.get(sq),playerColor:context?.kind==='play'?'w':game.turn(),canDrag:canDragPiece,click:clickSquare,move:(from,to)=>{if(!canDragPiece(from))return;selected=from;targets=game.moves({square:from,verbose:true}).map(m=>m.to);clickSquare(to)}})}
 function setupBoard(fen){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.reset();game=fen==='start'?new Chess():new Chess(fen);selected=null;targets=[];lastMove=null;solvedNow=false}
-function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':'Moja akademia'}</a><div class="practice-layout"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div><div id="board-host"></div><div class="board-label bottom"><span id="board-bottom">${bottom}</span>${context.kind==='puzzle'?'<button class="puzzle-flip-button" id="flip-puzzle-board" type="button" aria-label="Odwróć szachownicę" aria-pressed="false" title="Odwróć szachownicę"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4 9a8 8 0 0 1 13.7-3.8L20 7.5M20 3v4.5h-4.5M20 15a8 8 0 0 1-13.7 3.8L4 16.5M4 21v-4.5h4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="8" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.25"/><path d="M8 8h4v4H8zm4 4h4v4h-4z" fill="currentColor"/></svg></button>':'<span>AKADEMIA 64</span>'}</div></section><section class="lesson-panel">${panel}</section></div>`;drawBoard()}
+function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':'Moja akademia'}</a><div class="practice-layout"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div><div id="board-host"></div><div class="board-label bottom"><span id="board-bottom">${bottom}</span>${context.kind==='puzzle'?puzzleBoardControls():'<span>AKADEMIA 64</span>'}</div></section><section class="lesson-panel">${panel}</section></div>`;drawBoard()}
+const puzzleNavigation=[
+ ['first','Do początku','M6 5v14M18 6l-6 6 6 6'],
+ ['previous','Ruch wstecz','M15 6l-6 6 6 6'],
+ ['next','Ruch naprzód','M9 6l6 6-6 6'],
+ ['last','Do końca','M18 5v14M6 6l6 6-6 6']
+];
+function puzzleBoardControls(){
+ const navigation=puzzleNavigation.map(([action,label,path])=>`<button class="puzzle-board-button" type="button" data-puzzle-nav="${action}" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="${path}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`).join('');
+ return `<div class="puzzle-board-controls" role="group" aria-label="Sterowanie szachownicą">${navigation}<button class="puzzle-board-button" id="flip-puzzle-board" type="button" aria-label="Odwróć szachownicę" aria-pressed="false" title="Odwróć szachownicę"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4 9a8 8 0 0 1 13.7-3.8L20 7.5M20 3v4.5h-4.5M20 15a8 8 0 0 1-13.7 3.8L4 16.5M4 21v-4.5h4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="8" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.25"/><path d="M8 8h4v4H8zm4 4h4v4h-4z" fill="currentColor"/></svg></button></div>`;
+}
+function updatePuzzleNavigation(){
+ const last=context.positions.length-1;
+ const current=context.reviewPly??last;
+ for(const [action] of puzzleNavigation){
+  $('[data-puzzle-nav="'+action+'"]').disabled=action==='first'||action==='previous'?current===0:current===last;
+ }
+ $('#board-bottom').textContent=context.reviewPly==null?context.turnLabel:`Pozycja ${current} z ${last}`;
+}
+function showPuzzlePosition(action){
+ const last=context.positions.length-1;
+ const current=context.reviewPly??last;
+ const destination={first:0,previous:current-1,next:current+1,last}[action];
+ if(destination<0||destination>last||destination===current)return;
+ cancelPromotion?.();
+ selected=null;targets=[];
+ context.reviewPly=destination===last?null:destination;
+ drawBoard();
+}
 function feedback(text,kind=''){const el=$('#feedback');if(el){el.textContent=text;el.className='feedback '+kind}}
 function lesson(id){const l=all.find(x=>x.id===id);if(!l){location.hash='learn';return}context={kind:'lesson',item:l};hintCount=0;setupBoard(l.fen);practiceShell(`<div class="eyebrow">ETAP ${l.ui+1} · ${units[l.ui].title}</div><div class="lesson-counter">Lekcja ${all.indexOf(l)+1} z ${all.length}<div class="progress"><span style="width:${(all.indexOf(l)+1)/all.length*100}%"></span></div></div><h2>${l.title}</h2><p>${l.text}</p>${l.type==='quiz'?`<div class="instruction">${l.question}</div><div class="quiz-options">${l.options.map((o,i)=>`<button class="quiz-option" data-answer="${i}">${o}</button>`).join('')}</div>`:`<div class="instruction">${l.task}</div>`}<div id="feedback" class="feedback">${state.done.includes(id)?'Ta lekcja jest już ukończona. Możesz ją powtórzyć.':l.type==='quiz'?'Wybierz odpowiedź.':l.type==='game'?'Twoja pierwsza pełna partia czeka.':'Spróbuj samodzielnie. W razie potrzeby skorzystaj z podpowiedzi.'}</div><div class="lesson-actions">${l.type==='game'?`<a class="btn" href="#play">Rozpocznij partię →</a>`:`<button class="btn" id="next-lesson" hidden>Dalej →</button>${l.type!=='quiz'?'<button class="btn outline" id="hint">Podpowiedź</button>':''}<button class="text-link" id="reset-exercise">Od początku</button>`}</div>`,l.type==='quiz'?'Spójrz na pozycję':'Twoja lekcja',l.fen.includes(' b ')?'Czarne · analiza pozycji':'Białe · ćwiczenie');
 if(l.type==='quiz')document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{if(solvedNow)return;if(+b.dataset.answer===l.answer){b.classList.add('correct');success(l.explain)}else feedback('To jeszcze nie ta odpowiedź. Spójrz ponownie na wyjaśnienie i spróbuj jeszcze raz.','error')});if($('#hint'))$('#hint').onclick=()=>{hintCount++;feedback(l.hint);};if($('#reset-exercise'))$('#reset-exercise').onclick=()=>lesson(id);
@@ -131,7 +165,7 @@ function promotionFor(from,to){
  });
 }
 
-async function clickSquare(sq){if(cancelPromotion)return;if(solvedNow||!game)return;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return;
+async function clickSquare(sq){if(cancelPromotion)return;if(solvedNow||!game||context?.reviewPly!=null)return;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return;
 if(context.item?.type==='square'){if(sq===context.item.target)success('Dokładnie! h1 to jasny prawy dolny narożnik.');else feedback('Sprawdź literę kolumny i numer rzędu. Poszukaj pola h1.','error');return}
 if(context.kind==='lesson'&&['quiz','game'].includes(context.item.type))return;
 if(selected){const from=selected;const moves=game.moves({square:from,verbose:true});if(moves.some(m=>m.to===sq)){const activeGame=game,activeContext=context;const promotion=await promotionFor(from,sq);if(game!==activeGame||context!==activeContext)return;if(promotion===null)return;const move={from,to:sq,promotion};if(context.kind==='puzzle'){
@@ -148,6 +182,7 @@ if(selected){const from=selected;const moves=game.moves({square:from,verbose:tru
  const played=game.move(move);
  if(!played)return;
  lastMove=[from,sq];selected=null;targets=[];
+ ctx.positions.push({fen:game.fen(),move:lastMove});
  if(!ctx.item.line||ctx.step===ctx.item.line.length-1){
   recordTactic(!ctx.assisted&&!ctx.failed);
   success(game.isCheckmate()?'Mat! Pełna kontynuacja rozwiązana.':'Świetnie! Cała kombinacja została rozwiązana.');
@@ -155,7 +190,9 @@ if(selected){const from=selected;const moves=game.moves({square:from,verbose:tru
   ctx.step++;
   const answer=ctx.item.line[ctx.step],reply=game.move({from:answer.slice(0,2),to:answer.slice(2,4),promotion:answer[4]||'q'});
   if(!reply){feedback('Błąd danych zadania — odpowiedź przeciwnika jest nielegalna.','error');return}
-  lastMove=[reply.from,reply.to];ctx.step++;drawBoard();
+  lastMove=[reply.from,reply.to];
+  ctx.positions.push({fen:game.fen(),move:lastMove});
+  ctx.step++;drawBoard();
   feedback('Dobrze! Przeciwnik odpowiedział '+reply.san+'. Znajdź kolejny ruch.');
  }
  return;
@@ -354,6 +391,8 @@ function puzzle(id){
   lastMove=[openingMove.from,openingMove.to];
  }
  context.puzzleStartFen=game.fen();
+ context.positions=[{fen:context.puzzleStartFen,move:lastMove}];
+ context.turnLabel=game.turn()==='w'?'Białe · Twój ruch':'Czarne · Twój ruch';
  const index=puzzles.indexOf(p);
  const white=game.turn()==='w';
  practiceShell(`
@@ -373,7 +412,7 @@ function puzzle(id){
    <p id="puzzle-answer">Rozwiąż zadanie lub pokaż rozwiązanie, aby zobaczyć analizę.</p>
    <p id="stockfish-result" role="status"></p>
    <a href="https://github.com/nmrugg/stockfish.js/tree/v19.0.1">Źródła Stockfish.js 19.0.1 (GPLv3)</a>
-  </section>`, 'Pozycja treningowa',white?'Białe · Twój ruch':'Czarne · Twój ruch');
+  </section>`, 'Pozycja treningowa',context.turnLabel);
 
  main.querySelector('.board-card').insertAdjacentHTML('beforeend',`
   <section class="tactic-history" aria-label="Historia punktów z ostatnich zadań">
@@ -383,6 +422,9 @@ function puzzle(id){
    </div>
    <div class="tactic-tiles" id="tactic-tiles" aria-live="polite"></div>
   </section>`);
+ for(const [action] of puzzleNavigation){
+  $('[data-puzzle-nav="'+action+'"]').onclick=()=>showPuzzlePosition(action);
+ }
  $('#flip-puzzle-board').onclick=event=>{
   cancelPromotion?.();
   context.flipped=!context.flipped;
@@ -399,14 +441,16 @@ function puzzle(id){
   const initial=new Chess(context.puzzleStartFen);
   const solution=(p.line?p.line.slice(1):[p.target.join('')+(p.promotion||'')]);
   const moves=[];
+  context.positions.length=1;
+  context.reviewPly=null;
   for(const u of solution){
    const m=initial.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u[4]||'q'});
    if(!m)break;
    moves.push(m.san);
+   context.positions.push({fen:initial.fen(),move:[m.from,m.to]});
   }
   game=initial;
-  const last=solution.at(-1);
-  if(last)lastMove=[last.slice(0,2),last.slice(2,4)];
+  lastMove=context.positions.at(-1).move;
   selected=null;targets=[];solvedNow=true;
   drawBoard();
   feedback('Rozwiązanie: '+moves.join(' ')+' · Nie przyznano punktów za tę próbę.');
