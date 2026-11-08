@@ -1,9 +1,9 @@
 // Apply the saved theme before styles load, preventing a bright initial flash.
 (() => {
-  const key = 'akademia64-theme';
+  const key = 'akademia64-dark-palette';
   const root = document.documentElement;
-  const normalize = value => value === 'gray' ? 'gray' : 'dark';
-  let preference = 'dark';
+  const normalize = value => value === 'dark' ? 'dark' : 'gray';
+  let preference = 'gray';
   try { preference = normalize(localStorage.getItem(key)); } catch {}
 
   function apply() {
