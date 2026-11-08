@@ -1,6 +1,7 @@
 // Glicko-2: ranking treningowy Akademia64, skala zbliżona do Lichess.
 const SCALE=173.7178, TAU=0.5;
-const init=()=>({rating:1500,rd:350,vol:0.06});
+export const STARTING_RATING=700;
+const init=()=>({rating:STARTING_RATING,rd:350,vol:0.06});
 const f=(x,delta,phi,v,a)=>Math.exp(x)*(delta*delta-phi*phi-v-Math.exp(x))/(2*Math.pow(phi*phi+v+Math.exp(x),2))-(x-a)/(TAU*TAU);
 export function ratePuzzle(state,puzzleRating,success){
  const input=state||init();let mu=(input.rating-1500)/SCALE, phi=Math.max(30,Math.min(350,input.rd))/SCALE;
