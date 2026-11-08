@@ -31,6 +31,7 @@ function fixture(){
  return {auth,a,d,account,records,calls,service:createFirebaseService({auth,db:{},authSDK:a,dbSDK:d})};
 }
 const p={done:['0-0'],solved:['mate1'],days:['2026-11-02'],games:1};
+const normalizedProgress={...p,tactics:[],corrections:[]};
 test('registration uses Firebase without storing passwords or automatically sending mail',async()=>{
  const {service,auth,calls}=fixture();
  const result=await service.register({email:' learner@example.test ',password:'Test password phrase',name:' Szachista '});
@@ -41,7 +42,7 @@ test('registration uses Firebase without storing passwords or automatically send
 });
 test('only the current, verified account reads or writes its progress',async()=>{
  const {service,auth,account,calls}=fixture();auth.currentUser=account('alice');
- await service.saveProgress('alice',p);assert.deepEqual(await service.getProgress('alice'),p);
+ await service.saveProgress('alice',p);assert.deepEqual(await service.getProgress('alice'),normalizedProgress);
  await assert.rejects(service.getProgress('bob'),{code:'account/changed'});
  auth.currentUser=account('bob');assert.deepEqual(await service.getProgress('bob'),emptyProgress());
  await assert.rejects(service.saveProgress('alice',p),{code:'account/changed'});
@@ -66,7 +67,7 @@ test('password recovery uses Firebase email, does not disclose unknown addresses
 });
 test('progress filters invalid ids, keeps unique achievements and is stable across merges',()=>{
  const result=normalizeProgress({done:['0-0','0-0','injected'],solved:['mate1','x'],games:-1,days:['2026-11-02','x']});
- assert.deepEqual(result,{...p,games:0});assert.deepEqual(mergeProgress(result,result),result);assert.ok(sameProgress(result,result));
+ assert.deepEqual(result,{...normalizedProgress,games:0});assert.deepEqual(mergeProgress(result,result),result);assert.ok(sameProgress(result,result));
 });
 test('the published root entry references dist assets and targets only the academy Firebase project',async()=>{
  const root=await readFile(new URL('../index.html',import.meta.url),'utf8');const dist=await readFile(new URL('../dist/index.html',import.meta.url),'utf8');
@@ -94,5 +95,5 @@ test('a failed final Firebase deletion restores the saved progress',async()=>{
  const f=fixture();f.auth.currentUser=f.account('alice');await f.service.saveProgress('alice',p);
  f.a.deleteUser=async()=>{throw Object.assign(new Error(),{code:'auth/network-request-failed'})};
  await assert.rejects(f.service.deleteAccount('correct password'),{code:'auth/network-request-failed'});
- assert.deepEqual(await f.service.getProgress('alice'),p);assert.equal(f.auth.currentUser.uid,'alice');
+ assert.deepEqual(await f.service.getProgress('alice'),normalizedProgress);assert.equal(f.auth.currentUser.uid,'alice');
 });
