@@ -1,9 +1,9 @@
-import { loadFirebase,firebaseMessage } from './firebase-service.js';
-import { emptyProgress,normalizeProgress,mergeProgress,sameProgress } from './progress.js';
+import { loadFirebase,firebaseMessage } from './firebase-service.js?v=20261108-corrections';
+import { emptyProgress,normalizeProgress,mergeProgress,sameProgress } from './progress.js?v=20261108-corrections';
 const guestKey='akademia64-v1';
 const $=selector=>document.querySelector(selector);
 function read(key){try{return normalizeProgress(JSON.parse(localStorage.getItem(key)||'null'))}catch{return emptyProgress()}}
-const hasProgress=p=>p.done.length||p.solved.length||p.games;
+const hasProgress=p=>p.done.length||p.solved.length||p.games||p.tactics.length||p.corrections.length;
 let deleting=false;
 let service=null,user=null,ready=false,onProgress=()=>{},timer,pending=null,saving=false,generation=0,syncState='',formBusy=false,busyElements=[],deferredAuth;
 function key(){return user?`akademia64-user-${user.id}`:guestKey}

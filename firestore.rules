@@ -9,11 +9,12 @@ service cloud.firestore {
     function validProgress() {
       let p = request.resource.data;
       return p.keys().hasAll(['done', 'solved', 'days', 'games', 'updatedAt'])
-        && p.keys().hasOnly(['done', 'solved', 'days', 'games', 'updatedAt'])
+        && p.keys().hasOnly(['done', 'solved', 'days', 'games', 'updatedAt', 'tactics', 'corrections'])
         && p.done is list && p.done.size() <= 19
         && p.done.hasOnly(['0-0','0-1','0-2','1-0','1-1','1-2','1-3','2-0','2-1','2-2','3-0','3-1','3-2','3-3','4-0','4-1','4-2','5-0','5-1'])
-        && p.solved is list && p.solved.size() <= 6
-        && p.solved.hasOnly(['mate1','hanging','backrank','forkreal','promotion','bishop'])
+        && p.solved is list && p.solved.size() <= 5000
+        && p.get('tactics', []) is list && p.get('tactics', []).size() <= 5000
+        && p.get('corrections', []) is list && p.get('corrections', []).size() <= 5000
         && p.days is list && p.days.size() <= 5000
         && p.games is int && p.games >= 0 && p.games <= 1000000
         && p.updatedAt == request.time;

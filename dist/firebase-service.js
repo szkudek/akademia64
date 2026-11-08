@@ -1,5 +1,5 @@
 import { firebaseConfig } from './firebase-config.js';
-import { emptyProgress,normalizeProgress,mergeProgress } from './progress.js';
+import { emptyProgress,normalizeProgress,mergeProgress } from './progress.js?v=20261108-corrections';
 
 const SDK='https://www.gstatic.com/firebasejs/13.1.0/';
 export async function loadFirebase(){
