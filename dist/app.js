@@ -158,6 +158,66 @@ if(context.kind==='opening'){const expected=new Chess(game.fen());const m=expect
 if(context.kind==='play'){game.move(move);lastMove=[from,sq];selected=null;targets=[];activity();drawBoard();updateGame();if(!game.isGameOver())scheduleAI();return}}
 }
 const p=game.get(sq);if(p&&p.color===game.turn()){selected=sq;targets=game.moves({square:sq,verbose:true}).map(m=>m.to)}else{selected=null;targets=[]}drawBoard()}
+let lichessIndex=null;
+let puzzleIndexLoading=null;
+const loadedPuzzleShards=new Set();
+let sinceShardLoad=100;
+let mixedRequest=0;
+async function loadPuzzleIndex(){
+ if(lichessIndex)return lichessIndex;
+ if(!puzzleIndexLoading)puzzleIndexLoading=fetch('dist/puzzle-index.json').then(r=>{
+  if(!r.ok)throw Error('Baza zadań jest jeszcze przygotowywana.');
+  return r.json();
+ }).then(data=>{
+  if(!data||data.count!==100000||!Array.isArray(data.shards))throw Error('Niepoprawny indeks bazy zadań.');
+  lichessIndex=data;
+  return data;
+ }).finally(()=>{puzzleIndexLoading=null;});
+ return puzzleIndexLoading;
+}
+async function fetchPuzzleShard(){
+ const index=await loadPuzzleIndex();
+ const unused=index.shards.filter(item=>!loadedPuzzleShards.has(item.file));
+ if(!unused.length)return false;
+ const rating=ratingFromAttempts(state.tactics).rating;
+ const ordered=unused.map(item=>({...item,distance:rating<item.min?item.min-rating:rating>item.max?rating-item.max:0}))
+  .sort((a,b)=>a.distance-b.distance);
+ const options=ordered.slice(0,Math.min(8,ordered.length));
+ const shard=options[Math.floor(Math.random()*options.length)];
+ const response=await fetch('dist/puzzles/'+encodeURIComponent(shard.file));
+ if(!response.ok)throw Error('Nie udało się pobrać paczki zadań.');
+ const rows=await response.json();
+ if(!Array.isArray(rows)||rows.length!==shard.count)throw Error('Uszkodzona paczka zadań.');
+ const existing=new Set(puzzles.map(p=>p.id));
+ for(const row of rows){
+  if(!Array.isArray(row)||row.length!==5||typeof row[0]!=='string'||typeof row[2]!=='string')continue;
+  const id='li_'+row[0];
+  if(existing.has(id))continue;
+  const themes=row[4].split(' ');
+  puzzles.push({id,source:'lichess',title:'Znajdź najlepszą kontynuację',
+   category:themes.map(t=>themesPL[t]).find(Boolean)||'Taktyka',
+   rating:row[3],fen:row[1],line:row[2].split(' '),
+   text:'Znajdź i wykonaj całą kombinację. Przeciwnik odpowie automatycznie.',
+   hint:'Sprawdź najpierw szachy, bicia i groźby.'});
+ }
+ loadedPuzzleShards.add(shard.file);
+ sinceShardLoad=0;
+ return true;
+}
+async function openMixedPuzzle(){
+ const token=++mixedRequest;
+ const previous=location.hash;
+ if(!lichessIndex||sinceShardLoad>=16){
+  if(previous==='#puzzles'||previous===''||previous==='#home'){
+   main.innerHTML='<div class="page-intro"><h1>Miszmasz</h1><p role="status">Dobieranie zadania do Twojego rankingu…</p></div>';
+  }
+  try{await fetchPuzzleShard();}
+  catch(error){console.warn('Baza zadań:',error);/* zachowaj dotychczasowe zadania */ }
+ }
+ if(token!==mixedRequest||location.hash!==previous)return;
+ sinceShardLoad++;
+ puzzle(nextMixedPuzzle());
+}
 let recentlySeenPuzzles=[];
 function nextMixedPuzzle(){
  const p=choosePuzzle(puzzles,state.tactics,recentlySeenPuzzles);
@@ -254,7 +314,7 @@ function puzzle(id){
    <button class="text-link" id="reset-exercise" type="button">Reset pozycji</button>
    <small>PPM zaznacza pole. Przeciągnij z PPM, aby narysować strzałkę. Shift daje zielony, Ctrl czerwony, a Alt niebieski. Na dotyku włącz Rysowanie.</small>
   </div>`);
- $('#next-puzzle').onclick=()=>puzzle(nextMixedPuzzle());
+ $('#next-puzzle').onclick=()=>openMixedPuzzle();
  updateTacticsStats();
  $('#annotation-mode').onclick=event=>{
   drawing.enabled=!drawing.enabled;
@@ -480,6 +540,6 @@ function play(){context={kind:'play'};setupBoard('start');gameFinished=false;pra
 
 function updateGame(){const h=game.history();$('#history').innerHTML=h.map((m,i)=>`${i%2===0?`<span>${i/2+1}.</span>`:''}<span>${m}</span>`).join('');$('#history').scrollTop=$('#history').scrollHeight;$('#undo').disabled=h.length===0||gameFinished;$('#game-hint').disabled=game.turn()!=='w'||game.isGameOver();$('#board-top').textContent='Komputer · czarne';$('#board-bottom').textContent=game.turn()==='w'?'Ty · białe · Twój ruch':'Czarne · ruch komputera';if(game.isGameOver()){let message=game.isCheckmate()?(game.turn()==='b'?'Mat! Wygrywasz. Dobra robota.':'Mat. Komputer wygrywa. Każda partia to nowe doświadczenie.'):'Remis. '+(game.isStalemate()?'Król nie jest szachowany i nie ma legalnego ruchu — pat.':game.isInsufficientMaterial()?'Brakuje materiału do mata.':game.isThreefoldRepetition()?'Pozycja powtórzyła się trzykrotnie.':'Osiągnięto limit ruchów bez bicia i ruchu pionem.');feedback(message,'success');$('#board-bottom').textContent='Partia zakończona';if(!gameFinished){gameFinished=true;$('#undo').disabled=true;state.games++;if(!state.done.includes('5-1'))state.done.push('5-1');activity();toast('✧ Pierwsza pełna partia zapisana w postępach.')}}else feedback(game.isCheck()?'Szach! Zadbaj o bezpieczeństwo swojego króla.':game.turn()==='w'?'Twój ruch. Co grozi przeciwnik? Czy wszystkie figury są bezpieczne?':'Komputer przygotowuje odpowiedź.');}
 function achievements(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">ŚLADY TWOJEGO ROZWOJU</div><h1>Umiejętności, z których możesz być dumny.</h1><p>Każda odznaka oznacza ukończony etap. Zbieraj doświadczenia i wracaj do nauki wtedy, kiedy masz ochotę.</p></div><div class="achievements-grid">${units.map((u,i)=>`<div class="achievement ${earned(i)?'earned':''}"><div class="medal">${u.icon}</div><h3>${u.badge}</h3><p>Ukończ etap „${u.title}”.</p><small>${earned(i)?'✓ ZDOBYTA':`${u.lessons.filter((l,j)=>state.done.includes(`${i}-${j}`)).length} / ${u.lessons.length} LEKCJI`}</small></div>`).join('')}</div><div class="empty-note">${state.days.length?`Masz za sobą ${state.days.length} ${state.days.length===1?'dzień':'dni'} aktywnej nauki. `:''}Odznaki zostają z Tobą. Przerwa w nauce nie odbiera żadnego osiągnięcia.</div>`}
-function route(){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id]=(location.hash.slice(1)||'home').split('/');const navPage={lesson:'learn',puzzle:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',achievements:'Osiągnięcia'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,lesson:()=>lesson(id),puzzles:()=>puzzle(nextMixedPuzzle()),puzzle:()=>puzzle(id),openings:()=>openingsPage(id),opening:()=>opening(id),play,achievements};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
+function route(){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id]=(location.hash.slice(1)||'home').split('/');const navPage={lesson:'learn',puzzle:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',achievements:'Osiągnięcia'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),puzzle:()=>puzzle(id),openings:()=>openingsPage(id),opening:()=>opening(id),play,achievements};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);route();
 await accounts.start(progress=>{state=progress;route()});
