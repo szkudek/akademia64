@@ -1,27 +1,17 @@
+import { clicks, sampleRate } from './chess-clicks.js';
+
 const storageKey = 'akademia64.chessSound';
 const defaults = { enabled: true, volume: 45, moves: true, feedback: true };
 
-// Short, inharmonic resonances model the board and the softer felt mallet.
-const wood = {
-  modes: [[1, .65, .016], [2.17, .34, .008], [4.61, .21, .004]],
-  noise: .54,
-  decay: .004,
-};
-const mallet = {
-  modes: [[1, .72, .048], [2.01, .18, .020], [3.92, .07, .008]],
-  noise: .14,
-  decay: .006,
-};
-
-// Each strike specifies its material, onset, resonance, length and peak.
+// Each hit specifies the recording, its onset in seconds and its gain.
 const sounds = {
-  move: [[wood, 0, 306, .072, .28]],
-  capture: [[wood, 0, 490, .045, .19], [wood, .017, 229, .091, .35]],
-  castle: [[wood, 0, 278, .072, .28], [wood, .065, 339, .066, .24]],
-  promotion: [[wood, 0, 306, .072, .27], [mallet, .052, 587, .135, .18]],
-  correct: [[mallet, 0, 440, .115, .18], [mallet, .071, 554, .143, .17]],
-  incorrect: [[wood, 0, 207, .077, .19], [wood, .047, 168, .093, .14]],
-  mate: [[mallet, 0, 349, .138, .19], [mallet, .074, 440, .145, .17], [mallet, .147, 523, .172, .17]],
+  move: [['move', 0, 1]],
+  capture: [['capture', 0, 1]],
+  castle: [['tap', 0, 1], ['move', .050, .85]],
+  promotion: [['move', 0, .9], ['tap', .077, .8]],
+  correct: [['tap', 0, .62], ['move', .081, .72]],
+  incorrect: [['capture', 0, .51]],
+  mate: [['tap', 0, .75], ['tap', .064, .82], ['capture', .133, .86]],
 };
 
 function loadSettings() {
@@ -42,34 +32,25 @@ let settings = loadSettings();
 let audio, master, channels;
 const buffers = new Map();
 
+const recordings = new Map();
+
+function recording(name) {
+  if (recordings.has(name)) return recordings.get(name);
+  const bytes = Uint8Array.from(atob(clicks[name]), byte => byte.charCodeAt(0));
+  const pcm = new DataView(bytes.buffer);
+  const samples = Float32Array.from({ length: bytes.length / 2 }, (_, i) => pcm.getInt16(i * 2, true) / 32768);
+  recordings.set(name, samples);
+  return samples;
+}
+
 function soundBuffer(name) {
   if (buffers.has(name)) return buffers.get(name);
-  const strikes = sounds[name];
-  const rate = audio.sampleRate;
-  const duration = Math.max(...strikes.map(([, onset, , length]) => onset + length));
-  const buffer = audio.createBuffer(1, Math.ceil(duration * rate), rate);
-  const samples = buffer.getChannelData(0);
-  let seed = 64;
-  for (const [material, onset, pitch, length, strength] of strikes) {
-    const start = Math.round(onset * rate);
-    const strike = new Float32Array(Math.floor(length * rate));
-    let peak = 0;
-    let noise = 0;
-    for (let i = 0; i < strike.length; i++) {
-      const time = i / rate;
-      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-      noise += .28 * (seed / 2147483648 - 1 - noise);
-      let sample = noise * material.noise * Math.exp(-time / material.decay);
-      for (const [ratio, gain, decay] of material.modes) {
-        sample += Math.sin(2 * Math.PI * pitch * ratio * time) * gain * Math.exp(-time / decay);
-      }
-      sample *= Math.min(1, time / .0015, (length - time) / .016);
-      strike[i] = sample;
-      peak = Math.max(peak, Math.abs(sample));
-    }
-    for (let i = 0; i < strike.length && start + i < samples.length; i++) {
-      samples[start + i] += strike[i] * strength / peak;
-    }
+  const hits = sounds[name].map(([sample, onset, gain]) => [recording(sample), Math.round(onset * sampleRate), gain]);
+  const length = Math.max(...hits.map(([samples, offset]) => offset + samples.length));
+  const buffer = audio.createBuffer(1, length, sampleRate);
+  const mixed = buffer.getChannelData(0);
+  for (const [samples, offset, gain] of hits) {
+    for (let i = 0; i < samples.length; i++) mixed[offset + i] += samples[i] * gain;
   }
   buffers.set(name, buffer);
   return buffer;
@@ -112,7 +93,7 @@ function playSequence(events) {
       source.connect(channels[group]);
       source.onended = () => source.disconnect();
       source.start(time);
-      time += source.buffer.duration + .018;
+      time += source.buffer.duration + .008;
     }
   } catch {
     // A browser can suspend or disable audio independently of the settings.

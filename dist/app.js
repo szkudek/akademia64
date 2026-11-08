@@ -6,7 +6,7 @@ import { openingChapter } from './opening-chapter.js?v=20261108-caro-videos';
 import { lichessPuzzles } from './puzzle-bank.js';
 import { ratingFromAttempts, rateAttempt, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
 import { analyzePuzzle } from './puzzle-analysis.js';
-import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-wood-sounds';
+import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-recorded-clicks';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
 const icons={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
