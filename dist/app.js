@@ -1,10 +1,10 @@
 import { createBoardInput } from './board-input.js?v=20261108-board-flip';
-import { accounts } from './accounts.js?v=20261108-corrections';
-import { normalizeProgress, pendingCorrections } from './progress.js?v=20261108-corrections';
+import { accounts } from './accounts.js?v=20261108-rating-reset';
+import { normalizeProgress, pendingCorrections } from './progress.js?v=20261108-rating-reset';
 import { Chess } from './vendor/chess.js';
 import { openingChapter } from './opening-chapter.js';
 import { lichessPuzzles } from './puzzle-bank.js';
-import { ratingFromAttempts, ratePuzzle, choosePuzzle, STARTING_RATING } from './tactics-rating.js?v=20261108-start-700';
+import { ratingFromAttempts, rateAttempt, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
 import { analyzePuzzle } from './puzzle-analysis.js';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
@@ -206,7 +206,6 @@ const p=game.get(sq);if(p&&p.color===game.turn()){selected=sq;targets=game.moves
 let lichessIndex=null;
 let puzzleIndexLoading=null;
 const loadedPuzzleShards=new Set();
-let sinceShardLoad=100;
 let mixedRequest=0;
 async function loadPuzzleIndex(){
  if(lichessIndex)return lichessIndex;
@@ -220,14 +219,14 @@ async function loadPuzzleIndex(){
  }).finally(()=>{puzzleIndexLoading=null;});
  return puzzleIndexLoading;
 }
-async function fetchPuzzleShard(){
+async function fetchPuzzleShard(rating,maxDistance){
  const index=await loadPuzzleIndex();
  const unused=index.shards.filter(item=>!loadedPuzzleShards.has(item.file));
  if(!unused.length)return false;
- const rating=ratingFromAttempts(state.tactics).rating;
  const ordered=unused.map(item=>({...item,distance:rating<item.min?item.min-rating:rating>item.max?rating-item.max:0}))
   .sort((a,b)=>a.distance-b.distance);
- const options=ordered.slice(0,Math.min(8,ordered.length));
+ if(ordered[0].distance>maxDistance)return false;
+ const options=ordered.filter(item=>item.distance===ordered[0].distance);
  const shard=options[Math.floor(Math.random()*options.length)];
  return loadPuzzleShard(shard);
 }
@@ -249,24 +248,31 @@ async function loadPuzzleShard(shard,puzzleId){
    text:'Znajdź i wykonaj całą kombinację. Przeciwnik odpowie automatycznie.',
    hint:'Sprawdź najpierw szachy, bicia i groźby.'});
  }
- if(!puzzleId){
-  loadedPuzzleShards.add(shard.file);
-  sinceShardLoad=0;
- }
+ if(!puzzleId)loadedPuzzleShards.add(shard.file);
  return true;
 }
 async function openMixedPuzzle(){
  const token=++mixedRequest;
  const previous=location.hash;
- if(!lichessIndex||sinceShardLoad>=16){
+ const rating=ratingFromAttempts(state.tactics).rating;
+ const unavailable=new Set([...state.tactics.map(attempt=>attempt.id),...recentlySeenPuzzles]);
+ const closestUnseen=()=>puzzles.reduce((distance,puzzle)=>
+  unavailable.has(puzzle.id)?distance:Math.min(distance,Math.abs(puzzle.rating-rating)),Infinity);
+ if(!lichessIndex||closestUnseen()>PUZZLE_RATING_RANGE){
   if(previous==='#puzzles'||previous===''||previous==='#home'){
    main.innerHTML='<div class="page-intro"><h1>Miszmasz</h1><p role="status">Dobieranie zadania do Twojego rankingu…</p></div>';
   }
-  try{await fetchPuzzleShard();}
+  try{
+   let closest=closestUnseen();
+   while(token===mixedRequest&&location.hash===previous){
+    if(!await fetchPuzzleShard(rating,closest))break;
+    closest=closestUnseen();
+    if(closest<=PUZZLE_RATING_RANGE)break;
+   }
+  }
   catch(error){console.warn('Baza zadań:',error);/* zachowaj dotychczasowe zadania */ }
  }
  if(token!==mixedRequest||location.hash!==previous)return;
- sinceShardLoad++;
  puzzle(nextMixedPuzzle());
 }
 let recentlySeenPuzzles=[];
@@ -311,7 +317,7 @@ function recordTactic(ok){
  const already=Boolean(first);
  const before=ratingFromAttempts(state.tactics).rating;
  const at=Date.now();
- if(!already)state.tactics.push({id,rating,ok,at});
+ if(!already)state.tactics.push({id,rating,ok,at,ratingVersion:RATING_VERSION});
  const updateCorrection=!ok||(previous??first)?.ok===false;
  if(updateCorrection){
   state.corrections=state.corrections.filter(attempt=>attempt.id!==id);
@@ -330,7 +336,7 @@ function recordTactic(ok){
  if(!ok)$('#next-puzzle').hidden=false;
 }
 function updateTacticsStats(){
- const attempts=state.tactics||[];
+ const attempts=ratedAttempts(state.tactics);
  const rated=ratingFromAttempts(attempts);
  const score=document.querySelector('#tactic-rating');
  if(!score)return;
@@ -344,12 +350,15 @@ function renderTacticTiles(){
  const ctx=context;
  if(!list||ctx?.kind!=='puzzle')return;
  const attempts=[...(state.tactics||[])].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id));
- let rating=null;
+ const ratings={legacy:null,current:null};
  const history=attempts.map(attempt=>{
-  const next=ratePuzzle(rating,attempt.rating,attempt.ok);
-  const delta=next.rating-(rating?.rating??STARTING_RATING);
-  rating=next;
-  return {id:attempt.id,rating:attempt.rating,ok:attempt.ok,delta};
+  const archived=attempt.ratingVersion!==RATING_VERSION;
+  const group=archived?'legacy':'current';
+  const previous=ratings[group];
+  const next=rateAttempt(previous,attempt);
+  const delta=next.rating-(previous?.rating??STARTING_RATING);
+  ratings[group]=next;
+  return {id:attempt.id,rating:attempt.rating,ok:attempt.ok,delta,archived};
  });
  const latest=history.filter(a=>!ctx.tileResult||a.id!==ctx.item.id).slice(-11);
  const current=ctx.tileResult||null;
@@ -366,7 +375,7 @@ function renderTacticTiles(){
   };
   el.className='tactic-tile '+(item.pending?'pending':item.ok?'correct':'incorrect');
   el.textContent=item.pending?'?':(item.delta>0?'+':'')+item.delta;
-  el.setAttribute('title',item.pending?'Bieżące zadanie — oczekiwanie na wynik':(item.ok?'Poprawne':'Błędne')+' · '+(item.delta>0?'+':'')+item.delta+' pkt'+(item.repeat?' · powtórka':''));
+  el.setAttribute('title',item.pending?'Bieżące zadanie — oczekiwanie na wynik':(item.ok?'Poprawne':'Błędne')+' · '+(item.delta>0?'+':'')+item.delta+' pkt'+(item.repeat?' · powtórka':'')+(item.archived?' · przed resetem rankingu':''));
   el.setAttribute('aria-label','Otwórz zadanie '+item.id+' · '+el.title);
   list.append(el);
  }

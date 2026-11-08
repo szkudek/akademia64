@@ -1,5 +1,5 @@
-import { loadFirebase,firebaseMessage } from './firebase-service.js?v=20261108-corrections';
-import { emptyProgress,normalizeProgress,mergeProgress,sameProgress } from './progress.js?v=20261108-corrections';
+import { loadFirebase,firebaseMessage } from './firebase-service.js?v=20261108-rating-reset';
+import { emptyProgress,normalizeProgress,mergeProgress,sameProgress } from './progress.js?v=20261108-rating-reset';
 const guestKey='akademia64-v1';
 const $=selector=>document.querySelector(selector);
 function read(key){try{return normalizeProgress(JSON.parse(localStorage.getItem(key)||'null'))}catch{return emptyProgress()}}

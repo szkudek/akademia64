@@ -8,8 +8,12 @@ function cleanAttempts(value,latest=false){
   if(!a||typeof a!=='object'||typeof a.id!=='string'||!/^[A-Za-z0-9_-]{1,32}$/.test(a.id))continue;
   if(!Number.isFinite(a.rating)||a.rating<400||a.rating>3500||typeof a.ok!=='boolean'||!Number.isSafeInteger(a.at)||a.at<0)continue;
   const row={id:a.id,rating:Math.round(a.rating),ok:a.ok,at:a.at};
+  if(!latest&&a.ratingVersion===2)row.ratingVersion=2;
   const existing=byId.get(row.id);
-  const preferred=existing&&(latest?row.at>existing.at||(row.at===existing.at&&row.ok):row.at<existing.at||(row.at===existing.at&&!row.ok));
+  const sameResult=existing&&row.at===existing.at&&row.ok===existing.ok;
+  const preferred=existing&&(latest
+   ?row.at>existing.at||(row.at===existing.at&&row.ok)
+   :row.at<existing.at||(row.at===existing.at&&!row.ok&&existing.ok)||(sameResult&&row.ratingVersion&&!existing.ratingVersion));
   if(!existing||preferred)byId.set(row.id,row);
  }
  const sorted=[...byId.values()].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id));
