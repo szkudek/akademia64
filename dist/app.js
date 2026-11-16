@@ -196,14 +196,15 @@ function bindBoardControls(){
  };
 }
 function boardNavigationRange(){
+ if(context.kind==='opening'&&openingMode==='trainer')return {current:openingStep,last:openingStep,locked:true};
  if(context.kind==='opening'&&openingMode==='show')return {current:openingStep,last:context.item.line.length};
  const last=context.positions.length-1;
  return {current:context.reviewPly??last,last};
 }
 function updateBoardNavigation(){
- const {current,last}=boardNavigationRange();
+ const {current,last,locked}=boardNavigationRange();
  for(const [action] of boardNavigation){
-  $('[data-board-nav="'+action+'"]').disabled=action==='first'||action==='previous'?current===0:current===last;
+  $('[data-board-nav="'+action+'"]').disabled=Boolean(locked)||(action==='first'||action==='previous'?current===0:current===last);
  }
  const reviewing=context.reviewPly!=null;
  $('#board-bottom').hidden=reviewing;
@@ -212,7 +213,8 @@ function updateBoardNavigation(){
  review.textContent=reviewing?`Pozycja ${current} z ${last}`:'';
 }
 function showBoardPosition(action){
- const {current,last}=boardNavigationRange();
+ const {current,last,locked}=boardNavigationRange();
+ if(locked)return;
  const destination={first:0,previous:current-1,next:current+1,last}[action];
  if(destination<0||destination>last||destination===current)return;
  if(context.kind==='opening'&&openingMode==='show'){goToOpeningStep(destination);return}
@@ -295,7 +297,7 @@ if(selected){const from=selected;const moves=game.moves({square:from,verbose:tru
  return;
 }
 if(context.kind==='lesson'){const t=context.item.target;if(from!==t[0]||sq!==t[1]||(context.item.promotion&&promotion!==context.item.promotion)){soundMove(null,{answer:'incorrect'});feedback('To legalny ruch, ale cel ćwiczenia jest inny. Spróbuj jeszcze raz.','error');selected=null;targets=[];drawBoard();return}moveOnBoard(move,{answer:'correct'});lastMove=[from,sq];success(game.isCheckmate()?'Mat! Król przeciwnika nie ma obrony. Doskonały ruch.':'Dobrze! Właśnie udało Ci się zastosować tę zasadę.');return}
-if(context.kind==='opening'){const expected=new Chess(game.fen());const m=expected.move(context.item.line[openingStep]);if(m.from!==from||m.to!==sq||(m.promotion&&promotion!==m.promotion)){soundMove(null,{answer:'incorrect'});feedback('Ten ruch jest legalny, ale ćwiczymy inny wariant. Skorzystaj z podpowiedzi.','error');return}moveOnBoard(move,{answer:'correct'});openingStep++;lastMove=[from,sq];selected=null;targets=[];drawBoard();updateOpening();return}
+if(context.kind==='opening'){playOpeningMove(move);return}
 if(context.kind==='analysisExercise'){checkAnalysisExercise(move);return}
 if(freeAnalysis()){playAnalysisMove(move);return}
 if(context.kind==='play'){moveOnBoard(move);lastMove=[from,sq];selected=null;targets=[];activity();drawBoard();updateGame();if(!game.isGameOver())scheduleAI();return}}
@@ -641,7 +643,7 @@ async function opening(id){
   <div class="eyebrow">WARSZTAT DEBIUTOWY${o.eco?' · '+e(o.eco):''}</div>
   <h2>${e(course?.title||o.title)}</h2>
   <div class="opening-example">
-  ${course?`<label class="opening-variant-label">Wybierz wariant do prześledzenia
+  ${course?`<label class="opening-variant-label">Wybierz wariant
     <select id="course-variant">${course.variants.map((variant,i)=>`<option value="course-${course.id}-${i}">${e(variant.title)}</option>`).join('')}</select>
   </label>`:''}
   <p>${e(o.desc||'Przykładowy przebieg wariantu z katalogu ECO.')}</p>
@@ -649,6 +651,15 @@ async function opening(id){
   </div>
   ${o.relatedCourse?`<p><a class="text-link" href="#opening/course-${o.relatedCourse.id}-0">Przeczytaj lekcję o całym debiucie →</a></p>`:''}
   <div class="opening-walkthrough">
+  <div class="opening-training">
+   <button class="btn outline" type="button" id="trainer-mode" aria-pressed="false">Sprawdź swoją pamięć</button>
+   <div id="opening-training-options" hidden>
+    <label for="opening-training-side">Graj jako</label>
+    <select id="opening-training-side"><option value="w">Białe</option><option value="b" ${o.line.length<2?'disabled':''}>Czarne</option></select>
+    <button class="btn outline" type="button" id="opening-restart">Od początku</button>
+   </div>
+   <p class="tiny" id="opening-training-progress" hidden></p>
+  </div>
   <div class="lesson-actions opening-board-actions"><button class="btn outline" id="opening-prev">← Wstecz</button><button class="btn" id="opening-next">Następny ruch →</button><button class="btn outline" id="opening-hint" hidden>Podpowiedź</button></div>
   <h3 class="opening-move-heading" id="opening-move-heading">Pozycja wyjściowa</h3>
   <div id="feedback" class="feedback opening-explanation" role="status"></div>
@@ -764,11 +775,19 @@ async function opening(id){
  $('#opening-related')?.addEventListener('click',()=>library.focusOpeningFamily(o.family));
  $('#show-mode').onclick=()=>resetOpening('show');
  $('#practice-mode').onclick=()=>resetOpening('practice');
+ $('#trainer-mode').onclick=()=>resetOpening(openingMode==='trainer'?'show':'trainer');
+ $('#opening-training-side').onchange=()=>resetOpening('trainer');
+ $('#opening-restart').onclick=()=>resetOpening('trainer');
  $('#opening-next').onclick=()=>goToOpeningStep(openingStep+1);
  $('#opening-prev').onclick=()=>goToOpeningStep(openingStep-1);
  $('#opening-hint').onclick=()=>{
   if(openingStep>=o.line.length)return;
   const move=new Chess(game.fen()).move(o.line[openingStep]);
+  if(context.trainer){
+   context.trainer.assisted.add(openingStep);
+   feedback(openingTrainingHint(move));
+   return;
+  }
   feedback(`Ruch ${openingStep+1}: ${names[move.piece]} z ${move.from} na ${move.to}.`);
  };
  updateOpening();
@@ -790,24 +809,74 @@ function goToOpeningStep(destination){
  drawBoard();updateOpening();
 }
 function resetOpening(mode){
- openingMode=mode;openingStep=0;setupBoard('start');drawBoard();
- for(const [id,value] of [['show-mode','show'],['practice-mode','practice']]){
+ const training=mode==='trainer';
+ const side=$('#opening-training-side').value;
+ if(training&&!context.trainer)context.preTrainingFlip=context.flipped;
+ if(!training&&context.trainer)context.flipped=context.preTrainingFlip;
+ context.trainer=training?{side,assisted:new Set(),independent:0,total:0}:null;
+ if(training)context.flipped=side==='b';
+ $('#flip-board').setAttribute('aria-pressed',String(Boolean(context.flipped)));
+ openingMode=mode;openingStep=0;setupBoard('start');
+ const reply=playOpeningReply();
+ $('#opening-training-options').hidden=!training;
+ $('#opening-training-progress').hidden=!training;
+ for(const [id,value] of [['show-mode','show'],['practice-mode','practice'],['trainer-mode','trainer']]){
   const button=$('#'+id);
   button.classList.toggle('active',mode===value);
   button.setAttribute('aria-pressed',String(mode===value));
  }
- $('#opening-next').hidden=mode==='practice';
+ $('#opening-prev').hidden=training;
+ $('#opening-next').hidden=mode!=='show';
  $('#opening-hint').hidden=mode==='show';
- updateOpening();
+ drawBoard();
+ updateOpening({reply});
 }
-function updateOpening(){
+function openingTrainingHint(move){
+ const note=context.item.notes?.[openingStep];
+ return `W tym wariancie zagraj ${move.san} (${move.from} → ${move.to}).${note?' '+note:''}`;
+}
+function playOpeningReply(){
+ const trainer=context.trainer;
+ if(!trainer||openingStep>=context.item.line.length||game.turn()===trainer.side)return;
+ const reply=moveOnBoard(context.item.line[openingStep],null);
+ openingStep++;
+ lastMove=[reply.from,reply.to];
+ return reply;
+}
+function playOpeningMove(move){
+ const expected=new Chess(game.fen()).move(context.item.line[openingStep]);
+ const trainer=context.trainer;
+ if(expected.from!==move.from||expected.to!==move.to||(expected.promotion&&expected.promotion!==move.promotion)){
+  soundMove(null,{answer:'incorrect'});
+  if(trainer){
+   trainer.assisted.add(openingStep);
+   feedback('Ten ruch nie należy do ćwiczonego wariantu. '+openingTrainingHint(expected),'error');
+   selected=null;targets=[];
+   drawBoard();
+  }else feedback('Ten ruch jest legalny, ale ćwiczymy inny wariant. Skorzystaj z podpowiedzi.','error');
+  return;
+ }
+ const played=moveOnBoard(move,null);
+ if(trainer){
+  trainer.total++;
+  if(!trainer.assisted.has(openingStep))trainer.independent++;
+ }
+ openingStep++;
+ lastMove=[played.from,played.to];
+ const reply=playOpeningReply();
+ soundMove(played,{reply,answer:'correct',mate:game.isCheckmate()});
+ selected=null;targets=[];
+ drawBoard();
+ updateOpening({played,reply});
+}
+function updateOpening({played,reply}={}){
  const {item:o}=context;
  const moves=$('#opening-moves');
  moves.replaceChildren(...o.line.map((move,index)=>{
   const token=document.createElement('span');
   token.className='move'+(index===openingStep-1?' current':'');
   token.textContent=(index%2===0?Math.floor(index/2+1)+'. ':'')+
-   (openingMode==='practice'&&index>=openingStep?'…':move);
+   (openingMode!=='show'&&index>=openingStep?'…':move);
   return token;
  }));
  const complete=openingStep===o.line.length;
@@ -822,6 +891,18 @@ function updateOpening(){
  $('#opening-move-heading').textContent=move
   ? `${number}${move.color==='w'?'.':'…'} ${move.san} · ${move.color==='w'?'białe':'czarne'}`
   : 'Pozycja wyjściowa';
+ const trainer=context.trainer;
+ if(trainer){
+  const side=trainer.side==='w'?'białe':'czarne';
+  const ownNote=played&&o.notes?.[openingStep-(reply?2:1)];
+  const sequence=[played&&`Dobrze, ${played.san}.`,ownNote,reply&&`Komputer: ${reply.san}.`,reply&&note].filter(Boolean);
+  sequence.push(complete?'Wariant ukończony.':`Twój ruch · ${side}.`);
+  $('#opening-training-progress').textContent=`Bez podpowiedzi i błędów: ${trainer.independent}/${trainer.total} Twoich ruchów.`;
+  $('#board-bottom').textContent=complete?'Koniec treningu':`Twój ruch · ${side}`;
+  feedback(sequence.join(' '),complete?'success':'');
+  if(complete)activity();
+  return;
+ }
  if(complete){
   feedback(note||'To ostatni ruch w tym przykładzie.','success');
   if(openingMode==='practice')activity();
