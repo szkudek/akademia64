@@ -1,5 +1,5 @@
 self.ACADEMY_OFFLINE={
-  "version": "9c48c12ebd4a5fc5",
+  "version": "14d3aab6cd34d073",
   "assets": [
     "accounts.js?v=20261116-release",
     "app.js?v=20261116-practiced-markers",
@@ -32,7 +32,7 @@ self.ACADEMY_OFFLINE={
     "puzzle-bank.js",
     "puzzle-index.json",
     "puzzle-themes.js",
-    "pwa.js",
+    "pwa.js?v=20261116-install-help",
     "stockfish-analysis.js",
     "styles.css",
     "tactics-rating.js?v=20261108-rating-match",

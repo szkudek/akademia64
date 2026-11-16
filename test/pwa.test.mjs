@@ -8,9 +8,6 @@ const root=new URL('../',import.meta.url);
 const read=path=>readFile(new URL(path,root),'utf8');
 
 test('PWA release paths and generated manifests are current',async()=>{
- execFileSync(process.execPath,['scripts/sync-entry.mjs'],{cwd:root});
- const assets=await read('dist/offline-assets.js');
- console.log('INSTALL-HELP-CACHE '+assets.match(/"version": "([a-f0-9]+)"/)[1]);
  execFileSync(process.execPath,['scripts/sync-entry.mjs','--check'],{cwd:root});
  for(const prefix of ['', 'dist/']){
   const manifest=JSON.parse(await read(prefix+'manifest.webmanifest'));
