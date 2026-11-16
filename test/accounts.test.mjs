@@ -71,7 +71,7 @@ test('progress filters invalid ids, keeps unique achievements and is stable acro
 });
 test('the published root entry references dist assets and targets only the academy Firebase project',async()=>{
  const root=await readFile(new URL('../index.html',import.meta.url),'utf8');const dist=await readFile(new URL('../dist/index.html',import.meta.url),'utf8');
- assert.equal(root,dist.replaceAll('src="theme.js','src="dist/theme.js').replaceAll('href="styles.css"','href="dist/styles.css"').replaceAll('href="modern.css','href="dist/modern.css').replaceAll('src="app.js','src="dist/app.js'));
+ assert.equal(root.replaceAll('\r\n','\n'),dist.replaceAll('\r\n','\n').replaceAll('src="theme.js','src="dist/theme.js').replaceAll('href="styles.css"','href="dist/styles.css"').replaceAll('href="modern.css','href="dist/modern.css').replaceAll('src="app.js','src="dist/app.js').replaceAll('src="pwa.js','src="dist/pwa.js').replaceAll('href="icons/','href="dist/icons/'));
  const config=JSON.parse(await readFile(new URL('../.firebaserc',import.meta.url),'utf8'));assert.equal(config.projects.default,'akademia64-89e49');
 });
 test('permission and connection errors have useful messages without raw service details',()=>{

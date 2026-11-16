@@ -1,5 +1,5 @@
-import { loadFirebase,firebaseMessage } from './firebase-service.js?v=20261108-rating-reset';
-import { emptyProgress,normalizeProgress,mergeProgress,sameProgress } from './progress.js?v=20261108-rating-reset';
+import { loadFirebase,firebaseMessage } from './firebase-service.js?v=20261116-release';
+import { emptyProgress,normalizeProgress,mergeProgress,sameProgress } from './progress.js?v=20261116-release';
 const guestKey='akademia64-v1';
 const $=selector=>document.querySelector(selector);
 function read(key){try{return normalizeProgress(JSON.parse(localStorage.getItem(key)||'null'))}catch{return emptyProgress()}}
@@ -21,7 +21,18 @@ function schedule(){clearTimeout(timer);if(user?.verified&&pending)timer=setTime
 async function flush(){
   clearTimeout(timer);if(saving||!pending||!user?.verified||!service||deleting)return;
   const own=generation,id=user.id,item=pending;pending=null;saving=true;syncState='Zapisywanie…';updateUI();
-  try{await service.saveProgress(id,item);if(own===generation)syncState=pending?'Oczekuje na zapis':'Zapisano na koncie'}
+  try{
+    const remote=await service.saveProgress(id,item);
+    if(own===generation){
+      const local=pending??item;
+      const merged=mergeProgress(local,remote);
+      if(!sameProgress(local,merged)){
+        remember(merged);
+        onProgress(merged,{background:true});
+      }
+      syncState=pending?'Oczekuje na zapis':'Zapisano na koncie';
+    }
+  }
   catch(error){if(own===generation){pending=mergeProgress(item,pending||emptyProgress());syncState=firebaseMessage(error)}}
   finally{saving=false;updateUI();if(pending&&user?.verified&&(own!==generation||syncState==='Oczekuje na zapis'))schedule()}
 }

@@ -1,3 +1,5 @@
+import { cleanPuzzleThemes } from './puzzle-themes.js';
+
 export const emptyProgress=()=>({done:[],solved:[],days:[],games:0,tactics:[],corrections:[]});
 export const lessonIds=[3,4,3,4,3,2].flatMap((n,i)=>Array.from({length:n},(_,j)=>`${i}-${j}`));
 export const puzzleIds=['mate1','hanging','backrank','forkreal','promotion','bishop'];
@@ -9,12 +11,18 @@ function cleanAttempts(value,latest=false){
   if(!Number.isFinite(a.rating)||a.rating<400||a.rating>3500||typeof a.ok!=='boolean'||!Number.isSafeInteger(a.at)||a.at<0)continue;
   const row={id:a.id,rating:Math.round(a.rating),ok:a.ok,at:a.at};
   if(!latest&&a.ratingVersion===2)row.ratingVersion=2;
+  const themes=latest?[]:cleanPuzzleThemes(a.themes);
+  if(themes.length)row.themes=themes;
   const existing=byId.get(row.id);
   const sameResult=existing&&row.at===existing.at&&row.ok===existing.ok;
   const preferred=existing&&(latest
    ?row.at>existing.at||(row.at===existing.at&&row.ok)
    :row.at<existing.at||(row.at===existing.at&&!row.ok&&existing.ok)||(sameResult&&row.ratingVersion&&!existing.ratingVersion));
-  if(!existing||preferred)byId.set(row.id,row);
+  const chosen=preferred||!existing?row:existing;
+  if(sameResult&&(row.themes||existing.themes)){
+   chosen.themes=cleanPuzzleThemes([...(row.themes??[]),...(existing.themes??[])]);
+  }
+  byId.set(row.id,chosen);
  }
  const sorted=[...byId.values()].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id));
  return latest?sorted.slice(-5000):sorted.slice(0,5000);

@@ -2,6 +2,11 @@ name: Publish Akademia 64 to GitHub Pages
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'dist/**'
+      - '.github/workflows/pages.yml'
 
 permissions:
   contents: read

@@ -1,5 +1,16 @@
 # Akademia 64
 
+## Kolejność prac
+
+1. Inteligentne zadania: motywy, poprawki i statystyki.
+2. Analiza partii 2.0.
+3. Trener debiutów.
+4. Akademia końcówek.
+5. Profil i XP.
+6. Plan treningowy.
+7. PWA Android.
+8. Fundamenty: pozostałe sprawdzenia, w tym synchronizacja z prawdziwym kontem Firebase.
+
 Interaktywna akademia szachowa: 19 lekcji, sześć zadań, trzy debiuty, trening z komputerem, mapa nauki i odznaki. Trzy motywy: jasny, ciemny oraz systemowy.
 
 ## Uruchomienie
@@ -84,3 +95,15 @@ Reguły w `firestore.rules` wymagają publikacji w projekcie. Testy z atrapami n
 Firebase Authentication i Firestore działają również z GitHub Pages po publikacji aplikacji i konfiguracji chmury. Nie wymaga to przenoszenia strony na inny hosting. Google Sign-In pozostaje kolejnym etapem.
 
 Legalność ruchów sprawdza chess.js 1.4.0, licencja BSD-2-Clause w `dist/vendor/LICENSE-chess.txt`.
+
+## Instalacja na Androidzie
+
+Otwórz opublikowaną Akademię 64 w Chrome. W stopce wybierz **Zainstaluj aplikację**
+albo skorzystaj z opcji **Dodaj do ekranu głównego** w menu przeglądarki.
+Po instalacji otworzysz Akademię z ikony na ekranie głównym.
+
+Po pierwszym wczytaniu z internetem przeglądarka zapisuje pliki potrzebne do
+trybu offline. Dostępne są m.in. lekcje, trening debiutów, końcówki,
+analiza PGN ze Stockfishem i zadania dołączone do aplikacji. Logowanie,
+synchronizacja Firebase, dodatkowe paczki zadań i materiały wideo wymagają połączenia.
+Po zmianie plików strony uruchom `npm run sync:entry`, aby odświeżyć listę plików offline.
