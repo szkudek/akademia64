@@ -751,3 +751,11 @@ h1, h2, .hero h2 { font-weight: 700; }
 .analysis-error-row .btn{min-height:36px;padding:6px 10px}
 .analysis-moves [data-severity="1"]{border-color:#cda759}
 .analysis-moves :is([data-severity="2"],[data-severity="3"]){border-color:#e87979}
+
+.opening-training{display:grid;gap:8px;margin-bottom:12px}
+.opening-training>#trainer-mode{justify-self:start}
+#opening-training-options{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#opening-training-options[hidden],#opening-training-progress[hidden]{display:none}
+#opening-training-side{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--text);font:inherit}
+#opening-training-progress{margin:0}
+#trainer-mode[aria-pressed="true"]{border-color:var(--green)}
