@@ -1,3 +1,4 @@
+import { dailyTrainingPlan, trainingMinutes, trainingSegments } from './training-plan.js';
 import { academyLevel, localDay, profileActivity, xpSources } from './profile-progress.js';
 import { endgames, endgameOutcome } from './endgames.js';
 import { createBoardInput } from './board-input.js?v=20261108-free-analysis';
@@ -152,7 +153,7 @@ function home(){
  const dayTasks=[state.done.length>0,state.solved.length>0,state.games>0].filter(Boolean).length;
  main.innerHTML=`<header class="academy-banner"><div class="banner-copy"><div class="banner-kicker"><span></span> AKADEMIA 64 <span class="banner-kicker-line"></span> SZTUKA DOBREGO RUCHU</div><h1>Wielka gra.<br><em>Zaczyna się od Ciebie.</em></h1><p>Odkrywaj, ćwicz, graj. Z każdym ruchem buduj swoją szachową pewność.</p><a class="banner-link" href="#learn">Odkryj swoją ścieżkę <span aria-hidden="true">↗</span></a></div><div class="banner-art" aria-hidden="true"><div class="banner-halo"></div><div class="banner-board"></div><svg class="banner-chess" viewBox="0 0 380 300" fill="none"><defs><linearGradient id="ivory-piece" x1="160" y1="60" x2="260" y2="260" gradientUnits="userSpaceOnUse"><stop stop-color="#fff7da"/><stop offset=".5" stop-color="#e6d2a4"/><stop offset="1" stop-color="#a58c58"/></linearGradient><linearGradient id="green-piece" x1="40" y1="100" x2="180" y2="270" gradientUnits="userSpaceOnUse"><stop stop-color="#819b74"/><stop offset="1" stop-color="#273f30"/></linearGradient></defs><ellipse cx="225" cy="264" rx="95" ry="13" fill="#091c15" opacity=".35"/><ellipse cx="107" cy="269" rx="63" ry="10" fill="#091c15" opacity=".3"/><g fill="url(#green-piece)" stroke="#b3c5a0" stroke-width="1.2" stroke-linejoin="round"><path d="M61 243c0-4 3-7 7-7h80c4 0 7 3 7 7l7 13c1 3-1 6-4 6H58c-4 0-5-3-4-6l7-13Z"/><path d="M94 168h28c-1 28 1 45 18 62H76c17-17 19-34 18-62Z"/><rect x="85" y="157" width="46" height="12" rx="5"/><path d="M108 103c-9 11-27 24-27 37 0 12 12 19 27 19s27-7 27-19c0-13-18-26-27-37Z"/><circle cx="108" cy="96" r="7"/><path d="M73 229h70c5 0 8 3 8 7v4H65v-4c0-4 3-7 8-7Z"/></g><path d="m113 116-13 24" stroke="#243e2b" stroke-width="4.5" stroke-linecap="round"/><path d="M119 126c5 5 8 10 8 15 0 6-4 10-10 12M99 177c0 18-2 32-8 43M72 247h70" stroke="#c2d2ad" stroke-width="2" stroke-linecap="round" opacity=".5"/><g fill="url(#ivory-piece)" stroke="#f5e7bf" stroke-width="1.1"><path d="M193 52h17V35h13v17h17v13h-17v24h-13V65h-17V52Z"/><path d="m184 97 13-12h40l13 12-10 35h-47l-9-35Z"/><path d="M196 142h41c-1 38 0 60 23 83h-87c23-23 24-45 23-83Z"/><rect x="187" y="131" width="59" height="12" rx="5"/><path d="M175 225h83l12 18H164l11-18Z"/><rect x="157" y="244" width="121" height="17" rx="6"/></g><path d="M202 153c0 25-2 42-10 57M199 99h33" stroke="#fff8e1" stroke-width="3" stroke-linecap="round" opacity=".55"/></svg><span class="banner-coordinate coordinate-a">a</span><span class="banner-coordinate coordinate-h">h</span><span class="banner-art-label">64 POLA. NIESKOŃCZENIE MOŻLIWOŚCI.</span></div></header>
  <div class="hero-grid"><section class="hero"><div class="hero-copy"><div class="eyebrow"><span class="hero-status-dot"></span> ${state.done.length?'KONTYNUUJ SWOJĄ ŚCIEŻKĘ':'ZACZNIJ OD MAŁEGO KROKU'}</div><h2>${state.done.length?l.title:'Poznaj grę.<br>Odkryj możliwości.'}</h2><p>${state.done.length?'Kolejna lekcja, kolejna umiejętność. Wróć dokładnie tam, gdzie kończy się Twój ostatni trening.':'Szachy zaczynają się od jednego ruchu. Przejdziemy z Tobą całą drogę — od zasad po pierwszą partię.'}</p><div class="hero-meta"><span>◷ &nbsp; 5–8 min</span><span class="hero-meta-divider"></span><span>Interaktywna lekcja</span></div><a class="btn light" href="#lesson/${l.id}">${state.done.length?'Kontynuuj naukę':'Rozpocznij naukę'} <span>↗</span></a><div class="hero-course-note">OD ZERA DO PIERWSZEJ PARTII <span>·</span> ${percent}% ukończone</div></div><div class="hero-visual"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="hero-board-wrap">${mini('r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4')}</div><div class="board-floating-note"><span>♞</span><div>Każda partia to nowy początek.<small>Zrób swój pierwszy ruch.</small></div></div></div></section>
- <section class="daily-card"><div class="card-heading"><div><div class="eyebrow">MAŁY PLAN, DUŻY POSTĘP</div><h3>Dobry rytm nauki</h3></div><span class="daily-count">${dayTasks}<small>/3</small></span></div><div class="daily-list"><a class="daily-item" href="#lesson/${l.id}"><span class="step-icon ${state.done.length?'completed':''}">${state.done.length?'✓':'01'}</span><div><strong>Poznaj nowy temat</strong><small>${l.title}</small></div><span>↗</span></a><a class="daily-item" href="#puzzles"><span class="step-icon ${state.solved.length?'completed':''}">${state.solved.length?'✓':'02'}</span><div><strong>Znajdź dobry ruch</strong><small>Krótkie zadanie na rozgrzewkę</small></div><span>↗</span></a><a class="daily-item" href="#play"><span class="step-icon ${state.games?'completed':''}">${state.games?'✓':'03'}</span><div><strong>Zagraj bez pośpiechu</strong><small>Partia treningowa bez zegara</small></div><span>↗</span></a></div><div class="daily-footer"><span class="live-dot"></span><span>Regularność jest ważniejsza niż tempo.</span></div></section></div>
+ <section class="daily-card"><div class="card-heading"><div><div class="eyebrow">MAŁY PLAN, DUŻY POSTĘP</div><h3>Dobry rytm nauki</h3></div><span class="daily-count">${dayTasks}<small>/3</small></span></div><div class="daily-list"><a class="daily-item" href="#lesson/${l.id}"><span class="step-icon ${state.done.length?'completed':''}">${state.done.length?'✓':'01'}</span><div><strong>Poznaj nowy temat</strong><small>${l.title}</small></div><span>↗</span></a><a class="daily-item" href="#puzzles"><span class="step-icon ${state.solved.length?'completed':''}">${state.solved.length?'✓':'02'}</span><div><strong>Znajdź dobry ruch</strong><small>Krótkie zadanie na rozgrzewkę</small></div><span>↗</span></a><a class="daily-item" href="#play"><span class="step-icon ${state.games?'completed':''}">${state.games?'✓':'03'}</span><div><strong>Zagraj bez pośpiechu</strong><small>Partia treningowa bez zegara</small></div><span>↗</span></a></div><div class="daily-footer"><a class="btn outline" href="#training">Ułóż plan treningowy →</a></div></section></div>
  <div class="stats"><a href="#learn" class="stat"><div><div class="stat-name">Ukończone lekcje</div><div class="stat-value">${state.done.length}<small> / ${all.length}</small></div><span class="stat-detail">Budujesz solidne podstawy</span></div><span class="stat-icon">▤</span></a><a href="#puzzles" class="stat"><div><div class="stat-name">Rozwiązane zadania</div><div class="stat-value">${state.solved.length}<small data-puzzle-count data-prefix=" / "></small></div><span class="stat-detail">Trenujesz szachową intuicję</span></div><span class="stat-icon">♟</span></a><a href="#profile" class="stat"><div><div class="stat-name">Zdobyte odznaki</div><div class="stat-value">${earnedCount()}<small> / ${units.length+1}</small></div><span class="stat-detail">Profil i XP →</span></div><span class="stat-icon">✧</span></a></div>
  <div class="dashboard-bottom"><section class="course-section"><div class="section-heading"><div><div class="eyebrow">KROK PO KROKU</div><h2>Twoja mapa nauki</h2></div><a class="text-link" href="#learn">Cały kurs <span>↗</span></a></div><div class="course-overview"><div class="course-top"><div><h3>Od zera do pierwszej partii</h3><p>6 etapów <span>·</span> ${all.length} praktycznych lekcji</p></div><span class="course-tag">PODSTAWY</span></div>${pathHTML()}<div class="course-bottom"><div class="course-progress-info"><strong>${percent}%</strong><span>Twojej pierwszej ścieżki</span></div><a class="text-link" href="#lesson/${l.id}">Zrób kolejny krok <span>→</span></a></div></div></section><section class="insight-section"><div class="section-heading"><div><div class="eyebrow">CHWILA NA REFLEKSJĘ</div><h2>Przy szachownicy</h2></div><span class="tiny">✧</span></div><div class="quote-card"><div class="insight-mark">“</div><div class="eyebrow">WARTO ZAPAMIĘTAĆ</div><blockquote>Dobry ruch zaczyna się od dobrego pytania.</blockquote><p>Co grozi przeciwnik? Zanim przesuniesz figurę, daj sobie chwilę na spojrzenie na całą planszę.</p><a class="text-link" href="#play">Sprawdź to w grze <span>↗</span></a><span class="quote-piece" aria-hidden="true">♞</span></div></section></div>`;
 }
@@ -637,7 +638,8 @@ async function opening(id){
  const e=library.escapeHTML;
  const course=o.course;
  const guide=o.guide;
- const showCourseBoard=course&&location.hash.endsWith('/board');
+ const trainOpening=location.hash.endsWith('/trainer');
+ const showCourseBoard=course&&(trainOpening||location.hash.endsWith('/board'));
  context={kind:'opening',item:o};
  openingStep=0;
  openingMode='show';
@@ -760,7 +762,7 @@ async function opening(id){
  if(course){
   const variants=$('#course-variant');
   variants.value=id;
-  variants.onchange=()=>{location.hash='opening/'+variants.value+'/board'};
+  variants.onchange=()=>{location.hash='opening/'+variants.value+(openingMode==='trainer'?'/trainer':'/board')};
   main.querySelectorAll('.opening-question').forEach((element,index)=>{
    const question=course.quiz[index];
    const status=element.querySelector('.opening-answer');
@@ -793,7 +795,8 @@ async function opening(id){
   }
   feedback(`Ruch ${openingStep+1}: ${names[move.piece]} z ${move.from} na ${move.to}.`);
  };
- updateOpening();
+ if(trainOpening)resetOpening('trainer');
+ else updateOpening();
  if(showCourseBoard) $('.opening-explorer').scrollIntoView({block:'start'});
 }
 function goToOpeningStep(destination){
@@ -1312,6 +1315,71 @@ async function replyInEndgame(){
  feedback(`Komputer zagrał ${played.san}. ${active.item.goal}`);
  drawBoard();
 }
+const inMemoryTrainingPlans=new Map();
+function trainingPlanPage(){
+ const storageKey='akademia64-training-'+(accounts.user?.id??'guest');
+ const data={
+  day:today(),progress:state,lessons:all,endgames,
+  completedEndgames:completedEndgames(),correctionCount:pendingCorrections(state).length
+ };
+ let saved=inMemoryTrainingPlans.get(storageKey);
+ if(!saved){
+  try{saved=JSON.parse(localStorage.getItem(storageKey))}catch{}
+ }
+ const plan=dailyTrainingPlan(data,saved);
+ const savePlan=()=>{
+  inMemoryTrainingPlans.set(storageKey,plan);
+  try{localStorage.setItem(storageKey,JSON.stringify(plan))}catch{}
+ };
+ savePlan();
+ main.innerHTML=`
+  <a class="back-link" href="#home">← &nbsp; Moja akademia</a>
+  <div class="page-intro"><h1>Plan treningowy</h1><p>Wybierz, ile masz dziś czasu. Po każdym ćwiczeniu wróć do planu i oznacz je jako wykonane.</p></div>
+  <section class="training-plan" aria-label="Dzisiejszy trening">
+   <div class="training-plan-header">
+    <label class="account-field" for="training-duration"><span>Czas sesji</span><select id="training-duration">
+     ${Object.keys(trainingMinutes).map(minutes=>`<option value="${minutes}">${minutes} minut</option>`).join('')}
+    </select></label>
+    <span id="training-status" role="status"></span>
+    <progress id="training-completion" max="4" aria-label="Ukończone ćwiczenia"></progress>
+   </div>
+   <ol id="training-segments"></ol>
+  </section>`;
+ const duration=$('#training-duration');
+ duration.value=String(plan.duration);
+ function updateStatus(){
+  const finished=plan.done[plan.duration].length;
+  $('#training-completion').value=finished;
+  $('#training-status').textContent=finished===4?'Plan na dziś ukończony.':`${finished} z 4 ćwiczeń ukończonych`;
+ }
+ function renderSegments(){
+  $('#training-segments').innerHTML=trainingSegments(plan,data).map(segment=>`
+   <li class="training-segment">
+    <div class="training-segment-body"><span class="tiny">${segment.category} · ${segment.minutes} min</span>
+     <h2>${segment.title}</h2><p>${segment.instruction}</p>
+     <a class="text-link" href="${segment.href}">Otwórz ćwiczenie →</a>
+    </div>
+    <label class="training-segment-check"><input type="checkbox" data-segment="${segment.id}" ${plan.done[plan.duration].includes(segment.id)?'checked':''}> Wykonane</label>
+   </li>`).join('');
+  updateStatus();
+ }
+ duration.onchange=()=>{
+  plan.duration=Number(duration.value);
+  savePlan();
+  renderSegments();
+ };
+ $('#training-segments').onchange=event=>{
+  const {segment}=event.target.dataset;
+  if(!segment)return;
+  const done=new Set(plan.done[plan.duration]);
+  if(event.target.checked)done.add(segment);
+  else done.delete(segment);
+  plan.done[plan.duration]=[...done];
+  savePlan();
+  updateStatus();
+ };
+ renderSegments();
+}
 function playerProfile(){
  const endgameCount=completedEndgames().size;
  const {streak,days,recent}=profileActivity(state);
@@ -1357,6 +1425,6 @@ function playerProfile(){
    </div>
   </section>`;
 }
-function route(){context?.defenseController?.abort();fullGameAnalysis?.abort();fullGameAnalysis=null;gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating]=(location.hash.slice(1)||'home').split('/');const navPage={endgames:'learn',lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,endgames:()=>endgamePage(id),lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
+function route(){context?.defenseController?.abort();fullGameAnalysis?.abort();fullGameAnalysis=null;gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating]=(location.hash.slice(1)||'home').split('/');const navPage={endgames:'learn',lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',training:'Plan treningowy',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,training:trainingPlanPage,endgames:()=>endgamePage(id),lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);route();
 await accounts.start(progress=>{state=progress;if(context?.kind==='analysis'||context?.kind==='analysisExercise'||context?.kind==='endgame')updateLevel();else route()});

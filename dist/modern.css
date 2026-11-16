@@ -776,3 +776,20 @@ h1, h2, .hero h2 { font-weight: 700; }
 .profile-history{padding:0;list-style:none}
 .profile-history span{color:var(--muted);text-align:right}
 @media(max-width:440px){.profile-history>li{grid-template-columns:1fr}.profile-history span{text-align:left}}
+
+.training-plan{max-width:850px}
+.training-plan-header,.training-segment{padding:16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper)}
+.training-plan-header{display:grid;grid-template-columns:minmax(110px,160px) minmax(0,1fr);gap:8px 16px;align-items:end}
+.training-plan-header label{margin:0}
+.training-plan-header select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--text);font:inherit}
+#training-completion{grid-column:1/-1;width:100%;accent-color:var(--green)}
+#training-segments{display:grid;gap:10px;list-style:none;padding:0}
+.training-segment{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.training-segment h2{font-size:1.15rem;margin:3px 0}
+.training-segment p{margin:4px 0 8px}
+.training-segment-check{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.training-segment-check input{accent-color:var(--green)}
+@media(max-width:500px){
+ .training-segment{align-items:flex-start;flex-direction:column}
+ .training-plan-header{grid-template-columns:1fr}
+}
