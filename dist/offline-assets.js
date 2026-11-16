@@ -1,8 +1,8 @@
 self.ACADEMY_OFFLINE={
-  "version": "df9bbaf0631b9cc7",
+  "version": "4b5859cee91cc558",
   "assets": [
-    "accounts.js?v=20261108-game-analysis",
-    "app.js?v=20261116-pwa",
+    "accounts.js?v=20261116-sync",
+    "app.js?v=20261116-sync",
     "board-input.js?v=20261108-free-analysis",
     "chess-clicks.js",
     "chess-sound.js?v=20261108-recorded-clicks",

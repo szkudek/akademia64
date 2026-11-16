@@ -58,7 +58,9 @@ test('both release layouts can install and use their cached shell offline',async
    return response;
   };
   assert.equal(await (await resolve(scope)).text(),'index.html');
-  const entry=scope+assetPrefix+'app.js?v=20261116-pwa';
+  const appPath=self.ACADEMY_OFFLINE.assets.find(path=>path.startsWith('app.js?'));
+  assert.ok(appPath);
+  const entry=scope+assetPrefix+appPath;
   assert.ok(await resolve(entry));
   assert.ok(await resolve(scope+assetPrefix+'vendor/stockfish/stockfish-19-lite-single.wasm'));
   assert.equal(resolve('https://firestore.googleapis.com/v1/projects'),undefined);
