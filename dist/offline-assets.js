@@ -1,5 +1,5 @@
 self.ACADEMY_OFFLINE={
-  "version": "c947d46d343fcc16",
+  "version": "ed6975f88ed12e0f",
   "assets": [
     "accounts.js?v=20261116-release",
     "app.js?v=20261116-king-flags",
@@ -18,7 +18,7 @@ self.ACADEMY_OFFLINE={
     "italian-lesson.js",
     "italian-variations.js",
     "manifest.webmanifest",
-    "modern.css?v=20261116-king-flags",
+    "modern.css?v=20261116-larger-flags",
     "opening-catalog.js",
     "opening-chapter.js?v=20261108-shared-board",
     "opening-courses.js",
