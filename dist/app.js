@@ -2,7 +2,7 @@ import { dailyTrainingPlan, trainingMinutes, trainingSegments } from './training
 import { academyLevel, localDay, profileActivity, xpSources } from './profile-progress.js';
 import { endgames, endgameOutcome } from './endgames.js';
 import { createBoardInput } from './board-input.js?v=20261108-free-analysis';
-import { accounts } from './accounts.js?v=20261108-game-analysis';
+import { accounts } from './accounts.js?v=20261116-sync';
 import { normalizeProgress, pendingCorrections } from './progress.js?v=20261108-rating-reset';
 import { Chess } from './vendor/chess.js';
 import { openingChapter } from './opening-chapter.js?v=20261108-shared-board';
@@ -1427,4 +1427,12 @@ function playerProfile(){
 }
 function route(){context?.defenseController?.abort();fullGameAnalysis?.abort();fullGameAnalysis=null;gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating]=(location.hash.slice(1)||'home').split('/');const navPage={endgames:'learn',lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',training:'Plan treningowy',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,training:trainingPlanPage,endgames:()=>endgamePage(id),lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);route();
-await accounts.start(progress=>{state=progress;if(context?.kind==='analysis'||context?.kind==='analysisExercise'||context?.kind==='endgame')updateLevel();else route()});
+await accounts.start((progress,{background=false}={})=>{
+ state=progress;
+ if(background){
+  if(['#profile','#achievements'].includes(location.hash))playerProfile();
+  if(context?.kind==='puzzle'){updateTacticsStats();renderCorrectionLink()}
+  updateLevel();
+ }else if(['analysis','analysisExercise','endgame'].includes(context?.kind))updateLevel();
+ else route();
+});
