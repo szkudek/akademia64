@@ -689,6 +689,17 @@ h1, h2, .hero h2 { font-weight: 700; }
 .puzzle-task-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 .puzzle-task-heading > :last-child { font-size: 12px; color: var(--muted); }
 .puzzle-analysis { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+.puzzle-analysis + .lesson-actions { margin-top: 0; }
+.tactic-history + .feedback:empty {
+  position: absolute;
+  width: 1px;
+  min-height: 0;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
 .puzzle-analysis h3 { margin: 0 0 8px; }
 .puzzle-analysis p, .puzzle-analysis a { font-size: 13px; }
 
