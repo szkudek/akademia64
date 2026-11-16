@@ -1,12 +1,13 @@
 import { formatScore } from './stockfish-analysis.js';
 import { graphValue, moveLabel, reviewMove } from './game-analysis.js';
 
-export function renderGameReport(root,{moves,evaluations,current,side,select,practice}){
+export function renderGameReport(root,{moves,evaluations,current,side,solvedErrors,select,practice}){
  const points=evaluations.map((evaluation,ply)=>[10+380*ply/moves.length,60-50*graphValue(evaluation)/600]);
  const steps=moves.slice(0,evaluations.length-1).map((move,index)=>({
   move, ply:index+1, review:reviewMove(move,evaluations[index],evaluations[index+1])
  }));
  const errors=steps.filter(({move,review})=>review?.severity>=2&&(side==='both'||move.color===side));
+ const remaining=errors.filter(({ply})=>!solvedErrors.has(ply));
  const selected=points[current];
  root.hidden=!points.length;
  if(root.hidden){root.replaceChildren();return}
@@ -26,8 +27,11 @@ export function renderGameReport(root,{moves,evaluations,current,side,select,pra
   <div id="analysis-errors"></div>`;
  root.querySelector('#analysis-scrubber').onchange=event=>select(Number(event.target.value));
  const list=root.querySelector('#analysis-errors');
- if(!errors.length){list.textContent='Brak wykrytych błędów w ocenionych ruchach wybranego koloru.';return}
- for(const {move,ply,review} of errors){
+ if(!remaining.length){
+  list.textContent=errors.length?'Wszystkie kluczowe błędy wybranego koloru zostały przećwiczone.':'Brak wykrytych błędów w ocenionych ruchach wybranego koloru.';
+  return;
+ }
+ for(const {move,ply,review} of remaining){
   const row=document.createElement('div');
   row.className='analysis-error-row';
   const inspect=document.createElement('button');

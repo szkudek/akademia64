@@ -12,7 +12,7 @@ import { ratingFromAttempts, ratedAttempts, choosePuzzle, STARTING_RATING, RATIN
 import { analyzePuzzle } from './puzzle-analysis.js?v=20261116-analysis';
 import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261116-analysis';
 import { createStockfish, formatScore, uciMove } from './stockfish-analysis.js';
-import { renderGameReport } from './game-report.js';
+import { renderGameReport } from './game-report.js?v=20261116-analysis-fixes';
 import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-recorded-clicks';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
@@ -235,7 +235,7 @@ function showBoardPosition(action){
  const destination={first:0,previous:current-1,next:current+1,last}[action];
  if(destination<0||destination>last||destination===current)return;
  if(context.kind==='opening'&&openingMode==='show'){goToOpeningStep(destination);return}
- if(context.kind==='analysis'){showAnalysisPosition(destination);return}
+ if(context.kind==='analysis'){navigateAnalysis(destination);return}
  cancelPromotion?.();
  selected=null;targets=[];
  context.reviewPly=destination===last?null:destination;
@@ -1057,6 +1057,13 @@ function showAnalysisPosition(ply,position=analysisPosition(ply)){
  updateAnalysisEngine(position,ply);
  updateGameReport();
 }
+function navigateAnalysis(ply){
+ const {current}=boardNavigationRange();
+ if(ply===current)return;
+ const move=context.moves[(ply>current?ply:current)-1];
+ soundMove(move);
+ showAnalysisPosition(ply);
+}
 function renderAnalysisMoves(){
  const buttons=document.createDocumentFragment();
  ['Start',...context.moves.map(moveLabel)].forEach((label,ply)=>{
@@ -1065,7 +1072,7 @@ function renderAnalysisMoves(){
   button.className='btn outline';
   button.textContent=label;
   button.dataset.ply=ply;
-  button.onclick=()=>showAnalysisPosition(ply);
+  button.onclick=()=>navigateAnalysis(ply);
   buttons.append(button);
  });
  $('#analysis-moves').replaceChildren(buttons);
@@ -1076,6 +1083,7 @@ function playAnalysisMove(move){
  context.evaluations.length=Math.min(context.evaluations.length,current+1);
  context.positions.length=current+1;
  context.moves.length=current;
+ for(const ply of context.solvedErrors)if(ply>current)context.solvedErrors.delete(ply);
  context.moves.push(moveOnBoard(move));
  renderAnalysisMoves();
  showAnalysisPosition(current+1,game);
@@ -1095,7 +1103,7 @@ function updateGameReport(){
  }
  const root=$('#analysis-report');
  const focusSlider=document.activeElement?.id==='analysis-scrubber';
- renderGameReport(root,{moves,evaluations,current,side,select:showAnalysisPosition,practice:startAnalysisExercise});
+ renderGameReport(root,{moves,evaluations,current,side,solvedErrors:context.solvedErrors,select:navigateAnalysis,practice:startAnalysisExercise});
  if(focusSlider)$('#analysis-scrubber')?.focus({preventScroll:true});
 }
 function stopFullAnalysis(){
@@ -1152,7 +1160,7 @@ function startAnalysisExercise(ply){
  const answer=saved.evaluations[ply-1];
  const original=saved.moves[ply-1];
  const back=()=>analysisPage(saved,ply);
- context={kind:'analysisExercise',answer,flipped:original.color==='b'};
+ context={kind:'analysisExercise',answer,onCorrect:()=>saved.solvedErrors.add(ply),flipped:original.color==='b'};
  setupBoard(original.before);
  practiceShell(`
   <h1>Ćwiczenie z partii</h1>
@@ -1180,6 +1188,7 @@ function checkAnalysisExercise(move){
 }
 function finishAnalysisExercise(move,correct){
  const played=game.move(move);
+ if(correct)context.onCorrect();
  lastMove=[played.from,played.to];
  solvedNow=true;selected=null;targets=[];
  drawBoard();
@@ -1187,7 +1196,7 @@ function finishAnalysisExercise(move,correct){
  feedback(`${correct?'Dobrze!':'Rozwiązanie.'} Wariant Stockfisha: ${context.answer.san.join(' ')}.`,correct?'success':'');
 }
 function analysisPage(saved,ply=0){
- context={kind:'analysis',moves:[],evaluations:[],side:'both',...saved};
+ context={kind:'analysis',moves:[],evaluations:[],solvedErrors:new Set(),side:'both',...saved};
  if(!saved)setupBoard('start');
  else{
   boardInput.reset();
@@ -1230,6 +1239,7 @@ function analysisPage(saved,ply=0){
   importId++;
   stopFullAnalysis();
   context.evaluations=[];
+  context.solvedErrors.clear();
   context.importLabel='';
   importStatus.textContent='';
   context.imported=false;
@@ -1254,6 +1264,7 @@ function analysisPage(saved,ply=0){
    const parsed=readGame(pgn);
    stopFullAnalysis();
    context.evaluations=[];
+   context.solvedErrors.clear();
    context.imported=true;
    context.moves=parsed.moves;
    context.positions=parsed.positions;
