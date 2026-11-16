@@ -1,5 +1,16 @@
 # Akademia 64
 
+## Kolejność prac
+
+1. Inteligentne zadania: motywy, poprawki i statystyki.
+2. Analiza partii 2.0.
+3. Trener debiutów.
+4. Akademia końcówek.
+5. Profil i XP.
+6. Plan treningowy.
+7. PWA Android.
+8. Fundamenty: pozostałe sprawdzenia, w tym synchronizacja z prawdziwym kontem Firebase.
+
 Interaktywna akademia szachowa: 19 lekcji, sześć zadań, trzy debiuty, trening z komputerem, mapa nauki i odznaki. Trzy motywy: jasny, ciemny oraz systemowy.
 
 ## Uruchomienie

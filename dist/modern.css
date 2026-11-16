@@ -795,3 +795,14 @@ h1, h2, .hero h2 { font-weight: 700; }
 }
 
 #install-app[hidden]{display:none}
+
+.tactic-training{display:grid;gap:8px;margin:14px 0;color:var(--text)}
+.tactic-training label,.tactic-theme-details summary{font-size:13px;font-weight:700}
+.tactic-training select{width:100%;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--text);font:inherit}
+.tactic-training p{margin:0}
+.tactic-theme-details{padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+.tactic-theme-details summary{cursor:pointer}
+.tactic-theme-details[open] summary{margin-bottom:8px}
+.tactic-theme-details ul{list-style:none;margin:8px 0;padding:0}
+.tactic-theme-details li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.tactic-theme-details li span{white-space:nowrap;font-variant-numeric:tabular-nums}

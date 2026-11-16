@@ -1,9 +1,10 @@
+import { cleanPuzzleThemes, puzzleThemes, summarizePuzzleThemes } from './puzzle-themes.js';
 import { dailyTrainingPlan, trainingMinutes, trainingSegments } from './training-plan.js';
 import { academyLevel, localDay, profileActivity, xpSources } from './profile-progress.js';
 import { endgames, endgameOutcome } from './endgames.js';
 import { createBoardInput } from './board-input.js?v=20261108-free-analysis';
-import { accounts } from './accounts.js?v=20261116-sync';
-import { normalizeProgress, pendingCorrections } from './progress.js?v=20261108-rating-reset';
+import { accounts } from './accounts.js?v=20261116-release';
+import { normalizeProgress, pendingCorrections } from './progress.js?v=20261116-release';
 import { Chess } from './vendor/chess.js';
 import { openingChapter } from './opening-chapter.js?v=20261108-shared-board';
 import { lichessPuzzles } from './puzzle-bank.js';
@@ -55,13 +56,18 @@ const puzzles=[
 {id:'bishop',title:'Przekątna okazja',category:'Zdobywanie figur',level:'Początkujący',fen:'7k/8/6r1/8/8/3B4/8/K7 w - - 0 1',target:['d3','g6'],text:'Znajdź niechronioną wieżę i zdobądź ją gońcem.',hint:'Z d3 przekątna biegnie przez e4 i f5 do g6.'}
 ];
 const originalPuzzles=puzzles.slice();
+const originalThemes={
+ mate1:['mate','mateIn1'], hanging:['hangingPiece'], backrank:['mate','mateIn1','backRankMate'],
+ forkreal:['fork'], promotion:['promotion'], bishop:['hangingPiece']
+};
+for(const p of originalPuzzles)p.themes=originalThemes[p.id];
 for(const [i,p] of originalPuzzles.entries())p.rating=900+i*80;
-const themesPL={mate:'Mat',mateIn1:'Mat w 1',mateIn2:'Mat w 2',mateIn3:'Mat w 3',fork:'Widełki',pin:'Związanie',skewer:'Rentgen',discoveredAttack:'Atak z odsłony',endgame:'Końcówka',sacrifice:'Poświęcenie',hangingPiece:'Niebroniona figura',defensiveMove:'Obrona',promotion:'Promocja',trappedPiece:'Uwięziona figura',backRankMate:'Mat na ostatniej linii',doubleCheck:'Podwójny szach'};
+const themesPL=puzzleThemes;
 for(const row of lichessPuzzles){
  puzzles.push({
   id:'li_'+row.id,source:'lichess',title:'Znajdź najlepszą kontynuację',
   category:row.themes.map(t=>themesPL[t]).find(Boolean)||'Taktyka',
-  rating:row.rating,fen:row.fen,line:row.line,
+  rating:row.rating,fen:row.fen,line:row.line,themes:cleanPuzzleThemes(row.themes),
   text:'Znajdź i wykonaj całą taktyczną kontynuację. Po Twoim ruchu przeciwnik odpowie automatycznie.',
   hint:'Sprawdź szachy, bicia i groźby. Przyjrzyj się niebronionym figurom.'
  });
@@ -83,6 +89,14 @@ for(const event of ['pointerup','click','keydown']){
 $('#help-button').onclick=()=>dialog('Twoja droga do dobrej gry','Zacznij od mapy nauki albo wybierz zadania. Na szachownicy kliknij figurę, a potem pole docelowe. Lekcje i trening są bez limitu czasu. Gra treningowa używa lokalnego przeciwnika komputerowego; rozmowa z trenerem AI nie jest jeszcze dostępna.');
 $('#storage-info').onclick=()=>accounts.showStorageInfo();
 $('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').onclick=()=>{const open=$('.sidebar').classList.toggle('open');$('.menu-toggle').setAttribute('aria-expanded',String(open))};
+$('.sidebar nav').addEventListener('click',event=>{
+ const link=event.target.closest('[data-nav]');
+ const toggle=$('.menu-toggle');
+ if(link?.hash===(location.hash||'#home')&&toggle.getAttribute('aria-expanded')==='true'){
+  toggle.click();
+  toggle.focus();
+ }
+});
 function updateLevel(){$('#level-name').textContent='Poziom '+academyLevel(state,completedEndgames().size).level}
 function progress(){return Math.round(state.done.length/all.length*100)}
 function nextLesson(){return all.find(l=>!state.done.includes(l.id))||all[0]}
@@ -358,28 +372,32 @@ async function loadPuzzleShard(shard,puzzleId){
   const themes=row[4].split(' ');
   puzzles.push({id,source:'lichess',title:'Znajdź najlepszą kontynuację',
    category:themes.map(t=>themesPL[t]).find(Boolean)||'Taktyka',
-   rating:row[3],fen:row[1],line:row[2].split(' '),
+   rating:row[3],fen:row[1],line:row[2].split(' '),themes:cleanPuzzleThemes(themes),
    text:'Znajdź i wykonaj całą kombinację. Przeciwnik odpowie automatycznie.',
    hint:'Sprawdź najpierw szachy, bicia i groźby.'});
  }
  if(!puzzleId)loadedPuzzleShards.add(shard.file);
  return true;
 }
-async function openMixedPuzzle(){
+async function openMixedPuzzle(theme){
+ theme=Object.hasOwn(puzzleThemes,theme)?theme:undefined;
  const token=++mixedRequest;
  const previous=location.hash;
  const rating=ratingFromAttempts(state.tactics).rating;
  const unavailable=new Set([...state.tactics.map(attempt=>attempt.id),...recentlySeenPuzzles]);
- const closestUnseen=()=>puzzles.reduce((distance,puzzle)=>
+ const pool=()=>theme?puzzles.filter(puzzle=>puzzle.themes.includes(theme)):puzzles;
+ const closestUnseen=()=>pool().reduce((distance,puzzle)=>
   unavailable.has(puzzle.id)?distance:Math.min(distance,Math.abs(puzzle.rating-rating)),Infinity);
  if(!loadedPuzzleShards.size||closestUnseen()>PUZZLE_RATING_RANGE){
-  if(previous==='#puzzles'||previous===''||previous==='#home'){
-   main.innerHTML='<div class="page-intro"><h1>Miszmasz</h1><p role="status">Dobieranie zadania do Twojego rankingu…</p></div>';
+  if(!context&&(previous.startsWith('#puzzles')||previous===''||previous==='#home')){
+   main.innerHTML=`<div class="page-intro"><h1>${theme?puzzleThemes[theme]:'Miszmasz'}</h1><p role="status">Dobieranie zadania do Twojego rankingu…</p></div>`;
   }
   try{
    let closest=closestUnseen();
-   while(token===mixedRequest&&location.hash===previous){
-    if(!await fetchPuzzleShard(rating,closest))break;
+   let searched=0;
+   while(token===mixedRequest&&location.hash===previous&&(!theme||searched<5)){
+    if(!await fetchPuzzleShard(rating,theme?Math.max(closest,PUZZLE_RATING_RANGE):closest))break;
+    searched++;
     closest=closestUnseen();
     if(closest<=PUZZLE_RATING_RANGE)break;
    }
@@ -387,14 +405,50 @@ async function openMixedPuzzle(){
   catch(error){console.warn('Baza zadań:',error);/* zachowaj dotychczasowe zadania */ }
  }
  if(token!==mixedRequest||location.hash!==previous)return;
- puzzle(nextMixedPuzzle());
+ const options=pool();
+ if(!options.length){
+  main.innerHTML=`<div class="page-intro"><h1>Zadania</h1><p role="status">Brak dostępnych zadań dla tego motywu. Spróbuj ponownie lub wybierz inny motyw.</p></div>${puzzleTraining(theme)}<button class="btn" id="retry-puzzle-theme">Spróbuj ponownie</button>`;
+  bindPuzzleTraining();
+  $('#retry-puzzle-theme').onclick=()=>openMixedPuzzle(theme);
+  return;
+ }
+ puzzle(nextMixedPuzzle(options),theme);
 }
 let recentlySeenPuzzles=[];
-function nextMixedPuzzle(){
- const p=choosePuzzle(puzzles,state.tactics,recentlySeenPuzzles);
+function nextMixedPuzzle(pool){
+ const p=choosePuzzle(pool,state.tactics,recentlySeenPuzzles);
  recentlySeenPuzzles.push(p.id);
  if(recentlySeenPuzzles.length>25)recentlySeenPuzzles.shift();
  return p.id;
+}
+function puzzleTraining(theme){
+ return `<div class="tactic-training">
+  <label for="puzzle-theme">Motyw taktyczny</label>
+  <select id="puzzle-theme"><option value="">Wszystkie motywy</option>${Object.entries(puzzleThemes).map(([id,label])=>`<option value="${id}"${theme===id?' selected':''}>${label}</option>`).join('')}</select>
+  <p id="puzzle-recommendation" hidden><a class="text-link"></a></p>
+  <details class="tactic-theme-details"><summary>Skuteczność według motywów</summary><div id="puzzle-theme-stats"></div></details>
+ </div>`;
+}
+function bindPuzzleTraining(){
+ $('#puzzle-theme').onchange=event=>{
+  const theme=event.target.value;
+  const hash=theme?'#puzzles/'+theme:'#puzzles';
+  if(location.hash===hash)openMixedPuzzle(theme);
+  else location.hash=hash;
+ };
+ updatePuzzleThemeStats();
+}
+function updatePuzzleThemeStats(){
+ const {rows,recommended,unclassified}=summarizePuzzleThemes(state.tactics,new Map(puzzles.map(p=>[p.id,p])));
+ const suggestion=$('#puzzle-recommendation');
+ const link=suggestion.querySelector('a');
+ suggestion.hidden=!recommended||recommended===$('#puzzle-theme').value;
+ if(recommended){
+  link.href='#puzzles/'+recommended;
+  link.textContent='Polecany trening: '+puzzleThemes[recommended];
+ }
+ const results=rows.map(({theme,correct,total})=>`<li><a href="#puzzles/${theme}">${puzzleThemes[theme]}</a><span>${correct}/${total} · ${Math.round(100*correct/total)}%</span></li>`);
+ $('#puzzle-theme-stats').innerHTML=`<p class="tiny">Liczy się pierwsza próba każdego zadania. Jedno zadanie może mieć kilka motywów.</p>${results.length?`<ul>${results.join('')}</ul>`:'<p>Rozwiąż zadania, aby zobaczyć wyniki.</p>'}${unclassified?`<p class="tiny">Starsze próby bez rozpoznanego motywu: ${unclassified}.</p>`:''}`;
 }
 function renderCorrectionLink(){
  $('#puzzle-corrections').textContent='Poprawka ('+pendingCorrections(state).length+')';
@@ -406,7 +460,7 @@ function correctionsPage(){
   const puzzle=puzzles.find(item=>item.id===attempt.id);
   const row=document.createElement('li');
   const link=document.createElement('a');
-  link.href=puzzleHref(attempt);
+  link.href=puzzleHref(attempt)+'/corrections';
   link.textContent=(puzzle?.source==='lichess'||!puzzle?'Zadanie '+attempt.id.replace(/^li_/,''):puzzle.title)+' · '+attempt.rating;
   row.append(link);
   list.append(row);
@@ -432,13 +486,15 @@ function recordTactic(ok){
  const already=Boolean(first);
  const before=ratingFromAttempts(state.tactics).rating;
  const at=Date.now();
- if(!already)state.tactics.push({id,rating,ok,at,ratingVersion:RATING_VERSION});
+ if(!already)state.tactics.push({id,rating,ok,at,ratingVersion:RATING_VERSION,themes:ctx.item.themes});
+ const learnedThemes=first&&!first.themes&&ctx.item.themes.length>0;
+ if(learnedThemes)first.themes=ctx.item.themes;
  const updateCorrection=!ok||(previous??first)?.ok===false;
  if(updateCorrection){
   state.corrections=state.corrections.filter(attempt=>attempt.id!==id);
   state.corrections.push({id,rating,ok,at:Math.max(at,(previous?.at??0)+1)});
  }
- if(!already||updateCorrection)save();
+ if(!already||updateCorrection||learnedThemes)save();
  renderCorrectionLink();
  const after=ratingFromAttempts(state.tactics).rating;
  const change=after-before;
@@ -449,6 +505,7 @@ function recordTactic(ok){
  const status=document.querySelector('#tactic-result');
  if(status)status.textContent=label;
  updateTacticsStats();
+ updatePuzzleThemeStats();
  renderTacticTiles();
  if(!ok)$('#next-puzzle').hidden=false;
 }
@@ -506,8 +563,8 @@ function finishPuzzle(){
  });
 }
 
-async function openPuzzle(id,rating){
- if(puzzles.some(item=>item.id===id)){puzzle(id);return}
+async function openPuzzle(id,rating,review){
+ if(puzzles.some(item=>item.id===id)){puzzle(id,undefined,review);return}
  const puzzleRating=Number(rating??state.tactics.find(attempt=>attempt.id===id)?.rating);
  if(!/^li_[A-Za-z0-9_-]+$/.test(id)){puzzle(id);return}
  const token=gameToken;
@@ -537,10 +594,10 @@ async function openPuzzle(id,rating){
   return;
  }
  if(token!==gameToken)return;
- if(puzzles.some(item=>item.id===id))puzzle(id);
+ if(puzzles.some(item=>item.id===id))puzzle(id,undefined,review);
  else main.innerHTML='<p role="alert">Nie znaleziono zadania. <a href="#puzzles">Wylosuj inne zadanie</a>.</p>';
 }
-function puzzle(id){
+function puzzle(id,theme,review=false){
  const p=puzzles.find(item=>item.id===id);
  if(!p){location.hash='puzzles';return}
  const drawing={enabled:false,color:'orange'};
@@ -558,8 +615,9 @@ function puzzle(id){
  context.turnLabel=white?'Białe · Twój ruch':'Czarne · Twój ruch';
  const index=puzzles.indexOf(p);
  practiceShell(`
-  <div class="puzzle-task-heading"><span class="eyebrow">MISZMASZ · ${p.category}</span><span><span data-puzzle-count data-prefix="Baza "></span><span> · ranking ${p.rating}</span></span></div>
+  <div class="puzzle-task-heading"><span class="eyebrow">${review?'Poprawka':theme?puzzleThemes[theme]:'Miszmasz · '+p.category}</span><span><span data-puzzle-count data-prefix="Baza "></span><span> · ranking ${p.rating}</span></span></div>
   <div class="tactic-stats" aria-label="Ranking taktyczny"><span><small>Twój ranking Glicko-2</small><strong id="tactic-rating">${STARTING_RATING}</strong> <small id="tactic-rd">±350</small></span><span><small>Ocenione próby</small><strong id="tactic-count">0</strong></span><span><small>Skuteczność</small><strong id="tactic-accuracy">—</strong></span></div>
+  ${puzzleTraining(theme)}
   <div class="tactic-result" id="tactic-result" role="status"></div>
   <h2>${p.title}</h2>
   <div class="instruction puzzle-turn"><span class="turn-pawn ${white?'white':'black'}" aria-hidden="true">♟</span><span>${white?'Ruch białych':'Ruch czarnych'}<br>${p.text}</span></div>
@@ -568,7 +626,7 @@ function puzzle(id){
    <a class="btn outline" id="puzzle-corrections" href="#corrections">Poprawka</a>
    <button class="btn outline" id="hint">Podpowiedź</button>
    <button class="text-link" id="show-puzzle-solution">Pokaż rozwiązanie</button>
-   <button class="btn" id="next-puzzle" type="button" hidden>Kolejne zadanie →</button>
+   <button class="btn" id="next-puzzle" type="button" hidden>${review?'Wróć do poprawek':'Kolejne zadanie →'}</button>
   </div>
   <section class="puzzle-analysis">
    <h3>Analiza zadania</h3>
@@ -586,7 +644,11 @@ function puzzle(id){
    </div>
    <div class="tactic-tiles" id="tactic-tiles" aria-live="polite"></div>
   </section>`);
- $('#next-puzzle').onclick=()=>openMixedPuzzle();
+ $('#next-puzzle').onclick=()=>{
+  if(review)location.hash='corrections';
+  else openMixedPuzzle(theme);
+ };
+ bindPuzzleTraining();
  updateTacticsStats();
  renderTacticTiles();
  renderCorrectionLink();
@@ -1425,13 +1487,13 @@ function playerProfile(){
    </div>
   </section>`;
 }
-function route(){context?.defenseController?.abort();fullGameAnalysis?.abort();fullGameAnalysis=null;gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating]=(location.hash.slice(1)||'home').split('/');const navPage={endgames:'learn',lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',training:'Plan treningowy',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,training:trainingPlanPage,endgames:()=>endgamePage(id),lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
+function route(){context?.defenseController?.abort();fullGameAnalysis?.abort();fullGameAnalysis=null;gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating,mode]=(location.hash.slice(1)||'home').split('/');const navPage={endgames:'learn',lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',training:'Plan treningowy',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,training:trainingPlanPage,endgames:()=>endgamePage(id),lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(id),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating,mode==='corrections'),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);route();
 await accounts.start((progress,{background=false}={})=>{
  state=progress;
  if(background){
   if(['#profile','#achievements'].includes(location.hash))playerProfile();
-  if(context?.kind==='puzzle'){updateTacticsStats();renderCorrectionLink()}
+  if(context?.kind==='puzzle'){updateTacticsStats();renderCorrectionLink();updatePuzzleThemeStats()}
   updateLevel();
  }else if(['analysis','analysisExercise','endgame'].includes(context?.kind))updateLevel();
  else route();
