@@ -649,29 +649,27 @@ function puzzle(id,theme,review=false){
   <div class="tactic-result" id="tactic-result" role="status"></div>
   <h2>${p.title}</h2>
   <div class="instruction puzzle-turn"><span class="turn-pawn ${white?'white':'black'}" aria-hidden="true">♟</span><span>${white?'Ruch białych':'Ruch czarnych'}<br>${p.text}</span></div>
-  <div id="feedback" class="feedback" aria-live="polite">${state.solved.includes(id)?'To zadanie masz już rozwiązane. Powtórz je dla utrwalenia.':'Wybierz figurę i wskaż pole docelowe.'}</div>
-  <div class="lesson-actions">
-   <a class="btn outline" id="puzzle-corrections" href="#corrections">Poprawka</a>
-   <button class="btn outline" id="hint">Podpowiedź</button>
-   <button class="text-link" id="show-puzzle-solution">Pokaż rozwiązanie</button>
-   <button class="btn" id="next-puzzle" type="button" hidden>${review?'Wróć do poprawek':'Kolejne zadanie →'}</button>
-  </div>
-  <section class="puzzle-analysis">
-   <h3>Analiza zadania</h3>
-   <p id="puzzle-answer">Rozwiąż zadanie lub pokaż rozwiązanie, aby zobaczyć analizę.</p>
-   <p id="stockfish-result" role="status"></p>
-   <a href="https://github.com/nmrugg/stockfish.js/tree/v19.0.1">Źródła Stockfish.js 19.0.1 (GPLv3)</a>
-  </section>`, 'Pozycja treningowa',context.turnLabel);
- updatePuzzleBankCount();
-
- main.querySelector('.board-card').insertAdjacentHTML('beforeend',`
   <section class="tactic-history" aria-label="Historia punktów z ostatnich zadań">
    <div class="tactic-history-heading">
     <strong>Ostatnie zadania</strong>
     <span>Zmiana rankingu</span>
    </div>
    <div class="tactic-tiles" id="tactic-tiles" aria-live="polite"></div>
-  </section>`);
+  </section>
+  <div id="feedback" class="feedback" aria-live="polite">${state.solved.includes(id)?'To zadanie masz już rozwiązane. Powtórz je dla utrwalenia.':''}</div>
+  <section class="puzzle-analysis">
+   <h3>Analiza zadania</h3>
+   <p id="puzzle-answer">Rozwiąż zadanie lub pokaż rozwiązanie, aby zobaczyć analizę.</p>
+   <p id="stockfish-result" role="status"></p>
+   <a href="https://github.com/nmrugg/stockfish.js/tree/v19.0.1">Źródła Stockfish.js 19.0.1 (GPLv3)</a>
+  </section>
+  <div class="lesson-actions">
+   <a class="btn outline" id="puzzle-corrections" href="#corrections">Poprawka</a>
+   <button class="btn outline" id="hint">Podpowiedź</button>
+   <button class="text-link" id="show-puzzle-solution">Pokaż rozwiązanie</button>
+   <button class="btn" id="next-puzzle" type="button" hidden>${review?'Wróć do poprawek':'Kolejne zadanie →'}</button>
+  </div>`, 'Pozycja treningowa',context.turnLabel);
+ updatePuzzleBankCount();
  $('#next-puzzle').onclick=()=>{
   if(review)location.hash='corrections';
   else openMixedPuzzle(theme);
