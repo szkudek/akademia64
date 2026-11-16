@@ -1,8 +1,8 @@
 self.ACADEMY_OFFLINE={
-  "version": "02790dbfab501569",
+  "version": "2c3dd2f0a5e00385",
   "assets": [
     "accounts.js?v=20261116-release",
-    "app.js?v=20261116-release",
+    "app.js?v=20261116-analysis-fixes",
     "board-input.js?v=20261108-free-analysis",
     "chess-clicks.js",
     "chess-sound.js?v=20261108-recorded-clicks",
@@ -11,7 +11,7 @@ self.ACADEMY_OFFLINE={
     "firebase-service.js?v=20261116-release",
     "game-analysis.js",
     "game-analysis.js?v=20261116-analysis",
-    "game-report.js",
+    "game-report.js?v=20261116-analysis-fixes",
     "icons/icon-192.png",
     "icons/icon-512.png",
     "icons/icon-maskable.png",
