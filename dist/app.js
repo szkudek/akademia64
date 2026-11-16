@@ -1044,10 +1044,18 @@ function showAnalysisEvaluation(evaluation){
  bar.setAttribute('aria-label','Ocena pozycji: '+label);
  bar.querySelector('.analysis-evaluation-value').textContent=value;
 }
+function updateAnalysisSuggestion(){
+ const engine=$('#analysis-engine').checked;
+ const checkbox=$('#analysis-show-best');
+ checkbox.disabled=!engine;
+ context.suggestion=engine&&checkbox.checked&&context.analysisBestMove
+  ?{...context.analysisBestMove,color:'blue'}:null;
+ boardInput.setSuggestion(context.suggestion);
+}
 function updateAnalysisEngine(position,ply){
  gameAnalysis?.abort();
- context.suggestion=null;
- boardInput.setSuggestion(null);
+ context.analysisBestMove=null;
+ updateAnalysisSuggestion();
  const result=$('#analysis-result');
  const cached=context.evaluations[ply];
  showAnalysisEvaluation(cached);
@@ -1059,10 +1067,8 @@ function updateAnalysisEngine(position,ply){
   const previous=review?`${moveLabel(played)} · ${review.label}${loss}. Najlepszy wariant przed ruchem: ${before.san.join(' ')}. `:'';
   const line=cached.finished?(cached.kind==='mate'?'Mat.':'Remis.'):`Ocena: ${formatScore(cached)} · głębokość ${cached.depth}. Wariant: ${cached.san.join(' ')}.`;
   result.textContent=previous+line;
-  if(cached.best&&$('#analysis-engine').checked){
-   context.suggestion={...uciMove(cached.best),color:'blue'};
-   boardInput.setSuggestion(context.suggestion);
-  }
+  context.analysisBestMove=cached.best?uciMove(cached.best):null;
+  updateAnalysisSuggestion();
   return;
  }
  if(fullGameAnalysis){result.textContent='Ta pozycja czeka na ocenę.';return}
@@ -1087,10 +1093,8 @@ function updateAnalysisEngine(position,ply){
   onResult:(message,best,evaluation)=>{
    showAnalysisEvaluation(evaluation);
    result.textContent=message;
-   if(best){
-    context.suggestion={...best,color:'blue'};
-    boardInput.setSuggestion(context.suggestion);
-   }
+   context.analysisBestMove=best;
+   updateAnalysisSuggestion();
   },
   onError:()=>{result.textContent='Stockfish nie zwrócił oceny. Wyłącz i włącz silnik, aby spróbować ponownie.'}
  });
@@ -1209,7 +1213,7 @@ async function runFullAnalysis(){
 function startAnalysisExercise(ply){
  stopFullAnalysis();
  gameAnalysis?.abort();
- const saved={...context,engineEnabled:$('#analysis-engine').checked,suggestion:null};
+ const saved={...context,engineEnabled:$('#analysis-engine').checked,showBest:$('#analysis-show-best').checked,suggestion:null};
  const answer=saved.evaluations[ply-1];
  const original=saved.moves[ply-1];
  const back=()=>analysisPage(saved,ply);
@@ -1258,8 +1262,9 @@ function analysisPage(saved,ply=0){
  }
  practiceShell(`
   <h1>Analiza partii 2.0</h1>
-  <p>Graj na zmianę białymi i czarnymi albo wczytaj partię z pliku PGN. Włącz Stockfisha, aby zobaczyć ocenę pozycji i strzałkę najlepszego ruchu.</p>
+  <p>Graj na zmianę białymi i czarnymi albo wczytaj partię z pliku PGN. Włącz Stockfisha, aby zobaczyć ocenę pozycji.</p>
   <label class="settings-row"><input type="checkbox" id="analysis-engine"> Włącz Stockfisha</label>
+  <label class="settings-row"><input type="checkbox" id="analysis-show-best"> Pokaż najlepszy ruch</label>
   <div class="feedback" id="analysis-result" role="status"></div>
   <p class="tiny">Dodatnia ocena oznacza przewagę białych.</p>
   <div class="analysis-options">
@@ -1282,6 +1287,8 @@ function analysisPage(saved,ply=0){
  $('#analysis-side').value=context.side;
  $('#analysis-side').onchange=event=>{context.side=event.target.value;updateGameReport()};
  $('#analysis-engine').checked=Boolean(saved?.engineEnabled);
+ $('#analysis-show-best').checked=Boolean(saved?.showBest);
+ $('#analysis-show-best').onchange=updateAnalysisSuggestion;
  $('#analysis-all').onclick=runFullAnalysis;
  $('#analysis-stop').onclick=()=>{stopFullAnalysis();showAnalysisPosition(boardNavigationRange().current)};
  $('#analysis-engine').onchange=()=>{
