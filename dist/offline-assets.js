@@ -1,8 +1,8 @@
 self.ACADEMY_OFFLINE={
-  "version": "fc3695b0255b93ae",
+  "version": "5727f0423acfb42f",
   "assets": [
     "accounts.js?v=20261116-release",
-    "app.js?v=20261116-puzzle-panel",
+    "app.js?v=20261116-analysis-panels",
     "board-input.js?v=20261108-free-analysis",
     "chess-clicks.js",
     "chess-sound.js?v=20261108-recorded-clicks",
@@ -18,7 +18,7 @@ self.ACADEMY_OFFLINE={
     "italian-lesson.js",
     "italian-variations.js",
     "manifest.webmanifest",
-    "modern.css?v=20261116-puzzle-panel",
+    "modern.css?v=20261116-analysis-panels",
     "opening-catalog.js",
     "opening-chapter.js?v=20261108-shared-board",
     "opening-courses.js",
