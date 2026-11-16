@@ -10,7 +10,7 @@ import { openingChapter } from './opening-chapter.js?v=20261108-shared-board';
 import { lichessPuzzles } from './puzzle-bank.js';
 import { ratingFromAttempts, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
 import { analyzePuzzle } from './puzzle-analysis.js?v=20261116-eval-bar';
-import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261116-analysis';
+import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261116-king-flags';
 import { createStockfish, formatScore, uciMove } from './stockfish-analysis.js';
 import { renderGameReport } from './game-report.js?v=20261116-analysis-fixes';
 import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-recorded-clicks';
@@ -175,19 +175,46 @@ function earned(i){return units[i].lessons.every((l,j)=>state.done.includes(`${i
 function learn(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">TWOJA ŚCIEŻKA</div><h1>Małe kroki. Solidne podstawy.</h1><p>Od pierwszego ruchu do samodzielnej partii. Idź po kolei lub wybierz temat, który Cię ciekawi.</p></div><div class="map-summary"><div><h3>Od zera do pierwszej partii</h3><p>${state.done.length} z ${all.length} lekcji · ${units.length} etapów</p></div><div><div class="progress-label"><span>Twój postęp</span><span>${progress()}%</span></div><div class="progress"><span style="width:${progress()}%"></span></div></div></div><a href="#endgames" class="lesson-link endgame-entry"><span class="lesson-status">♔</span><span><strong>Akademia końcówek</strong><br>Maty, piony i wieże</span><small>6 lekcji →</small></a><div class="units">${units.map((u,i)=>`<section class="unit"><div class="unit-header"><div class="unit-emblem">${u.icon}</div><div><div class="eyebrow">ETAP 0${i+1}</div><h2>${u.title}</h2></div></div>${u.lessons.map((l,j)=>`<a class="lesson-link ${state.done.includes(`${i}-${j}`)?'done':''}" href="#lesson/${i}-${j}"><span class="lesson-status">${state.done.includes(`${i}-${j}`)?'✓':j+1}</span><span>${l.title}</span><small>${l.type==='game'?'Partia':'5–8 min'} &nbsp; →</small></a>`).join('')}<div class="badge-row">✧ &nbsp; ${earned(i)?'Zdobyta odznaka:':'Odznaka etapu:'} ${u.badge}</div></section>`).join('')}</div>`}
 let game=null,selected=null,targets=[],lastMove=null,context=null,solvedNow=false,aiTimer=null,gameToken=0,openingStep=0,openingMode='show',hintCount=0;
 function freeAnalysis(){return context?.kind==='analysis'&&!context.imported}
-function boardHTML(g,highlight=lastMove){
-const flipped=context?.flipped;
-const live=context?.reviewPly==null||freeAnalysis();
-const position=g.board();
-return `<div class="board ${context?.imported?"analysis-replay":""} ${context?.kind==='puzzle'?'puzzle-board':''}" role="group" aria-label="Interaktywna szachownica">${position.flatMap((row,viewRow)=>row.map((_,viewCol)=>{const r=flipped?7-viewRow:viewRow,c=flipped?7-viewCol:viewCol,p=position[r][c];const sq='abcdefgh'[c]+(8-r);return `<button ${context?.imported?'disabled':''} class="square ${(r+c)%2?'dark':''} ${live&&selected===sq?'selected':''} ${live&&targets.includes(sq)&&(context?.kind!=='play'||$('#show-targets')?.checked!==false)?'target':''} ${highlight?.includes(sq)?'last':''}" data-square="${sq}" aria-label="${sq}${p?`, ${p.color==='w'?'biały':'czarny'} ${names[p.type]}`:', puste pole'}">${p?pieceHTML(p.type,p.color):''}${viewCol===0?`<span class="coord rank">${8-r}</span>`:''}${viewRow===7?`<span class="coord">${'abcdefgh'[c]}</span>`:''}</button>`})).join('')}</div>`}
+function boardHTML(g,highlight=lastMove,outcome=null){
+ const flipped=context?.flipped;
+ const live=context?.reviewPly==null||freeAnalysis();
+ const position=g.board();
+ const squares=position.flatMap((row,viewRow)=>row.map((_,viewCol)=>{
+  const r=flipped?7-viewRow:viewRow,c=flipped?7-viewCol:viewCol;
+  const piece=position[r][c];
+  const square='abcdefgh'[c]+(8-r);
+  const result=piece?.type==='k'&&outcome?(outcome==='draw'?'draw':piece.color===outcome?'win':'loss'):'';
+  const player={win:', zwycięzca',loss:', przegrany',draw:', remis'}[result]??'';
+  const symbol=result==='draw'?'½':'⚑';
+  const description=piece?', '+(piece.color==='w'?'biały':'czarny')+' '+names[piece.type]:', puste pole';
+  const target=live&&targets.includes(square)&&(context?.kind!=='play'||$('#show-targets')?.checked!==false);
+  return '<button '+(context?.imported?'disabled ':'')+
+   'class="square '+((r+c)%2?'dark ':'')+(live&&selected===square?'selected ':'')+(target?'target ':'')+(highlight?.includes(square)?'last':'')+
+   '" data-square="'+square+'" aria-label="'+square+description+player+'">'+
+   (piece?pieceHTML(piece.type,piece.color):'')+
+   (result?'<span class="king-result '+result+'" aria-hidden="true">'+symbol+'</span>':'')+
+   (viewCol===0?'<span class="coord rank">'+(8-r)+'</span>':'')+
+   (viewRow===7?'<span class="coord">'+'abcdefgh'[c]+'</span>':'')+'</button>';
+ }));
+ const mode=context?.imported?'analysis-replay':context?.kind==='puzzle'?'puzzle-board':'';
+ return '<div class="board '+mode+'" role="group" aria-label="Interaktywna szachownica">'+squares.join('')+'</div>';
+}
 function canDragPiece(sq){if(solvedNow||!game||!context||context.imported||context.reviewPly!=null&&!freeAnalysis())return false;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return false;if(context.kind==='endgame'&&game.turn()!==context.side)return false;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return false;if(context.kind==='lesson'&&['square','quiz','game'].includes(context.item.type))return false;return game.get(sq)?.color===game.turn()}
 function drawBoard(){
  if(!$('#board-host'))return;
  const preview=context?.positions?.[context.reviewPly];
  const boardGame=preview&&!freeAnalysis()?new Chess(preview.fen):game;
- $('#board-host').innerHTML=preview?boardHTML(boardGame,preview.move):boardHTML(boardGame);
+ $('#board-host').innerHTML=boardHTML(boardGame,preview?preview.move:lastMove,boardOutcome(boardGame,preview));
  updateBoardNavigation();
  boardInput.attach($('#board-host .board'),{position:boardGame.fen(),flipped:context?.flipped,drawing:context?.drawing,suggestion:context?.suggestion,pieceAt:sq=>boardGame.get(sq),playerColor:context?.kind==='play'?'w':boardGame.turn(),canDrag:canDragPiece,click:clickSquare,move:(from,to)=>{if(!canDragPiece(from))return;selected=from;targets=game.moves({square:from,verbose:true}).map(m=>m.to);clickSquare(to)}})}
+function boardOutcome(position,preview){
+ if(position.isCheckmate())return position.turn()==='w'?'b':'w';
+ if(context.imported){
+  return preview?null:context.importOutcome??(position.isDraw()?'draw':null);
+ }
+ const canDraw=['play','analysis','endgame'].includes(context.kind)||context.kind==='puzzle'&&solvedNow;
+ return canDraw&&position.isDraw()?'draw':null;
+}
 function setupBoard(fen){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.reset();game=fen==='start'?new Chess():new Chess(fen);context.positions=[{fen:game.fen(),move:null}];context.reviewPly=null;selected=null;targets=[];lastMove=null;solvedNow=false}
 function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':context.kind==='endgame'?'#endgames':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':context.kind==='endgame'?'Akademia końcówek':'Moja akademia'}</a><div class="practice-layout"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div>${context.kind==='analysis'?analysisBoardMarkup():'<div id="board-host"></div>'}<div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
 const boardNavigation=[
@@ -1267,6 +1294,7 @@ function analysisPage(saved,ply=0){
   context.evaluations=[];
   context.solvedErrors.clear();
   context.importLabel='';
+  context.importOutcome=null;
   importStatus.textContent='';
   context.imported=false;
   context.moves=[];
@@ -1292,6 +1320,7 @@ function analysisPage(saved,ply=0){
    context.evaluations=[];
    context.solvedErrors.clear();
    context.imported=true;
+   context.importOutcome=parsed.outcome;
    context.moves=parsed.moves;
    context.positions=parsed.positions;
    game=new Chess(parsed.positions.at(-1).fen);
