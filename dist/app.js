@@ -216,7 +216,7 @@ function boardOutcome(position,preview){
  return canDraw&&position.isDraw()?'draw':null;
 }
 function setupBoard(fen){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.reset();game=fen==='start'?new Chess():new Chess(fen);context.positions=[{fen:game.fen(),move:null}];context.reviewPly=null;selected=null;targets=[];lastMove=null;solvedNow=false}
-function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':context.kind==='endgame'?'#endgames':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':context.kind==='endgame'?'Akademia końcówek':'Moja akademia'}</a><div class="practice-layout"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div>${context.kind==='analysis'?analysisBoardMarkup():'<div id="board-host"></div>'}<div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
+function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':context.kind==='endgame'?'#endgames':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':context.kind==='endgame'?'Akademia końcówek':'Moja akademia'}</a><div class="practice-layout" data-activity="${context.kind}"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div>${context.kind==='analysis'?analysisBoardMarkup():'<div id="board-host"></div>'}<div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${context.kind==='analysis'?'':boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
 const boardNavigation=[
  ['first','Do początku','M6 5v14M18 6l-6 6 6 6'],
  ['previous','Ruch wstecz','M15 6l-6 6 6 6'],
@@ -1109,6 +1109,7 @@ function showAnalysisPosition(ply,position=analysisPosition(ply)){
  drawBoard();
  $('#analysis-moves').querySelector('[aria-current]')?.removeAttribute('aria-current');
  $('#analysis-moves').children[ply].setAttribute('aria-current','step');
+ keepAnalysisMoveVisible();
  updateAnalysisEngine(position,ply);
  updateGameReport();
 }
@@ -1118,6 +1119,15 @@ function navigateAnalysis(ply){
  const move=context.moves[(ply>current?ply:current)-1];
  soundMove(move);
  showAnalysisPosition(ply);
+}
+function keepAnalysisMoveVisible(){
+ const panel=$('#analysis-panel-moves');
+ const move=$('#analysis-moves [aria-current]');
+ if(panel.hidden||!move)return;
+ const bounds=panel.getBoundingClientRect();
+ const item=move.getBoundingClientRect();
+ if(item.top<bounds.top)panel.scrollTop+=item.top-bounds.top;
+ else if(item.bottom>bounds.bottom)panel.scrollTop+=item.bottom-bounds.bottom;
 }
 function renderAnalysisMoves(){
  const buttons=document.createDocumentFragment();
@@ -1159,6 +1169,7 @@ function updateGameReport(){
  const root=$('#analysis-report');
  const focusSlider=document.activeElement?.id==='analysis-scrubber';
  renderGameReport(root,{moves,evaluations,current,side,solvedErrors:context.solvedErrors,select:navigateAnalysis,practice:startAnalysisExercise});
+ $('#analysis-report-empty').hidden=!root.hidden;
  if(focusSlider)$('#analysis-scrubber')?.focus({preventScroll:true});
 }
 function stopFullAnalysis(){
@@ -1258,9 +1269,20 @@ function analysisPage(saved,ply=0){
   solvedNow=false;
   game=analysisPosition(ply);
  }
+ const tabs=[['moves','Ruchy'],['engine','Silnik'],['report','Raport'],['pgn','PGN']];
  practiceShell(`
-  <h1>Analiza partii 2.0</h1>
-  <p>Graj na zmianę białymi i czarnymi albo wczytaj partię z pliku PGN. Włącz Stockfisha, aby zobaczyć ocenę pozycji.</p>
+  <div class="analysis-workspace">
+   <div class="analysis-header">
+    <h1>Analiza partii 2.0</h1>
+    <p id="analysis-game-name" class="tiny"></p>
+    <div class="analysis-tabs" role="tablist" aria-label="Panel analizy">
+     ${tabs.map(([id,label])=>`<button class="btn outline" type="button" id="analysis-tab-${id}" role="tab" aria-controls="analysis-panel-${id}" aria-selected="false" tabindex="-1">${label}</button>`).join('')}
+    </div>
+   </div>
+   <div class="analysis-tab-panel" id="analysis-panel-moves" role="tabpanel" aria-labelledby="analysis-tab-moves" hidden>
+    <div id="analysis-moves" class="analysis-moves" role="group" aria-label="Posunięcia partii"></div>
+   </div>
+   <div class="analysis-tab-panel" id="analysis-panel-engine" role="tabpanel" aria-labelledby="analysis-tab-engine" hidden>
   <label class="settings-row"><input type="checkbox" id="analysis-engine"> Włącz Stockfisha</label>
   <label class="settings-row"><input type="checkbox" id="analysis-show-best"> Pokaż najlepszy ruch</label>
   <div class="feedback" id="analysis-result" role="status"></div>
@@ -1271,17 +1293,46 @@ function analysisPage(saved,ply=0){
    <div class="lesson-actions"><button class="btn" id="analysis-all" type="button">Analizuj całą partię</button><button class="btn outline" id="analysis-stop" type="button" hidden>Zatrzymaj</button></div>
    <p id="analysis-progress" class="tiny" role="status"></p>
   </div>
-  <section id="analysis-report" hidden></section>
-  <h2>Posunięcia</h2>
-  <div id="analysis-moves" class="analysis-moves" role="group" aria-label="Posunięcia partii"></div>
-  <div class="lesson-actions"><button class="btn outline" type="button" id="analysis-reset">Nowa analiza</button></div>
-  <label class="account-field"><span>Plik PGN (jedna partia, do 1 MB)</span><input id="analysis-file" type="file" accept=".pgn,application/x-chess-pgn"></label>
-  <p id="analysis-import-status" class="tiny" role="status"></p>`, 'Analiza Partii','Ruch białych');
+   </div>
+   <div class="analysis-tab-panel" id="analysis-panel-report" role="tabpanel" aria-labelledby="analysis-tab-report" tabindex="0" hidden>
+    <p id="analysis-report-empty">Uruchom analizę całej partii w zakładce Silnik, aby zobaczyć wykres i kluczowe błędy.</p>
+    <section id="analysis-report" hidden></section>
+   </div>
+   <div class="analysis-tab-panel" id="analysis-panel-pgn" role="tabpanel" aria-labelledby="analysis-tab-pgn" hidden>
+    <label class="account-field"><span>Plik PGN (jedna partia, do 1 MB)</span><input id="analysis-file" type="file" accept=".pgn,application/x-chess-pgn"></label>
+    <p id="analysis-import-status" class="tiny" role="status"></p>
+    <button class="btn outline" type="button" id="analysis-reset">Nowa analiza</button>
+   </div>
+   <div class="analysis-toolbar">${boardControls()}</div>
+  </div>`, 'Analiza Partii','Ruch białych');
+
+ const tabButtons=tabs.map(([id])=>$('#analysis-tab-'+id));
+ const selectTab=(tab,focus=false)=>{
+  for(const button of tabButtons){
+   const active=button===tab;
+   button.setAttribute('aria-selected',String(active));
+   button.tabIndex=active?0:-1;
+   document.getElementById(button.getAttribute('aria-controls')).hidden=!active;
+  }
+  if(focus)tab.focus();
+  if(tab===tabButtons[0])keepAnalysisMoveVisible();
+ };
+ tabButtons.forEach((button,index)=>{
+  button.onclick=()=>selectTab(button);
+  button.onkeydown=event=>{
+   const destination={ArrowLeft:(index+tabButtons.length-1)%tabButtons.length,ArrowRight:(index+1)%tabButtons.length,Home:0,End:tabButtons.length-1}[event.key];
+   if(destination===undefined)return;
+   event.preventDefault();
+   selectTab(tabButtons[destination],true);
+  };
+ });
+ selectTab(tabButtons[saved?2:0]);
 
  const fileInput=$('#analysis-file');
  const importStatus=$('#analysis-import-status');
+ const gameName=$('#analysis-game-name');
  let importId=0;
- importStatus.textContent=context.importLabel??'';
+ gameName.textContent=context.importLabel??'';
  $('#analysis-side').value=context.side;
  $('#analysis-side').onchange=event=>{context.side=event.target.value;updateGameReport()};
  $('#analysis-engine').checked=Boolean(saved?.engineEnabled);
@@ -1301,11 +1352,13 @@ function analysisPage(saved,ply=0){
   context.importLabel='';
   context.importOutcome=null;
   importStatus.textContent='';
+  gameName.textContent='';
   context.imported=false;
   context.moves=[];
   setupBoard('start');
   renderAnalysisMoves();
   showAnalysisPosition(0);
+  selectTab(tabButtons[0],true);
  };
  fileInput.onchange=async()=>{
   const file=fileInput.files[0];
@@ -1331,8 +1384,10 @@ function analysisPage(saved,ply=0){
    game=new Chess(parsed.positions.at(-1).fen);
    renderAnalysisMoves();
    context.importLabel=`${parsed.players||file.name} · ${parsed.moves.length} półruchów`;
-   importStatus.textContent=context.importLabel;
+   gameName.textContent=context.importLabel;
+   importStatus.textContent='';
    showAnalysisPosition(0);
+   selectTab(tabButtons[0],true);
   }catch{
    if(fileInput.isConnected&&id===importId)importStatus.textContent='Nie udało się odczytać partii. Wybierz plik PGN zawierający jedną poprawną partię.';
   }

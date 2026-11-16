@@ -839,8 +839,7 @@ h1, h2, .hero h2 { font-weight: 700; }
   display: flex;
   flex-direction: column;
 }
-.workspace > main,
-.workspace > footer { max-width: none; }
+.workspace > main { max-width: none; }
 .workspace > main { flex: 1; min-width: 0; }
 
 @media (min-width: 1001px) {
@@ -883,7 +882,6 @@ h1, h2, .hero h2 { font-weight: 700; }
   .sidebar nav a { font-size: 13px; gap: 9px; padding: 12px 9px; white-space: normal; }
   .sidebar nav a span { display: inline-flex; flex: none; }
   .workspace > main { padding: 16px var(--workspace-gutter) 24px; }
-  .workspace > footer { padding-inline: var(--workspace-gutter); }
 
   .practice-layout,
   .opening-board-layout {
@@ -909,10 +907,6 @@ h1, h2, .hero h2 { font-weight: 700; }
   }
   .practice-layout > .lesson-panel { overflow-wrap: anywhere; }
   .practice-layout > .lesson-panel > * { flex-shrink: 0; }
-  .lesson-panel:has(> #analysis-moves) > .settings-row {
-    margin-block: 7px;
-    font-size: 13px;
-  }
   .workspace main > .back-link { margin-bottom: 10px; }
   .opening-explorer {
     max-width: none;
@@ -928,4 +922,111 @@ h1, h2, .hero h2 { font-weight: 700; }
     margin-inline: auto;
   }
   .practice-layout > .lesson-panel { min-width: 0; min-height: 0; }
+}
+
+.sidebar-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.sidebar-tools button {
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.sidebar-tools button:is(:hover, :focus-visible) {
+  background: var(--soft);
+  color: var(--heading);
+}
+
+.practice-layout[data-activity="analysis"] > .lesson-panel { padding: 0; }
+.analysis-workspace {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+}
+.analysis-header { padding: 16px 16px 10px; }
+.analysis-header h1 { font-size: clamp(1.2rem, 2vw, 1.65rem); margin: 0; }
+#analysis-game-name { margin: 4px 0; }
+#analysis-game-name:empty { display: none; }
+.analysis-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 12px;
+}
+.analysis-tabs .btn { padding: 7px 2px; font-size: 12px; }
+.analysis-tabs [aria-selected="true"] {
+  background: var(--soft);
+  border-color: var(--heading);
+  color: var(--heading);
+}
+.analysis-tab-panel {
+  min-height: 0;
+  max-height: 62dvh;
+  padding: 12px 16px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-block: 1px solid var(--line);
+}
+.analysis-tab-panel .settings-row { margin-block: 7px; font-size: 13px; }
+.analysis-workspace .analysis-moves {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: none;
+  overflow: visible;
+  padding: 2px;
+}
+.analysis-moves [data-ply="0"] { grid-column: 1 / -1; }
+.analysis-tab-panel .analysis-graph { margin-top: 0; }
+.analysis-workspace #analysis-errors { max-height: none; overflow: visible; }
+.analysis-toolbar { padding: 10px; }
+.analysis-toolbar .board-controls { margin: 0; justify-content: center; }
+
+@media (max-width: 1000px) {
+  .sidebar nav { flex-wrap: wrap; }
+  .sidebar-tools { flex-basis: 100%; grid-column: 1 / -1; }
+}
+@media (min-width: 1001px) {
+  .sidebar-tools { flex-direction: column; }
+  .analysis-workspace { height: 100%; }
+  .analysis-tab-panel { max-height: none; }
+}
+
+@media (min-width: 1001px) and (min-height: 560px) {
+  body:has(.practice-layout:is([data-activity="analysis"], [data-activity="analysisExercise"], [data-activity="puzzle"])) {
+    overflow: hidden;
+  }
+  .workspace:has(.practice-layout:is([data-activity="analysis"], [data-activity="analysisExercise"], [data-activity="puzzle"])) {
+    height: 100dvh;
+  }
+  .workspace:has(.practice-layout:is([data-activity="analysis"], [data-activity="analysisExercise"], [data-activity="puzzle"])) > main {
+    display: grid;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    row-gap: 10px;
+    padding-block: 12px;
+  }
+  .workspace main:has(> .practice-layout:is([data-activity="analysis"], [data-activity="analysisExercise"], [data-activity="puzzle"])) > .back-link {
+    justify-self: start;
+    margin: 0;
+  }
+  .practice-layout:is([data-activity="analysis"], [data-activity="analysisExercise"], [data-activity="puzzle"]) {
+    --board-column: min(62%, calc(100dvh - 164px));
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .practice-layout[data-activity="analysis"] > .lesson-panel {
+    overflow: hidden;
+    scrollbar-gutter: auto;
+  }
 }
