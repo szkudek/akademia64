@@ -843,8 +843,8 @@ async function opening(id){
   followup.append(panel.querySelector('.opening-quiz'),panel.querySelector('#opening-related'));
   lesson.append(followup);
  }else{
-  boardCard.prepend(example);
-  boardCard.append(walkthrough);
+  const panel=layout.querySelector('.lesson-panel');
+  panel.prepend(example,walkthrough);
   lesson.append(title,layout);
  }
  main.replaceChildren(lesson);
