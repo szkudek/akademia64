@@ -793,3 +793,5 @@ h1, h2, .hero h2 { font-weight: 700; }
  .training-segment{align-items:flex-start;flex-direction:column}
  .training-plan-header{grid-template-columns:1fr}
 }
+
+#install-app[hidden]{display:none}
