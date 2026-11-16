@@ -1,3 +1,4 @@
+import { endgames, endgameOutcome } from './endgames.js';
 import { createBoardInput } from './board-input.js?v=20261108-free-analysis';
 import { accounts } from './accounts.js?v=20261108-game-analysis';
 import { normalizeProgress, pendingCorrections } from './progress.js?v=20261108-rating-reset';
@@ -155,7 +156,7 @@ function home(){
  <div class="dashboard-bottom"><section class="course-section"><div class="section-heading"><div><div class="eyebrow">KROK PO KROKU</div><h2>Twoja mapa nauki</h2></div><a class="text-link" href="#learn">Cały kurs <span>↗</span></a></div><div class="course-overview"><div class="course-top"><div><h3>Od zera do pierwszej partii</h3><p>6 etapów <span>·</span> ${all.length} praktycznych lekcji</p></div><span class="course-tag">PODSTAWY</span></div>${pathHTML()}<div class="course-bottom"><div class="course-progress-info"><strong>${percent}%</strong><span>Twojej pierwszej ścieżki</span></div><a class="text-link" href="#lesson/${l.id}">Zrób kolejny krok <span>→</span></a></div></div></section><section class="insight-section"><div class="section-heading"><div><div class="eyebrow">CHWILA NA REFLEKSJĘ</div><h2>Przy szachownicy</h2></div><span class="tiny">✧</span></div><div class="quote-card"><div class="insight-mark">“</div><div class="eyebrow">WARTO ZAPAMIĘTAĆ</div><blockquote>Dobry ruch zaczyna się od dobrego pytania.</blockquote><p>Co grozi przeciwnik? Zanim przesuniesz figurę, daj sobie chwilę na spojrzenie na całą planszę.</p><a class="text-link" href="#play">Sprawdź to w grze <span>↗</span></a><span class="quote-piece" aria-hidden="true">♞</span></div></section></div>`;
 }
 function earned(i){return units[i].lessons.every((l,j)=>state.done.includes(`${i}-${j}`))}function earnedCount(){return units.filter((u,i)=>earned(i)).length}
-function learn(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">TWOJA ŚCIEŻKA</div><h1>Małe kroki. Solidne podstawy.</h1><p>Od pierwszego ruchu do samodzielnej partii. Idź po kolei lub wybierz temat, który Cię ciekawi.</p></div><div class="map-summary"><div><h3>Od zera do pierwszej partii</h3><p>${state.done.length} z ${all.length} lekcji · ${units.length} etapów</p></div><div><div class="progress-label"><span>Twój postęp</span><span>${progress()}%</span></div><div class="progress"><span style="width:${progress()}%"></span></div></div></div><div class="units">${units.map((u,i)=>`<section class="unit"><div class="unit-header"><div class="unit-emblem">${u.icon}</div><div><div class="eyebrow">ETAP 0${i+1}</div><h2>${u.title}</h2></div></div>${u.lessons.map((l,j)=>`<a class="lesson-link ${state.done.includes(`${i}-${j}`)?'done':''}" href="#lesson/${i}-${j}"><span class="lesson-status">${state.done.includes(`${i}-${j}`)?'✓':j+1}</span><span>${l.title}</span><small>${l.type==='game'?'Partia':'5–8 min'} &nbsp; →</small></a>`).join('')}<div class="badge-row">✧ &nbsp; ${earned(i)?'Zdobyta odznaka:':'Odznaka etapu:'} ${u.badge}</div></section>`).join('')}</div>`}
+function learn(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">TWOJA ŚCIEŻKA</div><h1>Małe kroki. Solidne podstawy.</h1><p>Od pierwszego ruchu do samodzielnej partii. Idź po kolei lub wybierz temat, który Cię ciekawi.</p></div><div class="map-summary"><div><h3>Od zera do pierwszej partii</h3><p>${state.done.length} z ${all.length} lekcji · ${units.length} etapów</p></div><div><div class="progress-label"><span>Twój postęp</span><span>${progress()}%</span></div><div class="progress"><span style="width:${progress()}%"></span></div></div></div><a href="#endgames" class="lesson-link endgame-entry"><span class="lesson-status">♔</span><span><strong>Akademia końcówek</strong><br>Maty, piony i wieże</span><small>6 lekcji →</small></a><div class="units">${units.map((u,i)=>`<section class="unit"><div class="unit-header"><div class="unit-emblem">${u.icon}</div><div><div class="eyebrow">ETAP 0${i+1}</div><h2>${u.title}</h2></div></div>${u.lessons.map((l,j)=>`<a class="lesson-link ${state.done.includes(`${i}-${j}`)?'done':''}" href="#lesson/${i}-${j}"><span class="lesson-status">${state.done.includes(`${i}-${j}`)?'✓':j+1}</span><span>${l.title}</span><small>${l.type==='game'?'Partia':'5–8 min'} &nbsp; →</small></a>`).join('')}<div class="badge-row">✧ &nbsp; ${earned(i)?'Zdobyta odznaka:':'Odznaka etapu:'} ${u.badge}</div></section>`).join('')}</div>`}
 let game=null,selected=null,targets=[],lastMove=null,context=null,solvedNow=false,aiTimer=null,gameToken=0,openingStep=0,openingMode='show',hintCount=0;
 function freeAnalysis(){return context?.kind==='analysis'&&!context.imported}
 function boardHTML(g,highlight=lastMove){
@@ -163,7 +164,7 @@ const flipped=context?.flipped;
 const live=context?.reviewPly==null||freeAnalysis();
 const position=g.board();
 return `<div class="board ${context?.imported?"analysis-replay":""} ${context?.kind==='puzzle'?'puzzle-board':''}" role="group" aria-label="Interaktywna szachownica">${position.flatMap((row,viewRow)=>row.map((_,viewCol)=>{const r=flipped?7-viewRow:viewRow,c=flipped?7-viewCol:viewCol,p=position[r][c];const sq='abcdefgh'[c]+(8-r);return `<button ${context?.imported?'disabled':''} class="square ${(r+c)%2?'dark':''} ${live&&selected===sq?'selected':''} ${live&&targets.includes(sq)&&(context?.kind!=='play'||$('#show-targets')?.checked!==false)?'target':''} ${highlight?.includes(sq)?'last':''}" data-square="${sq}" aria-label="${sq}${p?`, ${p.color==='w'?'biały':'czarny'} ${names[p.type]}`:', puste pole'}">${p?pieceHTML(p.type,p.color):''}${viewCol===0?`<span class="coord rank">${8-r}</span>`:''}${viewRow===7?`<span class="coord">${'abcdefgh'[c]}</span>`:''}</button>`})).join('')}</div>`}
-function canDragPiece(sq){if(solvedNow||!game||!context||context.imported||context.reviewPly!=null&&!freeAnalysis())return false;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return false;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return false;if(context.kind==='lesson'&&['square','quiz','game'].includes(context.item.type))return false;return game.get(sq)?.color===game.turn()}
+function canDragPiece(sq){if(solvedNow||!game||!context||context.imported||context.reviewPly!=null&&!freeAnalysis())return false;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return false;if(context.kind==='endgame'&&game.turn()!==context.side)return false;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return false;if(context.kind==='lesson'&&['square','quiz','game'].includes(context.item.type))return false;return game.get(sq)?.color===game.turn()}
 function drawBoard(){
  if(!$('#board-host'))return;
  const preview=context?.positions?.[context.reviewPly];
@@ -172,7 +173,7 @@ function drawBoard(){
  updateBoardNavigation();
  boardInput.attach($('#board-host .board'),{position:boardGame.fen(),flipped:context?.flipped,drawing:context?.drawing,suggestion:context?.suggestion,pieceAt:sq=>boardGame.get(sq),playerColor:context?.kind==='play'?'w':boardGame.turn(),canDrag:canDragPiece,click:clickSquare,move:(from,to)=>{if(!canDragPiece(from))return;selected=from;targets=game.moves({square:from,verbose:true}).map(m=>m.to);clickSquare(to)}})}
 function setupBoard(fen){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.reset();game=fen==='start'?new Chess():new Chess(fen);context.positions=[{fen:game.fen(),move:null}];context.reviewPly=null;selected=null;targets=[];lastMove=null;solvedNow=false}
-function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':'Moja akademia'}</a><div class="practice-layout"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div><div id="board-host"></div><div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
+function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':context.kind==='endgame'?'#endgames':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':context.kind==='endgame'?'Akademia końcówek':'Moja akademia'}</a><div class="practice-layout"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div><div id="board-host"></div><div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
 const boardNavigation=[
  ['first','Do początku','M6 5v14M18 6l-6 6 6 6'],
  ['previous','Ruch wstecz','M15 6l-6 6 6 6'],
@@ -262,7 +263,7 @@ function promotionFor(from,to){
  });
 }
 
-async function clickSquare(sq){if(cancelPromotion)return;if(solvedNow||!game||context?.imported||context?.reviewPly!=null&&!freeAnalysis())return;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return;
+async function clickSquare(sq){if(cancelPromotion)return;if(solvedNow||!game||context?.imported||context?.reviewPly!=null&&!freeAnalysis())return;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return;if(context.kind==='endgame'&&game.turn()!==context.side)return;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return;
 if(context.item?.type==='square'){if(sq===context.item.target)success('Dokładnie! h1 to jasny prawy dolny narożnik.');else feedback('Sprawdź literę kolumny i numer rzędu. Poszukaj pola h1.','error');return}
 if(context.kind==='lesson'&&['quiz','game'].includes(context.item.type))return;
 if(selected){const from=selected;const moves=game.moves({square:from,verbose:true});if(moves.some(m=>m.to===sq)){const activeGame=game,activeContext=context;const promotion=await promotionFor(from,sq);if(game!==activeGame||context!==activeContext)return;if(promotion===null)return;const move={from,to:sq,promotion};if(context.kind==='puzzle'){
@@ -298,6 +299,7 @@ if(selected){const from=selected;const moves=game.moves({square:from,verbose:tru
 }
 if(context.kind==='lesson'){const t=context.item.target;if(from!==t[0]||sq!==t[1]||(context.item.promotion&&promotion!==context.item.promotion)){soundMove(null,{answer:'incorrect'});feedback('To legalny ruch, ale cel ćwiczenia jest inny. Spróbuj jeszcze raz.','error');selected=null;targets=[];drawBoard();return}moveOnBoard(move,{answer:'correct'});lastMove=[from,sq];success(game.isCheckmate()?'Mat! Król przeciwnika nie ma obrony. Doskonały ruch.':'Dobrze! Właśnie udało Ci się zastosować tę zasadę.');return}
 if(context.kind==='opening'){playOpeningMove(move);return}
+if(context.kind==='endgame'){playEndgameMove(move);return}
 if(context.kind==='analysisExercise'){checkAnalysisExercise(move);return}
 if(freeAnalysis()){playAnalysisMove(move);return}
 if(context.kind==='play'){moveOnBoard(move);lastMove=[from,sq];selected=null;targets=[];activity();drawBoard();updateGame();if(!game.isGameOver())scheduleAI();return}}
@@ -1201,7 +1203,115 @@ function analysisPage(saved,ply=0){
  renderAnalysisMoves();
  showAnalysisPosition(ply);
 }
+function endgameProgressKey(){
+ return 'akademia64-endgames-'+(accounts.user?.id??'guest');
+}
+function completedEndgames(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(endgameProgressKey()));
+  return new Set(endgames.filter(exercise=>Array.isArray(saved)&&saved.includes(exercise.id)).map(exercise=>exercise.id));
+ }catch{return new Set()}
+}
+function endgamePage(id){
+ const exercise=endgames.find(item=>item.id===id);
+ if(exercise){startEndgame(exercise);return}
+ const completed=completedEndgames();
+ main.innerHTML=`
+  <a class="back-link" href="#learn">← &nbsp; Mapa nauki</a>
+  <div class="page-intro"><h1>Akademia końcówek</h1><p>Przećwicz podstawowe maty, końcówki pionowe i ustawienie wieży. Ukończone lekcje: ${completed.size} z ${endgames.length}.</p></div>
+  <section class="unit" aria-label="Lekcje końcówek">
+  ${endgames.map((item,index)=>`<a class="lesson-link ${completed.has(item.id)?'done':''}" href="#endgames/${item.id}"><span class="lesson-status">${completed.has(item.id)?'✓':index+1}</span><span><strong>${item.title}</strong><br>${item.goal}</span><small>Ćwicz →</small></a>`).join('')}
+  </section>`;
+}
+function startEndgame(exercise){
+ context?.defenseController?.abort();
+ const side=exercise.side??'w';
+ context={kind:'endgame',item:exercise,side,flipped:side==='b',progressKey:endgameProgressKey()};
+ setupBoard(exercise.fen);
+ const next=endgames[endgames.indexOf(exercise)+1];
+ const player=side==='w'?'białymi':'czarnymi';
+ practiceShell(`
+  <h1>${exercise.title}</h1>
+  <p>${exercise.lesson}</p>
+  <div class="instruction"><strong>Cel ćwiczenia</strong><br>${exercise.goal}</div>
+  <div id="feedback" class="feedback" role="status">Zagraj ${player}.</div>
+  <div class="lesson-actions">
+   <button class="btn outline" id="endgame-hint" type="button">Podpowiedź</button>
+   <button class="btn outline" id="endgame-restart" type="button">Zacznij od nowa</button>
+   <a class="btn" id="endgame-next" href="${next?'#endgames/'+next.id:'#endgames'}" hidden>${next?'Następna lekcja':'Wróć do akademii'}</a>
+  </div>`, 'Akademia końcówek', 'Twój ruch');
+ $('#board-top').textContent=`Grasz ${player}`;
+ $('#endgame-hint').onclick=()=>feedback(exercise.hint);
+ $('#endgame-restart').onclick=()=>{startEndgame(exercise);$('#endgame-restart').focus()};
+}
+function finishEndgame(outcome){
+ context.defenseController?.abort();
+ solvedNow=true;
+ $('#endgame-hint').disabled=true;
+ $('#board-bottom').textContent=outcome==='success'?'Lekcja ukończona':'Koniec ćwiczenia';
+ if(outcome==='success'){
+  if(context.progressKey===endgameProgressKey()){
+   const done=completedEndgames();
+   done.add(context.item.id);
+   try{localStorage.setItem(context.progressKey,JSON.stringify([...done]))}catch{}
+   activity();
+  }
+  $('#endgame-next').hidden=false;
+  feedback('Dobrze! Cel ćwiczenia został osiągnięty.','success');
+ }else{
+  feedback(outcome==='draw'?(game.isStalemate()?'Pat. Spróbuj ponownie i przed szachem matującym zostaw królowi pole ucieczki.':'Remis. Spróbuj ponownie.'):'Przeciwnik dał mata. Spróbuj ponownie.','error');
+ }
+ drawBoard();
+}
+function playEndgameMove(move){
+ const exercise=context.item;
+ if(exercise.objective==='move'){
+  const lan=move.from+move.to;
+  if(!exercise.answers.includes(lan)){
+   selected=null;targets=[];drawBoard();
+   feedback('Spróbuj jeszcze raz. '+exercise.hint,'error');
+   return;
+  }
+ }
+ const played=moveOnBoard(move);
+ lastMove=[played.from,played.to];
+ selected=null;targets=[];
+ const outcome=endgameOutcome(game,exercise,played);
+ if(outcome){finishEndgame(outcome);return}
+ $('#board-bottom').textContent='Ruch komputera';
+ feedback('Komputer szuka odpowiedzi…');
+ drawBoard();
+ replyInEndgame();
+}
+async function replyInEndgame(){
+ const active=context;
+ const position=game;
+ let reply;
+ if(!active.defenseFailed){
+  active.defenseController??=new AbortController();
+  try{
+   active.defenseEngine??=createStockfish(active.defenseController.signal);
+   const result=await active.defenseEngine.evaluate(position.fen(),{
+    startFen:active.item.fen,moves:position.history({verbose:true}).map(move=>move.lan),limit:'depth 13 movetime 350'
+   });
+   reply=uciMove(result.best);
+  }catch{
+   if(active!==context||active.defenseController.signal.aborted)return;
+   active.defenseFailed=true;
+   active.defenseEngine?.close();
+  }
+ }
+ if(active!==context||game!==position||active.defenseController?.signal.aborted)return;
+ const played=moveOnBoard(reply??chooseMove(position));
+ lastMove=[played.from,played.to];
+ context.reviewPly=null;
+ const outcome=endgameOutcome(position,active.item,played);
+ if(outcome){finishEndgame(outcome);return}
+ $('#board-bottom').textContent='Twój ruch';
+ feedback(`Komputer zagrał ${played.san}. ${active.item.goal}`);
+ drawBoard();
+}
 function playerProfile(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">ŚLADY TWOJEGO ROZWOJU</div><h1>Profil gracza</h1><h2>Osiągnięcia</h2><p>Każda odznaka oznacza ukończony etap. Zbieraj doświadczenia i wracaj do nauki wtedy, kiedy masz ochotę.</p></div><div class="achievements-grid">${units.map((u,i)=>`<div class="achievement ${earned(i)?'earned':''}"><div class="medal">${u.icon}</div><h3>${u.badge}</h3><p>Ukończ etap „${u.title}”.</p><small>${earned(i)?'✓ ZDOBYTA':`${u.lessons.filter((l,j)=>state.done.includes(`${i}-${j}`)).length} / ${u.lessons.length} LEKCJI`}</small></div>`).join('')}</div><div class="empty-note">${state.days.length?`Masz za sobą ${state.days.length} ${state.days.length===1?'dzień':'dni'} aktywnej nauki. `:''}Odznaki zostają z Tobą. Przerwa w nauce nie odbiera żadnego osiągnięcia.</div>`}
-function route(){fullGameAnalysis?.abort();fullGameAnalysis=null;gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating]=(location.hash.slice(1)||'home').split('/');const navPage={lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
+function route(){context?.defenseController?.abort();fullGameAnalysis?.abort();fullGameAnalysis=null;gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating]=(location.hash.slice(1)||'home').split('/');const navPage={endgames:'learn',lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,endgames:()=>endgamePage(id),lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);route();
-await accounts.start(progress=>{state=progress;if(context?.kind==='analysis'||context?.kind==='analysisExercise')updateLevel();else route()});
+await accounts.start(progress=>{state=progress;if(context?.kind==='analysis'||context?.kind==='analysisExercise'||context?.kind==='endgame')updateLevel();else route()});

@@ -759,3 +759,6 @@ h1, h2, .hero h2 { font-weight: 700; }
 #opening-training-side{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--text);font:inherit}
 #opening-training-progress{margin:0}
 #trainer-mode[aria-pressed="true"]{border-color:var(--green)}
+
+.endgame-entry{margin:0 0 18px;padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+#endgame-next[hidden]{display:none}
