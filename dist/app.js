@@ -12,7 +12,7 @@ import { ratingFromAttempts, ratedAttempts, choosePuzzle, STARTING_RATING, RATIN
 import { analyzePuzzle } from './puzzle-analysis.js?v=20261116-eval-bar';
 import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261116-king-flags';
 import { createStockfish, formatScore, uciMove } from './stockfish-analysis.js';
-import { renderGameReport } from './game-report.js?v=20261116-analysis-fixes';
+import { renderGameReport } from './game-report.js?v=20261116-practiced-markers';
 import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-recorded-clicks';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');

@@ -756,7 +756,9 @@ h1, h2, .hero h2 { font-weight: 700; }
 .analysis-cursor{stroke:var(--muted);opacity:.65}
 .analysis-curve{fill:none;stroke:var(--green);stroke-width:2.5}
 .analysis-error-mark{fill:#e87979}
+.analysis-error-mark.practiced{fill:#65bf78}
 .analysis-current-mark{fill:var(--heading);stroke:var(--paper);stroke-width:2}
+.analysis-current-mark.ring{fill:none;stroke:var(--heading);stroke-width:1.25}
 #analysis-errors{max-height:15rem;overflow:auto}
 .analysis-error-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
 .analysis-error-row .btn{min-height:36px;padding:6px 10px}
