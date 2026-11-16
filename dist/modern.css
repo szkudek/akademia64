@@ -806,3 +806,10 @@ h1, h2, .hero h2 { font-weight: 700; }
 .tactic-theme-details ul{list-style:none;margin:8px 0;padding:0}
 .tactic-theme-details li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
 .tactic-theme-details li span{white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.analysis-board{display:grid;grid-template-columns:clamp(28px,6vw,42px) minmax(0,1fr);gap:6px}
+.analysis-evaluation{position:relative;overflow:hidden;min-width:0;border:1px solid #777b84;border-radius:6px;background:#323741;--white-share:50%}
+.analysis-evaluation-white{position:absolute;inset:auto 0 0;height:var(--white-share);background:#f3f0e7}
+.analysis-board[data-flipped="true"] .analysis-evaluation-white{inset:0 0 auto}
+.analysis-evaluation[data-evaluated="false"] .analysis-evaluation-white{visibility:hidden}
+.analysis-evaluation-value{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:100%;padding:2px;border-radius:4px;background:#292e37;color:#fff;font-size:clamp(9px,2vw,12px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}

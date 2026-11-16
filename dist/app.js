@@ -9,7 +9,7 @@ import { Chess } from './vendor/chess.js';
 import { openingChapter } from './opening-chapter.js?v=20261108-shared-board';
 import { lichessPuzzles } from './puzzle-bank.js';
 import { ratingFromAttempts, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
-import { analyzePuzzle } from './puzzle-analysis.js?v=20261116-analysis';
+import { analyzePuzzle } from './puzzle-analysis.js?v=20261116-eval-bar';
 import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261116-analysis';
 import { createStockfish, formatScore, uciMove } from './stockfish-analysis.js';
 import { renderGameReport } from './game-report.js?v=20261116-analysis-fixes';
@@ -189,7 +189,7 @@ function drawBoard(){
  updateBoardNavigation();
  boardInput.attach($('#board-host .board'),{position:boardGame.fen(),flipped:context?.flipped,drawing:context?.drawing,suggestion:context?.suggestion,pieceAt:sq=>boardGame.get(sq),playerColor:context?.kind==='play'?'w':boardGame.turn(),canDrag:canDragPiece,click:clickSquare,move:(from,to)=>{if(!canDragPiece(from))return;selected=from;targets=game.moves({square:from,verbose:true}).map(m=>m.to);clickSquare(to)}})}
 function setupBoard(fen){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.reset();game=fen==='start'?new Chess():new Chess(fen);context.positions=[{fen:game.fen(),move:null}];context.reviewPly=null;selected=null;targets=[];lastMove=null;solvedNow=false}
-function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':context.kind==='endgame'?'#endgames':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':context.kind==='endgame'?'Akademia końcówek':'Moja akademia'}</a><div class="practice-layout"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div><div id="board-host"></div><div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
+function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':context.kind==='endgame'?'#endgames':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':context.kind==='endgame'?'Akademia końcówek':'Moja akademia'}</a><div class="practice-layout"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div>${context.kind==='analysis'?analysisBoardMarkup():'<div id="board-host"></div>'}<div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
 const boardNavigation=[
  ['first','Do początku','M6 5v14M18 6l-6 6 6 6'],
  ['previous','Ruch wstecz','M15 6l-6 6 6 6'],
@@ -208,6 +208,7 @@ function bindBoardControls(){
  $('#flip-board').onclick=event=>{
   cancelPromotion?.();
   context.flipped=!context.flipped;
+  if(context.kind==='analysis')$('#analysis-board').dataset.flipped=String(context.flipped);
   event.currentTarget.setAttribute('aria-pressed',String(context.flipped));
   drawBoard();
  };
@@ -994,12 +995,35 @@ function analysisPosition(ply){
  for(const move of context.moves.slice(0,ply))position.move(move);
  return position;
 }
+const shortAnalysisScore=new Intl.NumberFormat('pl',{signDisplay:'exceptZero',maximumFractionDigits:1});
+function analysisBoardMarkup(){
+ return `<div id="analysis-board" class="analysis-board" data-flipped="${Boolean(context.flipped)}">
+  <div id="analysis-evaluation" class="analysis-evaluation" data-evaluated="false" role="img" aria-label="Ocena pozycji: brak">
+   <span class="analysis-evaluation-white" aria-hidden="true"></span>
+   <span class="analysis-evaluation-value" aria-hidden="true">—</span>
+  </div>
+  <div id="board-host"></div>
+ </div>`;
+}
+function showAnalysisEvaluation(evaluation){
+ const bar=$('#analysis-evaluation');
+ const mate=evaluation?.kind==='mate';
+ const white=!evaluation?50:mate?(evaluation.score>0?100:0):50+50*Math.tanh(evaluation.score/400);
+ const value=!evaluation?'—':mate?(evaluation.finished?'Mat':'M'+Math.abs(evaluation.score)):shortAnalysisScore.format(evaluation.score/100);
+ const label=mate&&evaluation.finished?'Mat. Wygrywają '+(evaluation.score>0?'białe.':'czarne.'):evaluation?formatScore(evaluation):'Brak oceny';
+ bar.style.setProperty('--white-share',white+'%');
+ bar.dataset.evaluated=String(Boolean(evaluation));
+ bar.title=label;
+ bar.setAttribute('aria-label','Ocena pozycji: '+label);
+ bar.querySelector('.analysis-evaluation-value').textContent=value;
+}
 function updateAnalysisEngine(position,ply){
  gameAnalysis?.abort();
  context.suggestion=null;
  boardInput.setSuggestion(null);
  const result=$('#analysis-result');
  const cached=context.evaluations[ply];
+ showAnalysisEvaluation(cached);
  if(cached){
   const played=ply?context.moves[ply-1]:null;
   const before=context.evaluations[ply-1];
@@ -1020,6 +1044,7 @@ function updateAnalysisEngine(position,ply){
   return;
  }
  if(position.isGameOver()){
+  showAnalysisEvaluation(terminalEvaluation(position));
   result.textContent=position.isCheckmate()
    ? `Mat. Wygrywają ${position.turn()==='w'?'czarne':'białe'}.`
    : 'Remis w tej pozycji.';
@@ -1032,7 +1057,8 @@ function updateAnalysisEngine(position,ply){
   startFen:context.positions[0].fen,
   moves:context.moves.slice(0,ply).map(move=>move.lan),
   whitePerspective:true,
-  onResult:(message,best)=>{
+  onResult:(message,best,evaluation)=>{
+   showAnalysisEvaluation(evaluation);
    result.textContent=message;
    if(best){
     context.suggestion={...best,color:'blue'};

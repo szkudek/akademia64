@@ -12,7 +12,7 @@ export async function analyzePuzzle(fen,{signal,onResult,onError,startFen=fen,mo
    ? (value>0?`Mat w ${value}`:`Przeciwnik matuje w ${Math.abs(value)}`)
    : formatScore({...result,score:whitePerspective?result.score:value});
   if(!result.san.length){onError();return}
-  onResult(`${evaluation} · głębokość ${result.depth}. Linia: ${result.san.slice(0,6).join(' ')}.`,uciMove(result.best));
+  onResult(`${evaluation} · głębokość ${result.depth}. Linia: ${result.san.slice(0,6).join(' ')}.`,uciMove(result.best),result);
  }catch{
   if(!signal.aborted)onError();
  }finally{engine?.close()}
