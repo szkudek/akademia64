@@ -1,5 +1,5 @@
 self.ACADEMY_OFFLINE={
-  "version": "9ad7abad1bb11fed",
+  "version": "19a291afaf935799",
   "assets": [
     "accounts.js?v=20261116-release",
     "app.js?v=20261116-eval-bar",
@@ -18,7 +18,7 @@ self.ACADEMY_OFFLINE={
     "italian-lesson.js",
     "italian-variations.js",
     "manifest.webmanifest",
-    "modern.css?v=20261116-eval-bar",
+    "modern.css?v=20261116-narrow-eval-bar",
     "opening-catalog.js",
     "opening-chapter.js?v=20261108-shared-board",
     "opening-courses.js",
