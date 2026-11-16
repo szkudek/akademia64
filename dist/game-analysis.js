@@ -7,7 +7,9 @@ export function readGame(pgn){
  if(!moves.length)throw new Error('Brak posunięć');
  const positions=[{fen:moves[0].before,move:null}];
  for(const move of moves)positions.push({fen:move.after,move:[move.from,move.to]});
- return {moves,positions,players:[game.getHeaders().White,game.getHeaders().Black].filter(Boolean).join(' – ')};
+ const {White,Black,Result}=game.getHeaders();
+ const outcome=Result==='1-0'?'w':Result==='0-1'?'b':Result==='1/2-1/2'?'draw':null;
+ return {moves,positions,outcome,players:[White,Black].filter(Boolean).join(' – ')};
 }
 
 export function terminalEvaluation(position){
