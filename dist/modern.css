@@ -762,3 +762,17 @@ h1, h2, .hero h2 { font-weight: 700; }
 
 .endgame-entry{margin:0 0 18px;padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
 #endgame-next[hidden]{display:none}
+
+.profile-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px;margin-bottom:16px}
+.profile-card{min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(14px,3vw,24px)}
+.profile-card h2{margin-top:0}
+.profile-card progress{display:block;width:100%;margin:8px 0 14px;accent-color:var(--green)}
+.profile-card summary{cursor:pointer}
+.profile-stats,.profile-history{margin:12px 0 0}
+.profile-stats>div,.profile-history>li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:7px 0;border-bottom:1px solid var(--line)}
+.profile-stats dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums}
+.profile-activity{margin-bottom:22px}
+.profile-activity h3{margin:16px 0 0}
+.profile-history{padding:0;list-style:none}
+.profile-history span{color:var(--muted);text-align:right}
+@media(max-width:440px){.profile-history>li{grid-template-columns:1fr}.profile-history span{text-align:left}}
