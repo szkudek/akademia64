@@ -9,3 +9,36 @@ export function readGame(pgn){
  for(const move of moves)positions.push({fen:move.after,move:[move.from,move.to]});
  return {moves,positions,players:[game.getHeaders().White,game.getHeaders().Black].filter(Boolean).join(' – ')};
 }
+
+export function terminalEvaluation(position){
+ if(position.isCheckmate())return {kind:'mate',score:position.turn()==='w'?-1:1,finished:true};
+ if(position.isDraw())return {kind:'cp',score:0,finished:true};
+ return null;
+}
+
+// A forced mate outranks any numeric evaluation. Centipawn thresholds apply
+// only to positions where the engine has not reported mate.
+export function reviewMove(move,before,after){
+ if(!before?.best||!after)return null;
+ if(move.lan===before.best)return {label:'Najlepszy',severity:0};
+ const side=move.color==='w'?1:-1;
+ const oldValue=before.score*side,newValue=after.score*side;
+ if(before.kind==='mate'||after.kind==='mate'){
+  const outcome=(evaluation,value)=>evaluation.kind==='mate'?Math.sign(value):0;
+  return outcome(before,oldValue)>outcome(after,newValue)
+   ? {label:'Duży błąd',severity:3} : {label:'Zagrany',severity:0};
+ }
+ const loss=Math.max(0,oldValue-newValue);
+ if(loss>=250)return {label:'Duży błąd',severity:3,loss};
+ if(loss>=120)return {label:'Błąd',severity:2,loss};
+ if(loss>=60)return {label:'Niedokładność',severity:1,loss};
+ return {label:'Zagrany',severity:0,loss};
+}
+
+export function graphValue({kind,score}){
+ return kind==='mate'?Math.sign(score)*600:Math.max(-600,Math.min(600,score));
+}
+
+export function moveLabel(move){
+ return move.before.split(' ')[5]+(move.color==='w'?'. ':'… ')+move.san;
+}

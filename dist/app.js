@@ -5,8 +5,10 @@ import { Chess } from './vendor/chess.js';
 import { openingChapter } from './opening-chapter.js?v=20261108-shared-board';
 import { lichessPuzzles } from './puzzle-bank.js';
 import { ratingFromAttempts, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
-import { analyzePuzzle } from './puzzle-analysis.js?v=20261108-free-analysis';
-import { readGame } from './game-analysis.js';
+import { analyzePuzzle } from './puzzle-analysis.js?v=20261116-analysis';
+import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261116-analysis';
+import { createStockfish, formatScore, uciMove } from './stockfish-analysis.js';
+import { renderGameReport } from './game-report.js';
 import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-recorded-clicks';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
@@ -294,6 +296,7 @@ if(selected){const from=selected;const moves=game.moves({square:from,verbose:tru
 }
 if(context.kind==='lesson'){const t=context.item.target;if(from!==t[0]||sq!==t[1]||(context.item.promotion&&promotion!==context.item.promotion)){soundMove(null,{answer:'incorrect'});feedback('To legalny ruch, ale cel ćwiczenia jest inny. Spróbuj jeszcze raz.','error');selected=null;targets=[];drawBoard();return}moveOnBoard(move,{answer:'correct'});lastMove=[from,sq];success(game.isCheckmate()?'Mat! Król przeciwnika nie ma obrony. Doskonały ruch.':'Dobrze! Właśnie udało Ci się zastosować tę zasadę.');return}
 if(context.kind==='opening'){const expected=new Chess(game.fen());const m=expected.move(context.item.line[openingStep]);if(m.from!==from||m.to!==sq||(m.promotion&&promotion!==m.promotion)){soundMove(null,{answer:'incorrect'});feedback('Ten ruch jest legalny, ale ćwiczymy inny wariant. Skorzystaj z podpowiedzi.','error');return}moveOnBoard(move,{answer:'correct'});openingStep++;lastMove=[from,sq];selected=null;targets=[];drawBoard();updateOpening();return}
+if(context.kind==='analysisExercise'){checkAnalysisExercise(move);return}
 if(freeAnalysis()){playAnalysisMove(move);return}
 if(context.kind==='play'){moveOnBoard(move);lastMove=[from,sq];selected=null;targets=[];activity();drawBoard();updateGame();if(!game.isGameOver())scheduleAI();return}}
 }
@@ -836,7 +839,7 @@ function scheduleAI(){const token=gameToken;$('#board-top').textContent='Kompute
 function play(){context={kind:'play'};setupBoard('start');gameFinished=false;practiceShell(`<div class="eyebrow">SPOKOJNY TRENING · BEZ ZEGARA</div><h2>Twój ruch.</h2><p>Graj białymi przeciwko komputerowi. Sprawdzaj zagrożenia, próbuj pomysłów i korzystaj z pomocy.</p><div class="game-controls"><label for="difficulty" class="tiny">Poziom</label><select id="difficulty"><option value="easy">Pierwsze kroki</option><option value="medium">Uważny przeciwnik</option></select></div><div id="feedback" class="feedback">Zacznij od walki o centrum i rozwoju figur.</div><div class="lesson-actions"><button class="btn" id="game-hint">Wskazówka</button><button class="btn outline" id="undo">Cofnij</button><button class="text-link" id="new-game">Nowa partia</button></div><label class="settings-row"><input type="checkbox" id="show-targets" checked> Pokazuj legalne ruchy</label><div class="history" id="history"></div><p class="tiny">Przeciwnik i wskazówki działają lokalnie. Trener prowadzący rozmowę z AI pojawi się w kolejnej wersji.</p>`, 'Gra treningowa','Ty · białe');$('#new-game').onclick=()=>{if(game.history().length&&!game.isGameOver()&&!confirm('Rozpocząć nową partię? Bieżąca pozycja zostanie zastąpiona.'))return;clearTimeout(aiTimer);gameToken++;play()};$('#undo').onclick=()=>{clearTimeout(aiTimer);gameToken++;if(!game.history().length)return;if(game.turn()==='w')undoBoardMove();undoBoardMove();lastMove=null;selected=null;targets=[];drawBoard();updateGame();feedback('Ruch cofnięty. Spójrz na pozycję jeszcze raz.');};$('#game-hint').onclick=()=>{if(game.turn()!=='w'||game.isGameOver())return;const m=chooseMove(game,2);if(m){selected=m.from;targets=[m.to];drawBoard();feedback(`Rozważ ruch: ${names[m.piece]} z ${m.from} na ${m.to}.${m.captured?' Możesz zbić figurę przeciwnika.':m.san.includes('+')?' Ten ruch daje szacha.':' Sprawdź, jakie pola kontroluje figura po tym ruchu.'}`)}};$('#show-targets').onchange=()=>drawBoard();updateGame()}
 
 function updateGame(){const h=game.history();$('#history').innerHTML=h.map((m,i)=>`${i%2===0?`<span>${i/2+1}.</span>`:''}<span>${m}</span>`).join('');$('#history').scrollTop=$('#history').scrollHeight;$('#undo').disabled=h.length===0||gameFinished;$('#game-hint').disabled=game.turn()!=='w'||game.isGameOver();$('#board-top').textContent='Komputer · czarne';$('#board-bottom').textContent=game.turn()==='w'?'Ty · białe · Twój ruch':'Czarne · ruch komputera';if(game.isGameOver()){let message=game.isCheckmate()?(game.turn()==='b'?'Mat! Wygrywasz. Dobra robota.':'Mat. Komputer wygrywa. Każda partia to nowe doświadczenie.'):'Remis. '+(game.isStalemate()?'Król nie jest szachowany i nie ma legalnego ruchu — pat.':game.isInsufficientMaterial()?'Brakuje materiału do mata.':game.isThreefoldRepetition()?'Pozycja powtórzyła się trzykrotnie.':'Osiągnięto limit ruchów bez bicia i ruchu pionem.');feedback(message,'success');$('#board-bottom').textContent='Partia zakończona';if(!gameFinished){gameFinished=true;$('#undo').disabled=true;state.games++;if(!state.done.includes('5-1'))state.done.push('5-1');activity();toast('✧ Pierwsza pełna partia zapisana w postępach.')}}else feedback(game.isCheck()?'Szach! Zadbaj o bezpieczeństwo swojego króla.':game.turn()==='w'?'Twój ruch. Co grozi przeciwnik? Czy wszystkie figury są bezpieczne?':'Komputer przygotowuje odpowiedź.');}
-let gameAnalysis;
+let gameAnalysis, fullGameAnalysis;
 function analysisPosition(ply){
  const position=new Chess(context.positions[0].fen);
  for(const move of context.moves.slice(0,ply))position.move(move);
@@ -847,6 +850,22 @@ function updateAnalysisEngine(position,ply){
  context.suggestion=null;
  boardInput.setSuggestion(null);
  const result=$('#analysis-result');
+ const cached=context.evaluations[ply];
+ if(cached){
+  const played=ply?context.moves[ply-1]:null;
+  const before=context.evaluations[ply-1];
+  const review=played&&reviewMove(played,before,cached);
+  const loss=review?.loss>0?` · strata ${formatScore({kind:'cp',score:review.loss}).replace(/^\+/,'')}`:'';
+  const previous=review?`${moveLabel(played)} · ${review.label}${loss}. Najlepszy wariant przed ruchem: ${before.san.join(' ')}. `:'';
+  const line=cached.finished?(cached.kind==='mate'?'Mat.':'Remis.'):`Ocena: ${formatScore(cached)} · głębokość ${cached.depth}. Wariant: ${cached.san.join(' ')}.`;
+  result.textContent=previous+line;
+  if(cached.best&&$('#analysis-engine').checked){
+   context.suggestion={...uciMove(cached.best),color:'blue'};
+   boardInput.setSuggestion(context.suggestion);
+  }
+  return;
+ }
+ if(fullGameAnalysis){result.textContent='Ta pozycja czeka na ocenę.';return}
  if(!$('#analysis-engine').checked){
   result.textContent='Stockfish wyłączony.';
   return;
@@ -879,7 +898,7 @@ function showAnalysisPosition(ply,position=analysisPosition(ply)){
  selected=null;targets=[];
  const last=context.positions.length-1;
  context.reviewPly=ply===last?null:ply;
- if(freeAnalysis())game=position;
+ game=position;
  lastMove=context.positions[ply].move;
  context.suggestion=null;
  $('#board-bottom').textContent=position.turn()==='w'?'Ruch białych':'Ruch czarnych';
@@ -887,17 +906,16 @@ function showAnalysisPosition(ply,position=analysisPosition(ply)){
  $('#analysis-moves').querySelector('[aria-current]')?.removeAttribute('aria-current');
  $('#analysis-moves').children[ply].setAttribute('aria-current','step');
  updateAnalysisEngine(position,ply);
+ updateGameReport();
 }
 function renderAnalysisMoves(){
  const buttons=document.createDocumentFragment();
- ['Start',...context.moves.map(move=>{
-  const number=move.before.split(' ')[5];
-  return number+(move.color==='w'?'. ':'… ')+move.san;
- })].forEach((label,ply)=>{
+ ['Start',...context.moves.map(moveLabel)].forEach((label,ply)=>{
   const button=document.createElement('button');
   button.type='button';
   button.className='btn outline';
   button.textContent=label;
+  button.dataset.ply=ply;
   button.onclick=()=>showAnalysisPosition(ply);
   buttons.append(button);
  });
@@ -905,22 +923,141 @@ function renderAnalysisMoves(){
 }
 function playAnalysisMove(move){
  const {current}=boardNavigationRange();
+ stopFullAnalysis();
+ context.evaluations.length=Math.min(context.evaluations.length,current+1);
  context.positions.length=current+1;
  context.moves.length=current;
  context.moves.push(moveOnBoard(move));
  renderAnalysisMoves();
  showAnalysisPosition(current+1,game);
 }
-function analysisPage(){
- context={kind:'analysis',moves:[]};
- setupBoard('start');
+function updateGameReport(){
+ const {moves,evaluations,side}=context;
+ const {current}=boardNavigationRange();
+ $('#analysis-all').disabled=!moves.length||Boolean(fullGameAnalysis)||evaluations.length===moves.length+1;
+ $('#analysis-stop').hidden=!fullGameAnalysis;
+ $('#analysis-all').textContent=evaluations.length===moves.length+1?'Analiza gotowa':evaluations.length?'Wznów analizę':'Analizuj całą partię';
+ const labels=$('#analysis-moves').children;
+ for(let ply=1;ply<labels.length;ply++){
+  const review=reviewMove(moves[ply-1],evaluations[ply-1],evaluations[ply]);
+  const label=labels[ply];
+  label.dataset.severity=review?.severity??0;
+  label.textContent=moveLabel(moves[ply-1])+(review?.severity?' · '+review.label:'');
+ }
+ const root=$('#analysis-report');
+ const focusSlider=document.activeElement?.id==='analysis-scrubber';
+ renderGameReport(root,{moves,evaluations,current,side,select:showAnalysisPosition,practice:startAnalysisExercise});
+ if(focusSlider)$('#analysis-scrubber')?.focus({preventScroll:true});
+}
+function stopFullAnalysis(){
+ fullGameAnalysis?.abort();
+ fullGameAnalysis=null;
+ $('#analysis-progress').textContent='';
+}
+async function runFullAnalysis(){
+ if(fullGameAnalysis||!context.moves.length)return;
+ gameAnalysis?.abort();
+ const controller=new AbortController();
+ fullGameAnalysis=controller;
+ const {moves,positions,evaluations}=context;
+ const replay=analysisPosition(Math.max(0,evaluations.length-1));
+ const startFen=positions[0].fen;
+ const finalPly=moves.length;
+ const status=$('#analysis-progress');
+ let engine;
+ try{
+  updateGameReport();
+  updateAnalysisEngine(analysisPosition(boardNavigationRange().current),boardNavigationRange().current);
+  status.textContent='Uruchamianie Stockfisha…';
+  for(let ply=evaluations.length;ply<=finalPly;ply++){
+   if(ply>0)replay.move(moves[ply-1]);
+   const evaluation=terminalEvaluation(replay)??await (engine??=createStockfish(controller.signal)).evaluate(replay.fen(),{
+    startFen,moves:moves.slice(0,ply).map(move=>move.lan),limit:'depth 14 movetime 350'
+   });
+   controller.signal.throwIfAborted();
+   evaluations.push(evaluation);
+   status.textContent=`Oceniono ${ply} z ${finalPly} półruchów…`;
+   const {current}=boardNavigationRange();
+   if(current===ply)updateAnalysisEngine(replay,current);
+   if(ply%5===0||current===ply)updateGameReport();
+  }
+  status.textContent=`Analiza gotowa · ${finalPly} półruchów.`;
+ }catch{
+  if(controller.signal.aborted)return;
+  status.textContent='Analiza została przerwana przez błąd silnika. Możesz ją wznowić.';
+  $('#analysis-all').textContent='Wznów analizę';
+ }finally{
+  engine?.close();
+  if(fullGameAnalysis===controller){
+   fullGameAnalysis=null;
+   updateGameReport();
+   const {current}=boardNavigationRange();
+   updateAnalysisEngine(analysisPosition(current),current);
+  }
+ }
+}
+function startAnalysisExercise(ply){
+ stopFullAnalysis();
+ gameAnalysis?.abort();
+ const saved={...context,engineEnabled:$('#analysis-engine').checked,suggestion:null};
+ const answer=saved.evaluations[ply-1];
+ const original=saved.moves[ply-1];
+ const back=()=>analysisPage(saved,ply);
+ context={kind:'analysisExercise',answer,flipped:original.color==='b'};
+ setupBoard(original.before);
  practiceShell(`
-  <div class="eyebrow">IMPORT PGN · STOCKFISH</div>
-  <h1>Analiza Partii</h1>
+  <h1>Ćwiczenie z partii</h1>
+  <p>Pozycja przed ${original.before.split(' ')[5]}. ruchem. Znajdź ruch polecany przez Stockfisha.</p>
+  <div id="feedback" class="feedback" role="status">Graj ${original.color==='w'?'białymi':'czarnymi'}.</div>
+  <div class="lesson-actions">
+   <button class="btn outline" id="analysis-answer" type="button">Pokaż rozwiązanie</button>
+   <button class="btn" id="analysis-back" type="button">Wróć do analizy</button>
+  </div>`, 'Ćwiczenie z partii',original.color==='w'?'Ruch białych':'Ruch czarnych');
+ $('#analysis-back').onclick=back;
+ $('#analysis-answer').onclick=()=>{
+  cancelPromotion?.();
+  finishAnalysisExercise(uciMove(answer.best),false);
+ };
+ $('#analysis-back').focus();
+ window.scrollTo(0,0);
+}
+function checkAnalysisExercise(move){
+ const played=game.moves({square:move.from,verbose:true}).find(candidate=>
+  candidate.to===move.to&&(!candidate.promotion||candidate.promotion===move.promotion));
+ if(played?.lan===context.answer.best){finishAnalysisExercise(move,true);return}
+ selected=null;targets=[];
+ feedback('Stockfish wskazał inny ruch. Spróbuj jeszcze raz lub pokaż rozwiązanie.','error');
+ drawBoard();
+}
+function finishAnalysisExercise(move,correct){
+ const played=game.move(move);
+ lastMove=[played.from,played.to];
+ solvedNow=true;selected=null;targets=[];
+ drawBoard();
+ $('#analysis-answer').disabled=true;
+ feedback(`${correct?'Dobrze!':'Rozwiązanie.'} Wariant Stockfisha: ${context.answer.san.join(' ')}.`,correct?'success':'');
+}
+function analysisPage(saved,ply=0){
+ context={kind:'analysis',moves:[],evaluations:[],side:'both',...saved};
+ if(!saved)setupBoard('start');
+ else{
+  boardInput.reset();
+  solvedNow=false;
+  game=analysisPosition(ply);
+ }
+ practiceShell(`
+  <h1>Analiza partii 2.0</h1>
   <p>Graj na zmianę białymi i czarnymi albo wczytaj partię z pliku PGN. Włącz Stockfisha, aby zobaczyć ocenę pozycji i strzałkę najlepszego ruchu.</p>
   <label class="settings-row"><input type="checkbox" id="analysis-engine"> Włącz Stockfisha</label>
   <div class="feedback" id="analysis-result" role="status"></div>
   <p class="tiny">Dodatnia ocena oznacza przewagę białych.</p>
+  <div class="analysis-options">
+   <label for="analysis-side">Czyje błędy ćwiczyć?</label>
+   <select id="analysis-side"><option value="both">Obie strony</option><option value="w">Białe</option><option value="b">Czarne</option></select>
+   <div class="lesson-actions"><button class="btn" id="analysis-all" type="button">Analizuj całą partię</button><button class="btn outline" id="analysis-stop" type="button" hidden>Zatrzymaj</button></div>
+   <p id="analysis-progress" class="tiny" role="status"></p>
+  </div>
+  <section id="analysis-report" hidden></section>
   <h2>Posunięcia</h2>
   <div id="analysis-moves" class="analysis-moves" role="group" aria-label="Posunięcia partii"></div>
   <div class="lesson-actions"><button class="btn outline" type="button" id="analysis-reset">Nowa analiza</button></div>
@@ -930,12 +1067,21 @@ function analysisPage(){
  const fileInput=$('#analysis-file');
  const importStatus=$('#analysis-import-status');
  let importId=0;
+ importStatus.textContent=context.importLabel??'';
+ $('#analysis-side').value=context.side;
+ $('#analysis-side').onchange=event=>{context.side=event.target.value;updateGameReport()};
+ $('#analysis-engine').checked=Boolean(saved?.engineEnabled);
+ $('#analysis-all').onclick=runFullAnalysis;
+ $('#analysis-stop').onclick=()=>{stopFullAnalysis();showAnalysisPosition(boardNavigationRange().current)};
  $('#analysis-engine').onchange=()=>{
   const {current}=boardNavigationRange();
   updateAnalysisEngine(analysisPosition(current),current);
  };
  $('#analysis-reset').onclick=()=>{
   importId++;
+  stopFullAnalysis();
+  context.evaluations=[];
+  context.importLabel='';
   importStatus.textContent='';
   context.imported=false;
   context.moves=[];
@@ -957,21 +1103,24 @@ function analysisPage(){
    const pgn=await file.text();
    if(!fileInput.isConnected||id!==importId)return;
    const parsed=readGame(pgn);
+   stopFullAnalysis();
+   context.evaluations=[];
    context.imported=true;
    context.moves=parsed.moves;
    context.positions=parsed.positions;
    game=new Chess(parsed.positions.at(-1).fen);
    renderAnalysisMoves();
-   importStatus.textContent=`${parsed.players||file.name} · ${parsed.moves.length} półruchów`;
+   context.importLabel=`${parsed.players||file.name} · ${parsed.moves.length} półruchów`;
+   importStatus.textContent=context.importLabel;
    showAnalysisPosition(0);
   }catch{
    if(fileInput.isConnected&&id===importId)importStatus.textContent='Nie udało się odczytać partii. Wybierz plik PGN zawierający jedną poprawną partię.';
   }
  };
  renderAnalysisMoves();
- showAnalysisPosition(0);
+ showAnalysisPosition(ply);
 }
 function playerProfile(){main.innerHTML=`<div class="page-intro"><div class="eyebrow">ŚLADY TWOJEGO ROZWOJU</div><h1>Profil gracza</h1><h2>Osiągnięcia</h2><p>Każda odznaka oznacza ukończony etap. Zbieraj doświadczenia i wracaj do nauki wtedy, kiedy masz ochotę.</p></div><div class="achievements-grid">${units.map((u,i)=>`<div class="achievement ${earned(i)?'earned':''}"><div class="medal">${u.icon}</div><h3>${u.badge}</h3><p>Ukończ etap „${u.title}”.</p><small>${earned(i)?'✓ ZDOBYTA':`${u.lessons.filter((l,j)=>state.done.includes(`${i}-${j}`)).length} / ${u.lessons.length} LEKCJI`}</small></div>`).join('')}</div><div class="empty-note">${state.days.length?`Masz za sobą ${state.days.length} ${state.days.length===1?'dzień':'dni'} aktywnej nauki. `:''}Odznaki zostają z Tobą. Przerwa w nauce nie odbiera żadnego osiągnięcia.</div>`}
-function route(){gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating]=(location.hash.slice(1)||'home').split('/');const navPage={lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
+function route(){fullGameAnalysis?.abort();fullGameAnalysis=null;gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating]=(location.hash.slice(1)||'home').split('/');const navPage={lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);route();
-await accounts.start(progress=>{state=progress;if(context?.kind==='analysis')updateLevel();else route()});
+await accounts.start(progress=>{state=progress;if(context?.kind==='analysis'||context?.kind==='analysisExercise')updateLevel();else route()});
