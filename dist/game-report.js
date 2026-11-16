@@ -9,6 +9,7 @@ export function renderGameReport(root,{moves,evaluations,current,side,solvedErro
  const errors=steps.filter(({move,review})=>review?.severity>=2&&(side==='both'||move.color===side));
  const remaining=errors.filter(({ply})=>!solvedErrors.has(ply));
  const selected=points[current];
+ const selectedError=errors.some(({ply})=>ply===current);
  root.hidden=!points.length;
  if(root.hidden){root.replaceChildren();return}
  root.innerHTML=`
@@ -17,11 +18,13 @@ export function renderGameReport(root,{moves,evaluations,current,side,solvedErro
    <svg viewBox="0 0 400 120" role="img" aria-label="Wykres oceny Stockfisha z perspektywy białych">
     <line x1="10" y1="60" x2="390" y2="60" class="analysis-axis"/>
     <polyline points="${points.map(point=>point.join(',')).join(' ')}" class="analysis-curve"/>
-    ${errors.map(({ply})=>`<circle cx="${points[ply][0]}" cy="${points[ply][1]}" r="4" class="analysis-error-mark"/>`).join('')}
-    ${selected?`<line x1="${selected[0]}" y1="10" x2="${selected[0]}" y2="110" class="analysis-cursor"/><circle cx="${selected[0]}" cy="${selected[1]}" r="4" class="analysis-current-mark"/>`:''}
+    ${selected?`<line x1="${selected[0]}" y1="10" x2="${selected[0]}" y2="110" class="analysis-cursor"/>`:''}
+    ${errors.map(({ply})=>`<circle cx="${points[ply][0]}" cy="${points[ply][1]}" r="4" class="analysis-error-mark${solvedErrors.has(ply)?' practiced':''}"/>`).join('')}
+    ${selected?`<circle cx="${selected[0]}" cy="${selected[1]}" r="${selectedError?6:4}" class="analysis-current-mark${selectedError?' ring':''}"/>`:''}
    </svg>
    <input id="analysis-scrubber" type="range" aria-label="Pozycja na wykresie" min="0" max="${points.length-1}" value="${Math.min(current,points.length-1)}" ${points.length<2?'disabled':''}>
    <p class="tiny">Góra: przewaga białych · dół: przewaga czarnych. Wykres pokazuje oceny w skali od −6 do +6.</p>
+   ${errors.length?'<p class="tiny">Czerwone kółka: błędy do przećwiczenia. Zielone: błędy przećwiczone.</p>':''}
   </figure>
   <h2>Kluczowe błędy</h2>
   <div id="analysis-errors"></div>`;
