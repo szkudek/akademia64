@@ -1,5 +1,5 @@
 self.ACADEMY_OFFLINE={
-  "version": "56d7ea0f55294c21",
+  "version": "099995b2757cc6b5",
   "assets": [
     "accounts.js?v=20261116-release",
     "app.js?v=20261117-board-controls",
@@ -18,7 +18,7 @@ self.ACADEMY_OFFLINE={
     "italian-lesson.js",
     "italian-variations.js",
     "manifest.webmanifest",
-    "modern.css?v=20261117-shared-board-size",
+    "modern.css?v=20261117-shared-layout",
     "opening-catalog.js",
     "opening-chapter.js?v=20261108-shared-board",
     "opening-courses.js",

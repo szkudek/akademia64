@@ -850,13 +850,18 @@ h1, h2, .hero h2 { font-weight: 700; }
 .king-result.draw{background:#535c6a;border-radius:50%;font-weight:700}
 
 /* Shared workspace */
+.app { --workspace-gutter: 18px; --panel-padding: 16px; }
 .workspace {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 .workspace > main { max-width: none; }
-.workspace > main { flex: 1; min-width: 0; }
+.workspace > main { flex: 1; min-width: 0; padding: 12px var(--workspace-gutter); }
+.workspace .page-intro { margin-bottom: var(--workspace-gutter); }
+.workspace :is(.units, .profile-overview, .hero-grid, .dashboard-bottom) { gap: var(--workspace-gutter); }
+.workspace :is(.training-plan, .correction-list) { max-width: none; }
+.practice-layout > .lesson-panel, .opening-board-panel { padding: var(--panel-padding); }
 
 @media (min-width: 1001px) {
   .app {
@@ -897,7 +902,7 @@ h1, h2, .hero h2 { font-weight: 700; }
   .sidebar nav { flex: none; flex-direction: column; align-items: stretch; gap: 4px; }
   .sidebar nav a { font-size: 13px; gap: 9px; padding: 12px 9px; white-space: normal; }
   .sidebar nav a span { display: inline-flex; flex: none; }
-  .workspace > main { padding: 16px var(--workspace-gutter) 24px; }
+  .workspace > main { padding: 12px var(--workspace-gutter); }
 
   .practice-layout,
   .opening-board-layout {
@@ -1017,20 +1022,20 @@ h1, h2, .hero h2 { font-weight: 700; }
 }
 
 @media (min-width: 1001px) and (min-height: 560px) {
-  body:has(.practice-layout:is([data-activity="analysis"], [data-activity="analysisExercise"], [data-activity="puzzle"])) {
+  body:has(main > .practice-layout) {
     overflow: hidden;
   }
-  .workspace:has(.practice-layout:is([data-activity="analysis"], [data-activity="analysisExercise"], [data-activity="puzzle"])) {
+  .workspace:has(main > .practice-layout) {
     height: 100dvh;
   }
-  .workspace:has(.practice-layout:is([data-activity="analysis"], [data-activity="analysisExercise"], [data-activity="puzzle"])) > main {
+  .workspace:has(main > .practice-layout) > main {
     display: grid;
     min-height: 0;
     grid-template-rows: auto minmax(0, 1fr);
     row-gap: 10px;
     padding-block: 12px;
   }
-  .workspace main:has(> .practice-layout:is([data-activity="analysis"], [data-activity="analysisExercise"], [data-activity="puzzle"])) > .back-link {
+  .workspace main:has(> .practice-layout) > .back-link {
     justify-self: start;
     margin: 0;
   }
@@ -1038,7 +1043,7 @@ h1, h2, .hero h2 { font-weight: 700; }
   .opening-board-layout {
     --board-column: min(62%, calc(100dvh - 164px));
   }
-  .practice-layout:is([data-activity="analysis"], [data-activity="analysisExercise"], [data-activity="puzzle"]) {
+  .practice-layout {
     min-height: 0;
     grid-template-rows: minmax(0, 1fr);
   }
