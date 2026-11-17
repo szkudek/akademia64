@@ -9,7 +9,8 @@ export function readGame(pgn){
  for(const move of moves)positions.push({fen:move.after,move:[move.from,move.to]});
  const {White,Black,Result}=game.getHeaders();
  const outcome=Result==='1-0'?'w':Result==='0-1'?'b':Result==='1/2-1/2'?'draw':null;
- return {moves,positions,outcome,players:[White,Black].filter(Boolean).join(' – ')};
+ const players=[White,Black].filter(name=>name&&name!=='?').join(' – ');
+ return {moves,positions,outcome,players};
 }
 
 export function terminalEvaluation(position){
