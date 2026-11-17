@@ -1,5 +1,5 @@
 self.ACADEMY_OFFLINE={
-  "version": "f80dda1e6fb2d1d9",
+  "version": "c147b870210bbd64",
   "assets": [
     "accounts.js?v=20261116-release",
     "app.js?v=20261117-piece-proportions",
@@ -18,7 +18,7 @@ self.ACADEMY_OFFLINE={
     "italian-lesson.js",
     "italian-variations.js",
     "manifest.webmanifest",
-    "modern.css?v=20261117-piece-proportions",
+    "modern.css?v=20261117-pieces-80",
     "opening-catalog.js",
     "opening-chapter.js?v=20261108-shared-board",
     "opening-courses.js",
