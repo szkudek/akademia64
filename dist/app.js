@@ -100,7 +100,7 @@ $('.sidebar nav').addEventListener('click',event=>{
 function updateLevel(){$('#level-name').textContent='Poziom '+academyLevel(state,completedEndgames().size).level}
 function progress(){return Math.round(state.done.length/all.length*100)}
 function nextLesson(){return all.find(l=>!state.done.includes(l.id))||all[0]}
-function pieceHTML(type,color){return `<span class="piece ${color==='w'?'white':''}">${icons[type]}</span>`}
+function pieceHTML(type,color){return `<span class="piece ${color==='w'?'white':''}" data-piece-type="${type}">${icons[type]}</span>`}
 function mini(position='start',marked=[]){
  const board=position instanceof Chess?position:position==='start'?new Chess():new Chess(position);
  return `<div class="mini-board" aria-hidden="true">${board.board().flatMap((row,r)=>row.map((piece,c)=>`<span class="${(r+c)%2?'dark':''} ${marked.includes('abcdefgh'[c]+(8-r))?'marked':''}">${piece?pieceHTML(piece.type,piece.color):''}</span>`)).join('')}</div>`;
