@@ -92,6 +92,63 @@ export function openingPicker(activeCourse, activeId) {
   </nav>`;
 }
 
+
+const courseFilters = { query: '', side: 'all' };
+const courseDescriptions = {
+ italian: 'Goniec na c4, nacisk na f7 i walka o centrum. Poznaj spokojny plan z d3 oraz moment na przełom d4.',
+ caro: 'Zbuduj centrum ruchem …d5 i wyprowadź gońca c8 przed zamknięciem łańcucha pionów.',
+ spanish: 'Zwiększaj nacisk na centrum. Zobacz, kiedy wymienić skoczka c6 i jak przygotować d4.',
+ sicilian: 'Asymetryczna odpowiedź na 1.e4. Poznaj główne struktury i kierunki kontrgry czarnych.'
+};
+
+export function renderOpeningCourses(root, Chess, mini) {
+ root.innerHTML = `<section class="opening-course-library">
+  <div class="page-intro"><div class="eyebrow">BIBLIOTEKA DEBIUTÓW</div>
+   <h1>Wybierz swój debiut</h1>
+   <p>Poznaj idee, przejrzyj warianty i sprawdź swoją wiedzę.</p>
+  </div>
+  <div class="opening-library-filters">
+   <label class="opening-library-search"><span class="sr-only">Szukaj debiutu</span><input id="opening-course-search" type="search" placeholder="Szukaj debiutu…"></label>
+   <div class="opening-library-sides" role="group" aria-label="Kolor w debiucie">
+    ${[['all','Wszystkie'],['w','Białymi'],['b','Czarnymi']].map(([key,label])=>`<button type="button" data-course-side="${key}" aria-pressed="false">${label}</button>`).join('')}
+   </div>
+  </div>
+  <div class="opening-course-tiles"></div>
+  <p id="opening-course-status" class="tiny" role="status"></p>
+  <a class="opening-library-catalog text-link" href="#openings/catalog">Przeglądaj pełny katalog ECO →</a>
+ </section>`;
+ const query=root.querySelector('#opening-course-search');
+ query.value=courseFilters.query;
+ const sideButtons=root.querySelectorAll('[data-course-side]');
+ function renderCourses() {
+  const found=openingCourses.filter(course=>{
+   const side=['caro','sicilian'].includes(course.id)?'b':'w';
+   return (courseFilters.side==='all'||courseFilters.side===side)
+    && normalize(course.title+' '+course.eco+' '+courseDescriptions[course.id]).includes(normalize(courseFilters.query).trim());
+  });
+  root.querySelector('.opening-course-tiles').innerHTML=found.map(course=>{
+   const board=new Chess();
+   for(const move of getOpening('course-'+course.id+'-0',Chess).line)board.move(move);
+   const side=['caro','sicilian'].includes(course.id)?'Czarnymi':'Białymi';
+   return `<article class="opening-course-tile">
+    <div class="opening-course-tile-board">${mini(board)}</div>
+    <div class="opening-course-tile-copy">
+     <div class="eyebrow">${e(course.eco)} · ${side}</div>
+     <h2>${e(course.title)}</h2><p>${e(courseDescriptions[course.id])}</p>
+     <div class="opening-course-tile-footer"><span>${course.variants.length} wariantów · ${course.quiz.length} pytań</span>
+      <a class="btn" href="#opening/course-${course.id}-0">Otwórz debiut →</a>
+     </div>
+    </div>
+   </article>`;
+  }).join('');
+  root.querySelector('#opening-course-status').textContent=found.length?'':'Brak debiutów dla tych filtrów.';
+  sideButtons.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.courseSide===courseFilters.side)));
+ }
+ query.oninput=()=>{courseFilters.query=query.value;renderCourses()};
+ sideButtons.forEach(button=>button.onclick=()=>{courseFilters.side=button.dataset.courseSide;renderCourses()});
+ renderCourses();
+}
+
 export function renderOpeningLibrary(root) {
   root.innerHTML = `<section class="opening-library">
     <div class="page-intro"><div class="eyebrow">AKADEMIA 64 · DEBIUTY</div>

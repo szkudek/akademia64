@@ -705,7 +705,7 @@ async function loadOpeningLibrary(){
  const routeHash=location.hash;
  main.innerHTML='<p role="status">Wczytywanie biblioteki debiutów…</p>';
  try{
-  const library=await import('./opening-library.js');
+  const library=await import('./opening-library.js?v=20261117-course-library');
   return location.hash===routeHash?library:null;
  }catch{
   if(location.hash===routeHash)main.innerHTML='<div class="page-intro"><h1>Biblioteka debiutów</h1><p>Nie udało się wczytać katalogu.</p><button class="btn" id="opening-retry">Spróbuj ponownie</button></div>';
@@ -714,9 +714,10 @@ async function loadOpeningLibrary(){
  }
 }
 async function openingsPage(id){
- if(id!=='catalog')return opening('course-italian-0');
  const library=await loadOpeningLibrary();
- library?.renderOpeningLibrary(main);
+ if(!library)return;
+ if(id==='catalog')library.renderOpeningLibrary(main);
+ else library.renderOpeningCourses(main,Chess,mini);
 }
 async function opening(id){
  const library=await loadOpeningLibrary();
@@ -774,7 +775,7 @@ async function opening(id){
  const walkthrough=layout.querySelector('.opening-walkthrough');
  const lesson=document.createElement('section');
  lesson.className='opening-workshop';
- lesson.innerHTML=library.openingPicker(course?.id,id);
+ if(!course)lesson.innerHTML=library.openingPicker(course?.id,id);
  const title=layout.querySelector('.lesson-panel > h2');
  title.className='opening-workshop-title';
  if(course){
@@ -815,38 +816,85 @@ async function opening(id){
     }
    });
   }
-  const explorer=document.createElement('details');
-  explorer.className='opening-explorer';
-  explorer.open=showCourseBoard;
-  explorer.innerHTML='<summary class="btn">Sprawdź debiut <span aria-hidden="true">▾</span></summary>';
-  const boardLayout=document.createElement('div');
-  boardLayout.className='opening-board-layout';
-  const boardPanel=document.createElement('aside');
-  boardPanel.className='opening-board-panel';
-  boardPanel.setAttribute('aria-label','Wariant i przebieg ruchów');
-  boardPanel.append(example,walkthrough);
-  boardLayout.append(boardCard,boardPanel);
-  explorer.append(boardLayout);
-  chapter.querySelectorAll('.opening-board-link').forEach(link=>{
+  layout.classList.add('opening-course-workspace');
+  const header=document.createElement('header');
+  header.className='opening-course-panel-header';
+  header.innerHTML='<a class="text-link" href="#openings">← Biblioteka debiutów</a>';
+  header.append(title);
+  const tabList=document.createElement('div');
+  tabList.className='opening-course-tabs';
+  tabList.setAttribute('role','tablist');
+  tabList.setAttribute('aria-label','Materiały debiutu');
+  const tabs=[['learn','Nauka'],['variants','Warianty'],['quiz','Sprawdź się'],['videos','Wideo']];
+  const panes=new Map();
+  for(const [key,label] of tabs){
+   const button=document.createElement('button');
+   button.type='button';
+   button.id='opening-tab-'+key;
+   button.textContent=label;
+   button.setAttribute('role','tab');
+   button.setAttribute('aria-controls','opening-pane-'+key);
+   const pane=document.createElement('section');
+   pane.id='opening-pane-'+key;
+   pane.className='opening-course-pane';
+   pane.setAttribute('role','tabpanel');
+   pane.setAttribute('aria-labelledby',button.id);
+   pane.tabIndex=0;
+   panes.set(key,pane);
+   tabList.append(button);
+  }
+  header.append(tabList);
+  const selectTab=(key,focus=false)=>{
+   for(const [name] of tabs){
+    const active=name===key;
+    const button=tabList.querySelector('#opening-tab-'+name);
+    button.setAttribute('aria-selected',String(active));
+    button.tabIndex=active?0:-1;
+    panes.get(name).hidden=!active;
+   }
+   if(key!=='videos')panes.get('videos').querySelectorAll('[data-youtube-player]').forEach(player=>{player.open=false});
+   if(focus)tabList.querySelector('#opening-tab-'+key).focus();
+  };
+  tabs.forEach(([key],index)=>{
+   const button=tabList.querySelector('#opening-tab-'+key);
+   button.onclick=()=>selectTab(key);
+   button.onkeydown=event=>{
+    const next={ArrowLeft:(index+tabs.length-1)%tabs.length,ArrowRight:(index+1)%tabs.length,Home:0,End:tabs.length-1}[event.key];
+    if(next===undefined)return;
+    event.preventDefault();
+    selectTab(tabs[next][0],true);
+   };
+  });
+  const videos=chapter.querySelector('.opening-videos');
+  if(videos)panes.get('videos').append(videos);
+  panes.get('learn').append(chapter.firstElementChild);
+  panes.get('variants').append(example,walkthrough);
+  const quiz=panel.querySelector('.opening-quiz');
+  if(quiz){quiz.open=true;panes.get('quiz').append(quiz)}
+  const related=panel.querySelector('#opening-related');
+  if(related)panes.get('variants').append(related);
+  panel.replaceChildren(header,...panes.values());
+  panes.get('learn').querySelectorAll('.opening-board-link').forEach(link=>{
    link.addEventListener('click',event=>{
     if(link.hash!==location.hash)return;
     event.preventDefault();
-    explorer.open=true;
-    explorer.scrollIntoView({block:'start'});
+    selectTab('variants',true);
    });
   });
-  lesson.append(chapter.firstElementChild,explorer);
-  const followup=document.createElement('div');
-  followup.className='opening-followup';
-  followup.append(panel.querySelector('.opening-quiz'),panel.querySelector('#opening-related'));
-  lesson.append(followup);
+  selectTab(showCourseBoard?'variants':'learn');
+  const back=document.createElement('a');
+  back.className='back-link';
+  back.href='#openings';
+  back.textContent='← Biblioteka debiutów';
+  lesson.append(back,layout);
  }else{
   const panel=layout.querySelector('.lesson-panel');
   panel.prepend(example,walkthrough);
   lesson.append(title,layout);
  }
- main.replaceChildren(lesson);
- if(course)startOpeningPreviews(lesson,library);
+ if(course)main.replaceChildren(...lesson.childNodes);
+ else main.replaceChildren(lesson);
+ if(course)startOpeningPreviews(main,library);
  if(course){
   const variants=$('#course-variant');
   variants.value=id;
@@ -885,7 +933,7 @@ async function opening(id){
  };
  if(trainOpening)resetOpening('trainer');
  else updateOpening();
- if(showCourseBoard) $('.opening-explorer').scrollIntoView({block:'start'});
+ if(showCourseBoard) $('#opening-tab-variants').focus({preventScroll:true});
 }
 function goToOpeningStep(destination){
  const {line}=context.item;
