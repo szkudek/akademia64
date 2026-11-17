@@ -216,7 +216,7 @@ function boardOutcome(position,preview){
  return canDraw&&position.isDraw()?'draw':null;
 }
 function setupBoard(fen){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.reset();game=fen==='start'?new Chess():new Chess(fen);context.positions=[{fen:game.fen(),move:null}];context.reviewPly=null;selected=null;targets=[];lastMove=null;solvedNow=false}
-function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':context.kind==='endgame'?'#endgames':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':context.kind==='endgame'?'Akademia końcówek':'Moja akademia'}</a><div class="practice-layout" data-activity="${context.kind}"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div>${context.kind==='analysis'?analysisBoardMarkup():'<div id="board-host"></div>'}<div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${context.kind==='analysis'?'':boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
+function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':context.kind==='endgame'?'#endgames':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':context.kind==='endgame'?'Akademia końcówek':'Moja akademia'}</a><div class="practice-layout" data-activity="${context.kind}"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div>${context.kind==='analysis'?analysisBoardMarkup():'<div id="board-host"></div>'}<div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
 const boardNavigation=[
  ['first','Do początku','M6 5v14M18 6l-6 6 6 6'],
  ['previous','Ruch wstecz','M15 6l-6 6 6 6'],
@@ -1307,7 +1307,6 @@ function analysisPage(saved,ply=0){
     <p id="analysis-import-status" class="tiny" role="status"></p>
     <button class="btn outline" type="button" id="analysis-reset">Nowa analiza</button>
    </div>
-   <div class="analysis-toolbar">${boardControls()}</div>
   </div>`, 'Analiza Partii','Ruch białych');
 
  const tabButtons=tabs.map(([id])=>$('#analysis-tab-'+id));
