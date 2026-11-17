@@ -670,13 +670,7 @@ h1, h2, .hero h2 { font-weight: 700; }
 [data-theme] .board .square.selected { background: #f3da83; }
 .board .square.last, .mini-board > span.marked { box-shadow: inset 0 0 0 999px #d5c36766; }
 .mini-board { border-radius: 6px; }
-.board .piece, .mini-board > span > .piece { font-size: calc(12.25cqi * var(--piece-scale, 1)); }
-/* Chess glyphs have different visible heights at the same font size. */
-.piece[data-piece-type="k"] { --piece-scale: .97; }
-.piece[data-piece-type="q"] { --piece-scale: 1.07; }
-.piece[data-piece-type="r"] { --piece-scale: 1.12; }
-.piece[data-piece-type="b"] { --piece-scale: .86; }
-.piece[data-piece-type="n"] { --piece-scale: 1.06; }
+.board .piece, .mini-board > span > .piece { font-size: 10cqi; }
 [data-theme="dark"] .mini-board .piece.white { color: #f0e9d1; }
 .opening-preview-board .mini-board { border-radius: 0; }
 .puzzle-board.drawing-mode .square { cursor: crosshair; }
