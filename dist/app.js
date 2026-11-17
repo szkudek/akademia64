@@ -10,7 +10,7 @@ import { openingChapter } from './opening-chapter.js?v=20261108-shared-board';
 import { lichessPuzzles } from './puzzle-bank.js';
 import { ratingFromAttempts, ratedAttempts, choosePuzzle, STARTING_RATING, RATING_VERSION, PUZZLE_RATING_RANGE } from './tactics-rating.js?v=20261108-rating-match';
 import { analyzePuzzle } from './puzzle-analysis.js?v=20261116-eval-bar';
-import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261116-king-flags';
+import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261117-pgn-text';
 import { createStockfish, formatScore, uciMove } from './stockfish-analysis.js';
 import { renderGameReport } from './game-report.js?v=20261116-practiced-markers';
 import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-recorded-clicks';
@@ -1300,6 +1300,10 @@ function analysisPage(saved,ply=0){
    </div>
    <div class="analysis-tab-panel" id="analysis-panel-pgn" role="tabpanel" aria-labelledby="analysis-tab-pgn" hidden>
     <label class="account-field"><span>Plik PGN (jedna partia, do 1 MB)</span><input id="analysis-file" type="file" accept=".pgn,application/x-chess-pgn"></label>
+    <form id="analysis-pgn-form">
+     <label class="account-field"><span>Wklej tekst PGN</span><textarea id="analysis-pgn-text" rows="6" spellcheck="false" autocapitalize="off"></textarea></label>
+     <button class="btn" type="submit">Wczytaj partię</button>
+    </form>
     <p id="analysis-import-status" class="tiny" role="status"></p>
     <button class="btn outline" type="button" id="analysis-reset">Nowa analiza</button>
    </div>
@@ -1329,6 +1333,7 @@ function analysisPage(saved,ply=0){
  selectTab(tabButtons[saved?2:0]);
 
  const fileInput=$('#analysis-file');
+ const pgnText=$('#analysis-pgn-text');
  const importStatus=$('#analysis-import-status');
  const gameName=$('#analysis-game-name');
  let importId=0;
@@ -1351,6 +1356,7 @@ function analysisPage(saved,ply=0){
   context.solvedErrors.clear();
   context.importLabel='';
   context.importOutcome=null;
+  pgnText.value='';
   importStatus.textContent='';
   gameName.textContent='';
   context.imported=false;
@@ -1360,19 +1366,20 @@ function analysisPage(saved,ply=0){
   showAnalysisPosition(0);
   selectTab(tabButtons[0],true);
  };
- fileInput.onchange=async()=>{
-  const file=fileInput.files[0];
-  if(!file)return;
-  fileInput.value='';
+ const importGame=async(source,label)=>{
   const id=++importId;
+  if(source.size>1_000_000){
+   importStatus.textContent='PGN przekracza limit 1 MB.';
+   return;
+  }
   importStatus.textContent='Wczytuję partię…';
   try{
-   if(file.size>1_000_000){
-    importStatus.textContent='Plik przekracza limit 1 MB.';
+   const pgn=(await source.text()).trim();
+   if(!fileInput.isConnected||id!==importId)return;
+   if(!pgn){
+    importStatus.textContent='Brak tekstu PGN. Wklej zapis partii albo wybierz plik.';
     return;
    }
-   const pgn=await file.text();
-   if(!fileInput.isConnected||id!==importId)return;
    const parsed=readGame(pgn);
    stopFullAnalysis();
    context.evaluations=[];
@@ -1383,14 +1390,25 @@ function analysisPage(saved,ply=0){
    context.positions=parsed.positions;
    game=new Chess(parsed.positions.at(-1).fen);
    renderAnalysisMoves();
-   context.importLabel=`${parsed.players||file.name} · ${parsed.moves.length} półruchów`;
+   context.importLabel=`${parsed.players||label} · ${parsed.moves.length} półruchów`;
    gameName.textContent=context.importLabel;
+   pgnText.value='';
    importStatus.textContent='';
    showAnalysisPosition(0);
    selectTab(tabButtons[0],true);
   }catch{
-   if(fileInput.isConnected&&id===importId)importStatus.textContent='Nie udało się odczytać partii. Wybierz plik PGN zawierający jedną poprawną partię.';
+   if(fileInput.isConnected&&id===importId)importStatus.textContent='Nie udało się odczytać PGN. Podaj zapis jednej poprawnej partii.';
   }
+ };
+ fileInput.onchange=()=>{
+  const file=fileInput.files[0];
+  if(!file)return;
+  fileInput.value='';
+  return importGame(file,file.name);
+ };
+ $('#analysis-pgn-form').onsubmit=event=>{
+  event.preventDefault();
+  return importGame(new Blob([pgnText.value]),'Wklejona partia');
  };
  renderAnalysisMoves();
  showAnalysisPosition(ply);

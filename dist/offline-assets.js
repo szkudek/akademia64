@@ -1,8 +1,8 @@
 self.ACADEMY_OFFLINE={
-  "version": "14d3aab6cd34d073",
+  "version": "2ab781e48bb517ae",
   "assets": [
     "accounts.js?v=20261116-release",
-    "app.js?v=20261116-practiced-markers",
+    "app.js?v=20261117-pgn-text",
     "board-input.js?v=20261108-free-analysis",
     "chess-clicks.js",
     "chess-sound.js?v=20261108-recorded-clicks",
@@ -10,7 +10,7 @@ self.ACADEMY_OFFLINE={
     "firebase-config.js",
     "firebase-service.js?v=20261116-release",
     "game-analysis.js",
-    "game-analysis.js?v=20261116-king-flags",
+    "game-analysis.js?v=20261117-pgn-text",
     "game-report.js?v=20261116-practiced-markers",
     "icons/icon-192.png",
     "icons/icon-512.png",
@@ -18,7 +18,7 @@ self.ACADEMY_OFFLINE={
     "italian-lesson.js",
     "italian-variations.js",
     "manifest.webmanifest",
-    "modern.css?v=20261116-practiced-markers",
+    "modern.css?v=20261117-pgn-text",
     "opening-catalog.js",
     "opening-chapter.js?v=20261108-shared-board",
     "opening-courses.js",

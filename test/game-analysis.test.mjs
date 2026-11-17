@@ -12,6 +12,7 @@ test('PGN replay retains initial FEN, promotion and final position',()=>{
  assert.equal(parsed.positions[0].fen.split(' ').at(-1),'23');
  assert.deepEqual(parsed.positions[1].move,['a7','a8']);
  assert.equal(new Chess(parsed.positions[1].fen).get('a8').type,'q');
+ assert.equal(parsed.players,'');
  assert.throws(()=>readGame('1. e9'));
 });
 
