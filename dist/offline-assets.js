@@ -1,8 +1,8 @@
 self.ACADEMY_OFFLINE={
-  "version": "5b4116af9813e74c",
+  "version": "b5fb067c310208b5",
   "assets": [
     "accounts.js?v=20261116-release",
-    "app.js?v=20261118-analysis-error",
+    "app.js?v=20261118-analysis-error-longer",
     "board-input.js?v=20261108-free-analysis",
     "chess-clicks.js",
     "chess-sound.js?v=20261118-analysis-error",
@@ -18,7 +18,7 @@ self.ACADEMY_OFFLINE={
     "italian-lesson.js",
     "italian-variations.js",
     "manifest.webmanifest",
-    "modern.css?v=20261118-analysis-error",
+    "modern.css?v=20261118-analysis-error-longer",
     "opening-catalog.js",
     "opening-chapter.js?v=20261108-shared-board",
     "opening-courses.js",
