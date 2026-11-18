@@ -240,6 +240,18 @@ function drawBoard(){
  $('#board-host').innerHTML=boardHTML(boardGame,preview?preview.move:lastMove,boardOutcome(boardGame,preview));
  updateBoardNavigation();
  boardInput.attach($('#board-host .board'),{position:boardGame.fen(),flipped:context?.flipped,drawing:context?.drawing,suggestion:context?.suggestion,pieceAt:sq=>boardGame.get(sq),playerColor:context?.kind==='play'?'w':boardGame.turn(),canDrag:canDragPiece,click:clickSquare,move:(from,to)=>{if(!canDragPiece(from))return;selected=from;targets=game.moves({square:from,verbose:true}).map(m=>m.to);clickSquare(to)}})}
+function flashBoardAnswer(correct){
+ if(phoneLayout.matches)return;
+ const board=$('#board-host .board');
+ if(!board)return;
+ board.querySelector('.board-answer-flash')?.remove();
+ const flash=document.createElement('span');
+ flash.className='board-answer-flash '+(correct?'correct':'incorrect');
+ flash.setAttribute('aria-hidden','true');
+ const timer=setTimeout(()=>flash.remove(),500);
+ flash.addEventListener('animationend',()=>{clearTimeout(timer);flash.remove()},{once:true});
+ board.append(flash);
+}
 function boardOutcome(position,preview){
  if(position.isCheckmate())return position.turn()==='w'?'b':'w';
  if(context.imported){
@@ -350,11 +362,11 @@ if(selected){const from=selected;const moves=game.moves({square:from,verbose:tru
   soundMove(null,{answer:'incorrect'});
   recordTactic(false);
   feedback('Ten ruch nie jest rozwiązaniem. Ranking został rozliczony; możesz ćwiczyć dalej lub przejść do kolejnego zadania.','error');
-  selected=null;targets=[];drawBoard();return;
+  selected=null;targets=[];drawBoard();flashBoardAnswer(false);return;
  }
  if(expected.length===5&&promotion!==expected[4]){
   soundMove(null,{answer:'incorrect'});
-  recordTactic(false);feedback('Wybierz właściwą figurę promocji.','error');selected=null;targets=[];drawBoard();return;
+  recordTactic(false);feedback('Wybierz właściwą figurę promocji.','error');selected=null;targets=[];drawBoard();flashBoardAnswer(false);return;
  }
  const played=moveOnBoard(move,null);
  if(!played)return;
@@ -363,6 +375,7 @@ if(selected){const from=selected;const moves=game.moves({square:from,verbose:tru
   soundMove(played,{answer:'correct',mate:game.isCheckmate()});
   recordTactic(!ctx.assisted&&!ctx.failed);
   success(game.isCheckmate()?'Mat! Pełna kontynuacja rozwiązana.':'Świetnie! Cała kombinacja została rozwiązana.');
+  flashBoardAnswer(true);
  }else{
   ctx.step++;
   const answer=ctx.item.line[ctx.step],reply=moveOnBoard({from:answer.slice(0,2),to:answer.slice(2,4),promotion:answer[4]||'q'},null);
@@ -1372,6 +1385,7 @@ function checkAnalysisExercise(move){
  selected=null;targets=[];
  feedback('Stockfish wskazał inny ruch. Spróbuj jeszcze raz lub pokaż rozwiązanie.','error');
  drawBoard();
+ flashBoardAnswer(false);
 }
 function finishAnalysisExercise(move,correct){
  const played=game.move(move);
@@ -1379,6 +1393,7 @@ function finishAnalysisExercise(move,correct){
  lastMove=[played.from,played.to];
  solvedNow=true;selected=null;targets=[];
  drawBoard();
+ if(correct)flashBoardAnswer(true);
  $('#analysis-answer').disabled=true;
  feedback(`${correct?'Dobrze!':'Rozwiązanie.'} Wariant Stockfisha: ${context.answer.san.join(' ')}.`,correct?'success':'');
 }
