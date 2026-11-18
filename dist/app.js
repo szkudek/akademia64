@@ -1305,6 +1305,7 @@ function updateGameReport(){
  const focusSlider=document.activeElement?.id==='analysis-scrubber';
  renderGameReport(root,{moves,evaluations,current,side,solvedErrors:context.solvedErrors,select:navigateAnalysis,practice:startAnalysisExercise,interactive:!phoneLayout.matches});
  $('#analysis-report-empty').hidden=!root.hidden;
+ if(!phoneLayout.matches)$('#analysis-report-empty').textContent=fullGameAnalysis?'Trwa analiza partii. Raport pojawi się po ocenieniu pierwszych pozycji.':'Uruchom analizę całej partii w zakładce Analiza, aby zobaczyć wykres i kluczowe błędy.';
  if(focusSlider)$('#analysis-scrubber')?.focus({preventScroll:true});
 }
 function stopFullAnalysis(){
@@ -1525,7 +1526,11 @@ function analysisPage(saved,ply=0){
    updateAnalysisEngine(analysisPosition(boardNavigationRange().current),boardNavigationRange().current);
   }else updateAnalysisSuggestion();
  };
- $('#analysis-all').onclick=runFullAnalysis;
+ $('#analysis-all').onclick=()=>{
+  const analysis=runFullAnalysis();
+  if(!phoneLayout.matches)selectTab(tabButtons[2],true);
+  return analysis;
+ };
  $('#analysis-stop').onclick=()=>{stopFullAnalysis();showAnalysisPosition(boardNavigationRange().current)};
  $('#analysis-engine').onchange=()=>{
   const {current}=boardNavigationRange();
