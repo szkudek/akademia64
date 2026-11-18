@@ -1206,8 +1206,8 @@ function navigateAnalysis(ply){
   board.append(label);
   board.addEventListener('animationend',()=>{
    board.classList.remove('analysis-move-error');
-   label.remove();
   },{once:true});
+  label.addEventListener('animationend',()=>label.remove(),{once:true});
  }else soundMove(move);
 }
 function keepAnalysisMoveVisible(){
