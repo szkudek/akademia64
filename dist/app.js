@@ -239,7 +239,21 @@ function drawBoard(){
  const boardGame=preview&&!freeAnalysis()?new Chess(preview.fen):game;
  $('#board-host').innerHTML=boardHTML(boardGame,preview?preview.move:lastMove,boardOutcome(boardGame,preview));
  updateBoardNavigation();
- boardInput.attach($('#board-host .board'),{position:boardGame.fen(),flipped:context?.flipped,drawing:context?.drawing,suggestion:context?.suggestion,pieceAt:sq=>boardGame.get(sq),playerColor:context?.kind==='play'?'w':boardGame.turn(),canDrag:canDragPiece,click:clickSquare,move:(from,to)=>{if(!canDragPiece(from))return;selected=from;targets=game.moves({square:from,verbose:true}).map(m=>m.to);clickSquare(to)}})}
+ const mistake=context?.kind==='analysisExercise'?context.exerciseMistake:null;
+ if(mistake){
+  $('#board-host [data-square="'+mistake.to+'"]').classList.add('exercise-mistake-target');
+  $('#board-host .board').addEventListener('pointerdown',event=>{
+   const sq=event.target.closest('[data-square]')?.dataset.square;
+   if(event.button===0&&sq&&canDragPiece(sq))clearExerciseMistake();
+  },{capture:true});
+ }
+ boardInput.attach($('#board-host .board'),{position:boardGame.fen(),flipped:context?.flipped,drawing:context?.drawing,suggestion:context?.suggestion??mistake,pieceAt:sq=>boardGame.get(sq),playerColor:context?.kind==='play'?'w':boardGame.turn(),canDrag:canDragPiece,click:clickSquare,move:(from,to)=>{if(!canDragPiece(from))return;selected=from;targets=game.moves({square:from,verbose:true}).map(m=>m.to);clickSquare(to)}})}
+function clearExerciseMistake(){
+ if(context?.kind!=='analysisExercise'||!context.exerciseMistake)return;
+ context.exerciseMistake=null;
+ boardInput.setSuggestion(null);
+ $('#board-host .exercise-mistake-target')?.classList.remove('exercise-mistake-target');
+}
 function flashBoardAnswer(correct){
  if(phoneLayout.matches)return;
  const board=$('#board-host .board');
@@ -352,7 +366,7 @@ function promotionFor(from,to){
  });
 }
 
-async function clickSquare(sq){if(cancelPromotion)return;if(solvedNow||!game||context?.imported||context?.reviewPly!=null&&!freeAnalysis())return;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return;if(context.kind==='endgame'&&game.turn()!==context.side)return;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return;
+async function clickSquare(sq){if(cancelPromotion)return;if(context?.kind==='analysisExercise'&&canDragPiece(sq))clearExerciseMistake();if(solvedNow||!game||context?.imported||context?.reviewPly!=null&&!freeAnalysis())return;if(context.kind==='opening'&&(openingMode==='show'||openingStep>=context.item.line.length))return;if(context.kind==='endgame'&&game.turn()!==context.side)return;if(context.kind==='play'&&(game.turn()!=='w'||game.isGameOver()))return;
 if(context.item?.type==='square'){if(sq===context.item.target)success('Dokładnie! h1 to jasny prawy dolny narożnik.');else feedback('Sprawdź literę kolumny i numer rzędu. Poszukaj pola h1.','error');return}
 if(context.kind==='lesson'&&['quiz','game'].includes(context.item.type))return;
 if(selected){const from=selected;const moves=game.moves({square:from,verbose:true});if(moves.some(m=>m.to===sq)){const activeGame=game,activeContext=context;const promotion=await promotionFor(from,sq);if(game!==activeGame||context!==activeContext)return;if(promotion===null)return;const move={from,to:sq,promotion};if(context.kind==='puzzle'){
@@ -1357,7 +1371,7 @@ function startAnalysisExercise(ply,savedAnalysis){
    status.textContent='Wszystkie błędy wybranego koloru zostały przećwiczone.';
   }
  };
- context={kind:'analysisExercise',answer,onCorrect,flipped:original.color==='b'};
+ context={kind:'analysisExercise',answer,onCorrect,flipped:original.color==='b',exerciseMistake:desktop?{from:original.from,to:original.to,color:'red'}:null};
  setupBoard(original.before);
  practiceShell(`
   <h1>Ćwiczenie z partii</h1>
@@ -1388,6 +1402,7 @@ function checkAnalysisExercise(move){
  flashBoardAnswer(false);
 }
 function finishAnalysisExercise(move,correct){
+ clearExerciseMistake();
  const played=game.move(move);
  if(correct)context.onCorrect();
  lastMove=[played.from,played.to];
