@@ -29,7 +29,8 @@ test('both release layouts can install and use their cached shell offline',async
   const scope='https://example.test/akademia64/';
   const callbacks={};
   const saved=new Map();
-  const self={ACADEMY_ASSET_PATH:assetPrefix,registration:{scope},addEventListener:(event,callback)=>{callbacks[event]=callback}};
+  let online=false,activated=0;
+  const self={skipWaiting:async()=>{activated++},ACADEMY_ASSET_PATH:assetPrefix,registration:{scope},addEventListener:(event,callback)=>{callbacks[event]=callback}};
   vm.runInNewContext(assetScript,{self});
   const filesOnDisk=assetPrefix?'':'dist/';
   vm.runInNewContext(workerCode,{
@@ -44,20 +45,25 @@ test('both release layouts can install and use their cached shell offline',async
        saved.set(request.url,new Response(path));
       }
      },
-     async match(url){return saved.get(url)}
+     async match(url){return saved.get(url)?.clone()}
     };
    }},
-   fetch(){throw Error('Offline')}
+   fetch(){if(online)return new Response('Fresh page');throw Error('Offline')}
   });
   let result;
   callbacks.install({waitUntil:promise=>{result=promise}});
   await result;
+  assert.equal(activated,1,'a fully cached update activates without waiting for all tabs to close');
   const resolve=url=>{
    let response;
    callbacks.fetch({request:{url,method:'GET',mode:url===scope?'navigate':'cors'},respondWith:value=>{response=value}});
    return response;
   };
   assert.equal(await (await resolve(scope)).text(),'index.html');
+  online=true;
+  assert.equal(await (await resolve(scope)).text(),'Fresh page','an online reload must not keep serving the old app shell');
+  online=false;
+  assert.equal(await (await resolve(scope)).text(),'index.html','offline navigation still uses the cached shell');
   const appPath=self.ACADEMY_OFFLINE.assets.find(path=>path.startsWith('app.js?'));
   assert.ok(appPath);
   const entry=scope+assetPrefix+appPath;

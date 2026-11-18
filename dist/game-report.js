@@ -39,8 +39,27 @@ export function renderGameReport(root,{moves,evaluations,current,side,solvedErro
   <h2>Kluczowe błędy</h2>
   <div id="analysis-errors"></div>`;
  root.querySelector('#analysis-scrubber').onchange=event=>select(Number(event.target.value));
+ // Resolve the closest dot from the pointer position, including overlapping hit areas.
+ // The root survives report rerenders while Stockfish streams fresh evaluations.
+ const selectMarker=event=>{
+  if(!interactive||event.button!==0)return;
+  const svg=root.querySelector('.analysis-graph svg');
+  const matrix=svg?.getScreenCTM();
+  if(!matrix)return;
+  const point=svg.createSVGPoint();
+  point.x=event.clientX;point.y=event.clientY;
+  const position=point.matrixTransform(matrix.inverse());
+  let nearest=null,distance=Infinity;
+  for(const error of errors){
+   const [x,y]=points[error.ply];
+   const squared=(position.x-x)**2+(position.y-y)**2;
+   if(squared<distance){nearest=error.ply;distance=squared}
+  }
+  if(nearest!==null&&distance<=64)select(nearest);
+ };
+ root.onpointerdown=event=>{if(event.pointerType==='mouse')selectMarker(event)};
+ root.onclick=selectMarker;
  for(const marker of root.querySelectorAll('[data-error-ply]')){
-  marker.onclick=()=>select(Number(marker.dataset.errorPly));
   marker.onkeydown=event=>{
    if(event.key!=='Enter'&&event.key!==' ')return;
    event.preventDefault();
