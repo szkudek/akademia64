@@ -239,6 +239,9 @@ function drawBoard(){
  const boardGame=preview&&!freeAnalysis()?new Chess(preview.fen):game;
  $('#board-host').innerHTML=boardHTML(boardGame,preview?preview.move:lastMove,boardOutcome(boardGame,preview));
  updateBoardNavigation();
+ if(context?.kind==='analysisExercise'&&context.exerciseHint&&!solvedNow){
+  $('#board-host [data-square="'+context.exerciseHint+'"]').classList.add('exercise-hint-source');
+ }
  const mistake=context?.kind==='analysisExercise'?context.exerciseMistake:null;
  if(mistake){
   $('#board-host [data-square="'+mistake.to+'"]').classList.add('exercise-mistake-target');
@@ -1379,12 +1382,21 @@ function startAnalysisExercise(ply,savedAnalysis){
   <p>Pozycja przed ${original.before.split(' ')[5]}. ruchem. Znajdź ruch polecany przez Stockfisha.</p>
   <div id="feedback" class="feedback" role="status">Graj ${original.color==='w'?'białymi':'czarnymi'}.</div>
   <div class="lesson-actions">
+   ${desktop?'<button class="btn outline" id="analysis-hint" type="button">Podpowiedź</button>':''}
    <button class="btn outline" id="analysis-answer" type="button">Pokaż rozwiązanie</button>
    ${desktop?'<button class="btn" id="analysis-next-error" type="button" hidden>Następny błąd</button>':''}
    <button class="btn" id="analysis-back" type="button">Wróć do analizy</button>
   </div>
   ${desktop?'<p id="analysis-exercise-complete" class="tiny" role="status" hidden></p>':''}`, 'Ćwiczenie z partii',original.color==='w'?'Ruch białych':'Ruch czarnych');
  $('#analysis-back').onclick=back;
+ if(desktop)$('#analysis-hint').onclick=()=>{
+  cancelPromotion?.();
+  clearExerciseMistake();
+  selected=null;targets=[];
+  context.exerciseHint=answer.best.slice(0,2);
+  drawBoard();
+  feedback('Poszukaj najlepszego ruchu z pola '+context.exerciseHint+'. Zaznaczyłem je na żółto.');
+ };
  $('#analysis-answer').onclick=()=>{
   cancelPromotion?.();
   finishAnalysisExercise(uciMove(answer.best),false);
@@ -1410,6 +1422,7 @@ function finishAnalysisExercise(move,correct){
  drawBoard();
  if(correct)flashBoardAnswer(true);
  $('#analysis-answer').disabled=true;
+ if($('#analysis-hint'))$('#analysis-hint').disabled=true;
  feedback(`${correct?'Dobrze!':'Rozwiązanie.'} Wariant Stockfisha: ${context.answer.san.join(' ')}.`,correct?'success':'');
 }
 function analysisPage(saved,ply=0){
