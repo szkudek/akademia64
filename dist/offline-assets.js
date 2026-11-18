@@ -1,8 +1,8 @@
 self.ACADEMY_OFFLINE={
-  "version": "ddd373e07883167c",
+  "version": "3b7d6082088a3e41",
   "assets": [
     "accounts.js?v=20261116-release",
-    "app.js?v=20261118-auto-report",
+    "app.js?v=20261118-stockfish-cpu-icon",
     "board-input.js?v=20261108-free-analysis",
     "chess-clicks.js",
     "chess-sound.js?v=20261118-analysis-error",
@@ -18,7 +18,7 @@ self.ACADEMY_OFFLINE={
     "italian-lesson.js",
     "italian-variations.js",
     "manifest.webmanifest",
-    "modern.css?v=20261118-auto-report",
+    "modern.css?v=20261118-stockfish-cpu-icon",
     "opening-catalog.js",
     "opening-chapter.js?v=20261108-shared-board",
     "opening-courses.js",
