@@ -88,14 +88,31 @@ for(const event of ['pointerup','click','keydown']){
 }
 $('#help-button').onclick=()=>dialog('Twoja droga do dobrej gry','Zacznij od mapy nauki albo wybierz zadania. Na szachownicy kliknij figurę, a potem pole docelowe. Lekcje i trening są bez limitu czasu. Gra treningowa używa lokalnego przeciwnika komputerowego; rozmowa z trenerem AI nie jest jeszcze dostępna.');
 $('#storage-info').onclick=()=>accounts.showStorageInfo();
-$('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').onclick=()=>{const open=$('.sidebar').classList.toggle('open');$('.menu-toggle').setAttribute('aria-expanded',String(open))};
+const menuToggle=$('.menu-toggle');
+const mobileMore=$('.mobile-more');
+const phoneLayout=matchMedia('(max-width: 650px) and (pointer: coarse)');
+function setMenuOpen(open){
+ $('.sidebar').classList.toggle('open',open);
+ menuToggle.setAttribute('aria-expanded',String(open));
+ mobileMore.setAttribute('aria-expanded',String(open));
+}
+menuToggle.onclick=mobileMore.onclick=()=>setMenuOpen(!$('.sidebar').classList.contains('open'));
+phoneLayout.addEventListener('change',()=>setMenuOpen(false));
+document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&phoneLayout.matches&&$('.sidebar').classList.contains('open')){
+  setMenuOpen(false);
+  mobileMore.focus();
+ }
+});
 $('.sidebar nav').addEventListener('click',event=>{
  const link=event.target.closest('[data-nav]');
- const toggle=$('.menu-toggle');
- if(link?.hash===(location.hash||'#home')&&toggle.getAttribute('aria-expanded')==='true'){
-  toggle.click();
-  toggle.focus();
+ if(link?.hash===(location.hash||'#home')&&$('.sidebar').classList.contains('open')){
+  setMenuOpen(false);
+  (phoneLayout.matches?mobileMore:menuToggle).focus();
  }
+});
+$('.mobile-nav').addEventListener('click',event=>{
+ if(event.target.closest('a'))setMenuOpen(false);
 });
 function updateLevel(){$('#level-name').textContent='Poziom '+academyLevel(state,completedEndgames().size).level}
 function progress(){return Math.round(state.done.length/all.length*100)}
@@ -165,7 +182,15 @@ function home(){
  queueMicrotask(updatePuzzleBankCount);
  const l=nextLesson(),percent=progress();
  const dayTasks=[state.done.length>0,state.solved.length>0,state.games>0].filter(Boolean).length;
- main.innerHTML=`<header class="academy-banner"><div class="banner-copy"><div class="banner-kicker"><span></span> AKADEMIA 64 <span class="banner-kicker-line"></span> SZTUKA DOBREGO RUCHU</div><h1>Wielka gra.<br><em>Zaczyna się od Ciebie.</em></h1><p>Odkrywaj, ćwicz, graj. Z każdym ruchem buduj swoją szachową pewność.</p><a class="banner-link" href="#learn">Odkryj swoją ścieżkę <span aria-hidden="true">↗</span></a></div><div class="banner-art" aria-hidden="true"><div class="banner-halo"></div><div class="banner-board"></div><svg class="banner-chess" viewBox="0 0 380 300" fill="none"><defs><linearGradient id="ivory-piece" x1="160" y1="60" x2="260" y2="260" gradientUnits="userSpaceOnUse"><stop stop-color="#fff7da"/><stop offset=".5" stop-color="#e6d2a4"/><stop offset="1" stop-color="#a58c58"/></linearGradient><linearGradient id="green-piece" x1="40" y1="100" x2="180" y2="270" gradientUnits="userSpaceOnUse"><stop stop-color="#819b74"/><stop offset="1" stop-color="#273f30"/></linearGradient></defs><ellipse cx="225" cy="264" rx="95" ry="13" fill="#091c15" opacity=".35"/><ellipse cx="107" cy="269" rx="63" ry="10" fill="#091c15" opacity=".3"/><g fill="url(#green-piece)" stroke="#b3c5a0" stroke-width="1.2" stroke-linejoin="round"><path d="M61 243c0-4 3-7 7-7h80c4 0 7 3 7 7l7 13c1 3-1 6-4 6H58c-4 0-5-3-4-6l7-13Z"/><path d="M94 168h28c-1 28 1 45 18 62H76c17-17 19-34 18-62Z"/><rect x="85" y="157" width="46" height="12" rx="5"/><path d="M108 103c-9 11-27 24-27 37 0 12 12 19 27 19s27-7 27-19c0-13-18-26-27-37Z"/><circle cx="108" cy="96" r="7"/><path d="M73 229h70c5 0 8 3 8 7v4H65v-4c0-4 3-7 8-7Z"/></g><path d="m113 116-13 24" stroke="#243e2b" stroke-width="4.5" stroke-linecap="round"/><path d="M119 126c5 5 8 10 8 15 0 6-4 10-10 12M99 177c0 18-2 32-8 43M72 247h70" stroke="#c2d2ad" stroke-width="2" stroke-linecap="round" opacity=".5"/><g fill="url(#ivory-piece)" stroke="#f5e7bf" stroke-width="1.1"><path d="M193 52h17V35h13v17h17v13h-17v24h-13V65h-17V52Z"/><path d="m184 97 13-12h40l13 12-10 35h-47l-9-35Z"/><path d="M196 142h41c-1 38 0 60 23 83h-87c23-23 24-45 23-83Z"/><rect x="187" y="131" width="59" height="12" rx="5"/><path d="M175 225h83l12 18H164l11-18Z"/><rect x="157" y="244" width="121" height="17" rx="6"/></g><path d="M202 153c0 25-2 42-10 57M199 99h33" stroke="#fff8e1" stroke-width="3" stroke-linecap="round" opacity=".55"/></svg><span class="banner-coordinate coordinate-a">a</span><span class="banner-coordinate coordinate-h">h</span><span class="banner-art-label">64 POLA. NIESKOŃCZENIE MOŻLIWOŚCI.</span></div></header>
+ main.innerHTML=`<section class="mobile-home">
+ <h1>Moja akademia</h1><p>Wybierz, co chcesz dziś ćwiczyć.</p>
+ <div class="mobile-home-feature"><h2>Trening taktyki</h2><p>Rozwiązuj zadania dopasowane do Twojego rankingu.</p><a class="btn" href="#puzzles">Przejdź do zadań →</a></div>
+ <h2>Nauka i trening</h2>
+ <a class="mobile-home-link" href="#openings"><span><strong>Debiuty</strong><small>Poznaj pierwsze ruchy i plany gry</small></span><span aria-hidden="true">›</span></a>
+ <a class="mobile-home-link" href="#learn"><span><strong>Mapa nauki</strong><small>Wybierz temat do przećwiczenia</small></span><span aria-hidden="true">›</span></a>
+ <a class="mobile-home-link" href="#play"><span><strong>Gra treningowa</strong><small>Zagraj z komputerem</small></span><span aria-hidden="true">›</span></a>
+ <a class="mobile-home-link" href="#training"><span><strong>Plan treningowy</strong><small>Zaplanuj swoją naukę</small></span><span aria-hidden="true">›</span></a>
+ </section><header class="academy-banner"><div class="banner-copy"><div class="banner-kicker"><span></span> AKADEMIA 64 <span class="banner-kicker-line"></span> SZTUKA DOBREGO RUCHU</div><h1>Wielka gra.<br><em>Zaczyna się od Ciebie.</em></h1><p>Odkrywaj, ćwicz, graj. Z każdym ruchem buduj swoją szachową pewność.</p><a class="banner-link" href="#learn">Odkryj swoją ścieżkę <span aria-hidden="true">↗</span></a></div><div class="banner-art" aria-hidden="true"><div class="banner-halo"></div><div class="banner-board"></div><svg class="banner-chess" viewBox="0 0 380 300" fill="none"><defs><linearGradient id="ivory-piece" x1="160" y1="60" x2="260" y2="260" gradientUnits="userSpaceOnUse"><stop stop-color="#fff7da"/><stop offset=".5" stop-color="#e6d2a4"/><stop offset="1" stop-color="#a58c58"/></linearGradient><linearGradient id="green-piece" x1="40" y1="100" x2="180" y2="270" gradientUnits="userSpaceOnUse"><stop stop-color="#819b74"/><stop offset="1" stop-color="#273f30"/></linearGradient></defs><ellipse cx="225" cy="264" rx="95" ry="13" fill="#091c15" opacity=".35"/><ellipse cx="107" cy="269" rx="63" ry="10" fill="#091c15" opacity=".3"/><g fill="url(#green-piece)" stroke="#b3c5a0" stroke-width="1.2" stroke-linejoin="round"><path d="M61 243c0-4 3-7 7-7h80c4 0 7 3 7 7l7 13c1 3-1 6-4 6H58c-4 0-5-3-4-6l7-13Z"/><path d="M94 168h28c-1 28 1 45 18 62H76c17-17 19-34 18-62Z"/><rect x="85" y="157" width="46" height="12" rx="5"/><path d="M108 103c-9 11-27 24-27 37 0 12 12 19 27 19s27-7 27-19c0-13-18-26-27-37Z"/><circle cx="108" cy="96" r="7"/><path d="M73 229h70c5 0 8 3 8 7v4H65v-4c0-4 3-7 8-7Z"/></g><path d="m113 116-13 24" stroke="#243e2b" stroke-width="4.5" stroke-linecap="round"/><path d="M119 126c5 5 8 10 8 15 0 6-4 10-10 12M99 177c0 18-2 32-8 43M72 247h70" stroke="#c2d2ad" stroke-width="2" stroke-linecap="round" opacity=".5"/><g fill="url(#ivory-piece)" stroke="#f5e7bf" stroke-width="1.1"><path d="M193 52h17V35h13v17h17v13h-17v24h-13V65h-17V52Z"/><path d="m184 97 13-12h40l13 12-10 35h-47l-9-35Z"/><path d="M196 142h41c-1 38 0 60 23 83h-87c23-23 24-45 23-83Z"/><rect x="187" y="131" width="59" height="12" rx="5"/><path d="M175 225h83l12 18H164l11-18Z"/><rect x="157" y="244" width="121" height="17" rx="6"/></g><path d="M202 153c0 25-2 42-10 57M199 99h33" stroke="#fff8e1" stroke-width="3" stroke-linecap="round" opacity=".55"/></svg><span class="banner-coordinate coordinate-a">a</span><span class="banner-coordinate coordinate-h">h</span><span class="banner-art-label">64 POLA. NIESKOŃCZENIE MOŻLIWOŚCI.</span></div></header>
  <div class="hero-grid"><section class="hero"><div class="hero-copy"><div class="eyebrow"><span class="hero-status-dot"></span> ${state.done.length?'KONTYNUUJ SWOJĄ ŚCIEŻKĘ':'ZACZNIJ OD MAŁEGO KROKU'}</div><h2>${state.done.length?l.title:'Poznaj grę.<br>Odkryj możliwości.'}</h2><p>${state.done.length?'Kolejna lekcja, kolejna umiejętność. Wróć dokładnie tam, gdzie kończy się Twój ostatni trening.':'Szachy zaczynają się od jednego ruchu. Przejdziemy z Tobą całą drogę — od zasad po pierwszą partię.'}</p><div class="hero-meta"><span>◷ &nbsp; 5–8 min</span><span class="hero-meta-divider"></span><span>Interaktywna lekcja</span></div><a class="btn light" href="#lesson/${l.id}">${state.done.length?'Kontynuuj naukę':'Rozpocznij naukę'} <span>↗</span></a><div class="hero-course-note">OD ZERA DO PIERWSZEJ PARTII <span>·</span> ${percent}% ukończone</div></div><div class="hero-visual"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="hero-board-wrap">${mini('r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4')}</div><div class="board-floating-note"><span>♞</span><div>Każda partia to nowy początek.<small>Zrób swój pierwszy ruch.</small></div></div></div></section>
  <section class="daily-card"><div class="card-heading"><div><div class="eyebrow">MAŁY PLAN, DUŻY POSTĘP</div><h3>Dobry rytm nauki</h3></div><span class="daily-count">${dayTasks}<small>/3</small></span></div><div class="daily-list"><a class="daily-item" href="#lesson/${l.id}"><span class="step-icon ${state.done.length?'completed':''}">${state.done.length?'✓':'01'}</span><div><strong>Poznaj nowy temat</strong><small>${l.title}</small></div><span>↗</span></a><a class="daily-item" href="#puzzles"><span class="step-icon ${state.solved.length?'completed':''}">${state.solved.length?'✓':'02'}</span><div><strong>Znajdź dobry ruch</strong><small>Krótkie zadanie na rozgrzewkę</small></div><span>↗</span></a><a class="daily-item" href="#play"><span class="step-icon ${state.games?'completed':''}">${state.games?'✓':'03'}</span><div><strong>Zagraj bez pośpiechu</strong><small>Partia treningowa bez zegara</small></div><span>↗</span></a></div><div class="daily-footer"><a class="btn outline" href="#training">Ułóż plan treningowy →</a></div></section></div>
  <div class="stats"><a href="#learn" class="stat"><div><div class="stat-name">Ukończone lekcje</div><div class="stat-value">${state.done.length}<small> / ${all.length}</small></div><span class="stat-detail">Budujesz solidne podstawy</span></div><span class="stat-icon">▤</span></a><a href="#puzzles" class="stat"><div><div class="stat-name">Rozwiązane zadania</div><div class="stat-value">${state.solved.length}<small data-puzzle-count data-prefix=" / "></small></div><span class="stat-detail">Trenujesz szachową intuicję</span></div><span class="stat-icon">♟</span></a><div class="stat"><div><div class="stat-name">Zdobyte odznaki</div><div class="stat-value">${earnedCount()}<small> / ${units.length+1}</small></div></div><span class="stat-icon" aria-hidden="true">✧</span></div></div>
@@ -1319,7 +1344,7 @@ function analysisPage(saved,ply=0){
  }
  const tabs=[['moves','Ruchy'],['engine','Silnik'],['report','Raport'],['pgn','PGN']];
  practiceShell(`
-  <div class="analysis-workspace">
+  <div class="analysis-workspace"${saved?'':' data-awaiting-pgn'}>
    <div class="analysis-header">
     <h1>Analiza partii 2.0</h1>
     <p id="analysis-game-name" class="tiny"></p>
@@ -1377,7 +1402,7 @@ function analysisPage(saved,ply=0){
    selectTab(tabButtons[destination],true);
   };
  });
- selectTab(tabButtons[saved?2:0]);
+ selectTab(tabButtons[saved?2:phoneLayout.matches?3:0]);
 
  const fileInput=$('#analysis-file');
  const pgnText=$('#analysis-pgn-text');
@@ -1678,7 +1703,7 @@ function playerProfile(){
    </div>
   </section>`;
 }
-function route(){context?.defenseController?.abort();fullGameAnalysis?.abort();fullGameAnalysis=null;gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating,mode]=(location.hash.slice(1)||'home').split('/');const navPage={endgames:'learn',lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',training:'Plan treningowy',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});$('.sidebar').classList.remove('open');$('.menu-toggle').setAttribute('aria-expanded','false');const routes={home,learn,training:trainingPlanPage,endgames:()=>endgamePage(id),lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(id),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating,mode==='corrections'),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
+function route(){context?.defenseController?.abort();fullGameAnalysis?.abort();fullGameAnalysis=null;gameAnalysis?.abort();stopOpeningPreviews?.();stopOpeningPreviews=null;puzzleAnalysis?.abort();cancelPromotion?.();boardInput.dispose();clearTimeout(aiTimer);gameToken++;context=null;const [page='home',id,rating,mode]=(location.hash.slice(1)||'home').split('/');const navPage={endgames:'learn',lesson:'learn',puzzle:'puzzles',corrections:'puzzles',opening:'openings'}[page]||page;const labels={home:'Moja akademia',training:'Plan treningowy',learn:'Mapa nauki',puzzles:'Zadania',openings:'Debiuty',play:'Gra treningowa',analysis:'Analiza Partii',profile:'Profil gracza',achievements:'Profil gracza'};$('#breadcrumb').textContent=labels[navPage]||'Moja akademia';document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===navPage);if(a.dataset.nav===navPage)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});setMenuOpen(false);const routes={home,learn,training:trainingPlanPage,endgames:()=>endgamePage(id),lesson:()=>lesson(id),puzzles:()=>openMixedPuzzle(id),corrections:correctionsPage,puzzle:()=>openPuzzle(id,rating,mode==='corrections'),openings:()=>openingsPage(id),opening:()=>opening(id),play,analysis:analysisPage,profile:playerProfile,achievements:playerProfile};(routes[page]||home)();updateLevel();window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);route();
 await accounts.start((progress,{background=false}={})=>{
  state=progress;

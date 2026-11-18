@@ -1120,3 +1120,102 @@ h1, h2, .hero h2 { font-weight: 700; }
  .opening-course-pane { padding: 16px; }
  .opening-course-panel-header h2 { font-size: 23px; }
 }
+
+/* Phone layout, including installed touch-first browsers. */
+.mobile-nav, .mobile-home, .sidebar nav .mobile-menu-link { display: none; }
+
+@media (max-width: 650px) and (pointer: coarse) {
+  :root { color-scheme: dark; --mobile-nav-height: calc(64px + env(safe-area-inset-bottom)); }
+  :root[data-theme][data-palette] {
+    --canvas: #141b16;
+    --nav: #1a231c;
+    --paper: #202c23;
+    --heading: #f1f5eb;
+    --text: #e2eae0;
+    --reading: #c2d0bf;
+    --muted: #acbda8;
+    --line: #3b4d3d;
+    --soft: #304334;
+    --subtle: #26372a;
+    --green: #c3dc92;
+    --control: #dcebd3;
+    --accent: #c3dc92;
+    --board-light: #dde6bf;
+    --board-dark: #78936d;
+  }
+  .app { --workspace-gutter: 12px; --panel-padding: 12px; }
+  .workspace > main { padding-bottom: calc(var(--mobile-nav-height) + 16px); }
+  .topbar { min-height: 56px; padding: 7px 12px; }
+  .topbar .menu-toggle, .topbar .theme-picker, .topbar .profile-link { display: none; }
+  .topbar .account-button { min-height: 44px; font-size: 12px; }
+  .topbar .sidebar .brand { font-size: 12px; }
+  .topbar .sidebar nav {
+    position: fixed;
+    inset: auto 0 var(--mobile-nav-height);
+    max-height: 65dvh;
+    overflow: auto;
+    margin: 0;
+    padding: 12px;
+    background: var(--nav);
+    box-shadow: 0 -12px 30px #0007;
+  }
+  .topbar .sidebar nav a { min-height: 48px; }
+  .topbar .sidebar nav .mobile-menu-link { display: flex; }
+  .mobile-nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 19;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 3px;
+    padding: 5px 5px calc(5px + env(safe-area-inset-bottom));
+    background: var(--nav);
+    border-top: 1px solid var(--line);
+  }
+  .mobile-nav :is(a,button) {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 3px;
+    min-height: 53px;
+    padding: 3px 0;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--heading);
+    font: inherit;
+    font-size: 11px;
+    text-decoration: none;
+  }
+  .mobile-nav span { font-size: 21px; line-height: 1; }
+  .mobile-nav :is([aria-current],[aria-expanded="true"]) { background: var(--soft); color: var(--accent); }
+  .mobile-home { display: block; }
+  .mobile-home ~ :is(.academy-banner,.hero-grid) { display: none; }
+  .mobile-home h1, .page-intro h1 { font-size: 28px; }
+  .mobile-home h2 { font-size: 19px; margin-block: 14px 8px; }
+  .mobile-home-feature, .mobile-home-link {
+    margin-block: 8px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--paper);
+  }
+  .mobile-home-feature h2 { margin-top: 0; }
+  .mobile-home p { color: var(--reading); }
+  .mobile-home-link { display: flex; justify-content: space-between; align-items: center; color: var(--heading); text-decoration: none; }
+  .mobile-home-link small { display: block; color: var(--muted); margin-top: 3px; }
+  .workspace :is(.btn,.filter,.analysis-tabs button,.opening-course-tabs button) { min-height: 44px; }
+  .practice-layout, .opening-board-layout { gap: 10px; }
+  .practice-layout > .board-card, .opening-board-layout > .board-card { padding: 4px; min-width: 0; }
+  .board-card > #board-host { margin-inline-start: 0; }
+  .board-card .board-label.bottom { padding: 0 2px 3px; }
+  .board-controls { flex-basis: 100%; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .board-control-button { width: 100%; height: 44px; }
+  .opening-library-search input, .account-field :is(input,textarea) { font-size: 16px; }
+  .opening-course-pane { max-height: none; }
+  .practice-layout[data-activity="analysis"]:has([data-awaiting-pgn] #analysis-tab-pgn[aria-selected="true"]) > .board-card { display: none; }
+  .lesson-panel:has(.puzzle-task-heading) { display: flex; flex-direction: column; }
+  .lesson-panel:has(.puzzle-task-heading) > :is(h2,.puzzle-turn,#feedback,.lesson-actions) { order: -1; }
+  .lesson-panel:has(.puzzle-task-heading) > .lesson-actions { margin-block: 7px 14px; }
+  #toast { bottom: calc(var(--mobile-nav-height) + 8px); }
+}
