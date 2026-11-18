@@ -45,6 +45,24 @@ function recording(name) {
 
 function soundBuffer(name) {
   if (buffers.has(name)) return buffers.get(name);
+  if (name === 'analysisError') {
+    // A short two-tone error buzzer, with softened edges to avoid clicks.
+    const buffer = audio.createBuffer(1, Math.round(.36 * sampleRate), sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) {
+      const time = i / sampleRate;
+      const onset = time < .16 ? 0 : .20;
+      const duration = .16;
+      const local = time - onset;
+      if (local < 0 || local >= duration) continue;
+      const frequency = onset === 0 ? 220 : 165;
+      const envelope = Math.min(1, local / .008, (duration - local) / .025);
+      samples[i] = .24 * envelope * (Math.sin(2 * Math.PI * frequency * local)
+        + .3 * Math.sin(6 * Math.PI * frequency * local));
+    }
+    buffers.set(name, buffer);
+    return buffer;
+  }
   const hits = sounds[name].map(([sample, onset, gain]) => [recording(sample), Math.round(onset * sampleRate), gain]);
   const length = Math.max(...hits.map(([samples, offset]) => offset + samples.length));
   const buffer = audio.createBuffer(1, length, sampleRate);
@@ -98,6 +116,10 @@ function playSequence(events) {
   } catch {
     // A browser can suspend or disable audio independently of the settings.
   }
+}
+
+export function soundAnalysisError() {
+  playSequence([['analysisError', 'feedback']]);
 }
 
 export function soundMove(move, { reply, answer, mate = false } = {}) {
