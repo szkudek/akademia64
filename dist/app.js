@@ -1440,7 +1440,7 @@ function analysisPage(saved,ply=0){
   solvedNow=false;
   game=analysisPosition(ply);
  }
- const tabs=[['moves','Ruchy'],['engine','Silnik'],['report','Raport'],['pgn','PGN']];
+ const tabs=[['moves','Ruchy'],['engine',phoneLayout.matches?'Silnik':'Analiza'],['report','Raport'],['pgn','PGN']];
  practiceShell(`
   <div class="analysis-workspace"${saved?'':' data-awaiting-pgn'}>
    <div class="analysis-header">
@@ -1454,7 +1454,7 @@ function analysisPage(saved,ply=0){
     <div id="analysis-moves" class="analysis-moves" role="group" aria-label="Posunięcia partii"></div>
    </div>
    <div class="analysis-tab-panel" id="analysis-panel-engine" role="tabpanel" aria-labelledby="analysis-tab-engine" hidden>
-  <label class="settings-row"><input type="checkbox" id="analysis-engine"> Włącz Stockfisha</label>
+  ${phoneLayout.matches?'<label class="settings-row"><input type="checkbox" id="analysis-engine"> Włącz Stockfisha</label>':'<input type="checkbox" id="analysis-engine" hidden>'}
   ${phoneLayout.matches?'<label class="settings-row"><input type="checkbox" id="analysis-show-best"> Pokaż najlepszy ruch</label>':''}
   <div class="feedback" id="analysis-result" role="status"></div>
   <p class="tiny">Dodatnia ocena oznacza przewagę białych.</p>
@@ -1466,7 +1466,7 @@ function analysisPage(saved,ply=0){
   </div>
    </div>
    <div class="analysis-tab-panel" id="analysis-panel-report" role="tabpanel" aria-labelledby="analysis-tab-report" tabindex="0" hidden>
-    <p id="analysis-report-empty">Uruchom analizę całej partii w zakładce Silnik, aby zobaczyć wykres i kluczowe błędy.</p>
+    <p id="analysis-report-empty">Uruchom analizę całej partii w zakładce ${phoneLayout.matches?'Silnik':'Analiza'}, aby zobaczyć wykres i kluczowe błędy.</p>
     <section id="analysis-report" hidden></section>
    </div>
    <div class="analysis-tab-panel" id="analysis-panel-pgn" role="tabpanel" aria-labelledby="analysis-tab-pgn" hidden>
@@ -1510,7 +1510,7 @@ function analysisPage(saved,ply=0){
  gameName.textContent=context.importLabel??'';
  $('#analysis-side').value=context.side;
  $('#analysis-side').onchange=event=>{context.side=event.target.value;updateGameReport()};
- $('#analysis-engine').checked=Boolean(saved?.engineEnabled);
+ $('#analysis-engine').checked=phoneLayout.matches?Boolean(saved?.engineEnabled):true;
  const showBestCheckbox=$('#analysis-show-best');
  if(showBestCheckbox){
   showBestCheckbox.checked=Boolean(saved?.showBest);
@@ -1577,7 +1577,7 @@ function analysisPage(saved,ply=0){
    pgnText.value='';
    importStatus.textContent='';
    showAnalysisPosition(0);
-   selectTab(tabButtons[0],true);
+   selectTab(tabButtons[phoneLayout.matches?0:1],true);
   }catch{
    if(fileInput.isConnected&&id===importId)importStatus.textContent='Nie udało się odczytać PGN. Podaj zapis jednej poprawnej partii.';
   }
