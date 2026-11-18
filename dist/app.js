@@ -278,13 +278,16 @@ function boardOutcome(position,preview){
  return canDraw&&position.isDraw()?'draw':null;
 }
 function setupBoard(fen){puzzleAnalysis?.abort();cancelPromotion?.();boardInput.reset();game=fen==='start'?new Chess():new Chess(fen);context.positions=[{fen:game.fen(),move:null}];context.reviewPly=null;selected=null;targets=[];lastMove=null;solvedNow=false}
-function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':context.kind==='endgame'?'#endgames':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':context.kind==='endgame'?'Akademia końcówek':'Moja akademia'}</a><div class="practice-layout" data-activity="${context.kind}"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div>${context.kind==='analysis'?analysisBoardMarkup():'<div id="board-host"></div>'}<div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
+function practiceShell(panel,label='Ćwiczenie',bottom='Białe · Twój ruch'){main.innerHTML=`<a href="${context.kind==='lesson'?'#learn':context.kind==='puzzle'?'#puzzles':context.kind==='opening'?'#openings':context.kind==='endgame'?'#endgames':'#home'}" class="back-link">← &nbsp; ${context.kind==='lesson'?'Wróć do mapy':context.kind==='puzzle'?'Miszmasz':context.kind==='opening'?'Wszystkie debiuty':context.kind==='endgame'?'Akademia końcówek':'Moja akademia'}</a><div class="practice-layout" data-activity="${context.kind}"><section class="board-card"><div class="board-label"><span>${label}</span><span id="board-top">${context.kind==='play'?'Komputer · czarne':'Odkrywaj na szachownicy'}</span></div>${context.kind==='analysis'?analysisBoardMarkup():'<div id="board-host"></div>'}<div class="board-label bottom"><span id="board-bottom">${bottom}</span><span id="board-review" aria-live="polite" hidden></span>${context.kind==='analysis'&&!phoneLayout.matches?analysisBestMoveButton():''}${boardControls()}</div></section><section class="lesson-panel">${panel}</section></div>`;bindBoardControls();drawBoard()}
 const boardNavigation=[
  ['first','Do początku','M6 5v14M18 6l-6 6 6 6'],
  ['previous','Ruch wstecz','M15 6l-6 6 6 6'],
  ['next','Ruch naprzód','M9 6l6 6-6 6'],
  ['last','Do końca','M18 5v14M6 6l6 6-6 6']
 ];
+function analysisBestMoveButton(){
+ return '<button class="board-control-button analysis-best-toggle" id="analysis-best-toggle" type="button" aria-label="Pokaż najlepszy ruch" aria-pressed="false" title="Stockfish — Pokaż najlepszy ruch"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M24 16c-3-7-11-9-18-5l-4-4v18l4-4c7 4 15 2 18-5Z" fill="currentColor"/><path d="m12 9 3-5 5 7m-8 12 3 5 5-7" fill="currentColor"/><circle cx="19" cy="14" r="1.6" fill="var(--paper)"/><path d="m24 16 5-3v6Z" fill="currentColor"/></svg></button>';
+}
 function boardControls(){
  const navigation=boardNavigation.map(([action,label,path])=>`<button class="board-control-button" type="button" data-board-nav="${action}" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="${path}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`).join('');
  return `<div class="board-controls" role="group" aria-label="Sterowanie szachownicą">${navigation}<button class="board-control-button" id="flip-board" type="button" aria-label="Odwróć szachownicę" aria-pressed="${Boolean(context.flipped)}" title="Odwróć szachownicę"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4 9a8 8 0 0 1 13.7-3.8L20 7.5M20 3v4.5h-4.5M20 15a8 8 0 0 1-13.7 3.8L4 16.5M4 21v-4.5h4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="8" y="8" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.25"/><path d="M8 8h4v4H8zm4 4h4v4h-4z" fill="currentColor"/></svg></button><button class="board-control-button" id="chess-sound-settings" type="button" aria-label="Ustawienia dźwięku" title="Ustawienia dźwięku" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Zm12 0a4 4 0 0 1 0 6m2.5-8.5a7.5 7.5 0 0 1 0 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>`;
@@ -1156,8 +1159,12 @@ function showAnalysisEvaluation(evaluation){
 function updateAnalysisSuggestion(){
  const engine=$('#analysis-engine').checked;
  const checkbox=$('#analysis-show-best');
- checkbox.disabled=!engine;
- context.suggestion=engine&&checkbox.checked&&context.analysisBestMove
+ if(checkbox)checkbox.disabled=!engine;
+ const showBest=checkbox?checkbox.checked:Boolean(context.showBest);
+ const button=$('#analysis-best-toggle');
+ button?.setAttribute('aria-pressed',String(engine&&showBest));
+ if(button)button.title='Stockfish — '+(engine&&showBest?'Ukryj najlepszy ruch':'Pokaż najlepszy ruch');
+ context.suggestion=engine&&showBest&&context.analysisBestMove
   ?{...context.analysisBestMove,color:'blue'}:null;
  boardInput.setSuggestion(context.suggestion);
 }
@@ -1350,7 +1357,7 @@ async function runFullAnalysis(){
 function startAnalysisExercise(ply,savedAnalysis){
  if(context.kind==='analysis')stopFullAnalysis();
  gameAnalysis?.abort();
- const saved=savedAnalysis??{...context,engineEnabled:$('#analysis-engine').checked,showBest:$('#analysis-show-best').checked,suggestion:null};
+ const saved=savedAnalysis??{...context,engineEnabled:$('#analysis-engine').checked,showBest:$('#analysis-show-best')?.checked??Boolean(context.showBest),suggestion:null};
  const answer=saved.evaluations[ply-1];
  const original=saved.moves[ply-1];
  const back=()=>analysisPage(saved,ply);
@@ -1448,7 +1455,7 @@ function analysisPage(saved,ply=0){
    </div>
    <div class="analysis-tab-panel" id="analysis-panel-engine" role="tabpanel" aria-labelledby="analysis-tab-engine" hidden>
   <label class="settings-row"><input type="checkbox" id="analysis-engine"> Włącz Stockfisha</label>
-  <label class="settings-row"><input type="checkbox" id="analysis-show-best"> Pokaż najlepszy ruch</label>
+  ${phoneLayout.matches?'<label class="settings-row"><input type="checkbox" id="analysis-show-best"> Pokaż najlepszy ruch</label>':''}
   <div class="feedback" id="analysis-result" role="status"></div>
   <p class="tiny">Dodatnia ocena oznacza przewagę białych.</p>
   <div class="analysis-options">
@@ -1504,8 +1511,20 @@ function analysisPage(saved,ply=0){
  $('#analysis-side').value=context.side;
  $('#analysis-side').onchange=event=>{context.side=event.target.value;updateGameReport()};
  $('#analysis-engine').checked=Boolean(saved?.engineEnabled);
- $('#analysis-show-best').checked=Boolean(saved?.showBest);
- $('#analysis-show-best').onchange=updateAnalysisSuggestion;
+ const showBestCheckbox=$('#analysis-show-best');
+ if(showBestCheckbox){
+  showBestCheckbox.checked=Boolean(saved?.showBest);
+  showBestCheckbox.onchange=()=>{context.showBest=showBestCheckbox.checked;updateAnalysisSuggestion()};
+ }
+ const bestButton=$('#analysis-best-toggle');
+ if(bestButton)bestButton.onclick=()=>{
+  const engine=$('#analysis-engine');
+  context.showBest=!(engine.checked&&context.showBest);
+  if(context.showBest&&!engine.checked){
+   engine.checked=true;
+   updateAnalysisEngine(analysisPosition(boardNavigationRange().current),boardNavigationRange().current);
+  }else updateAnalysisSuggestion();
+ };
  $('#analysis-all').onclick=runFullAnalysis;
  $('#analysis-stop').onclick=()=>{stopFullAnalysis();showAnalysisPosition(boardNavigationRange().current)};
  $('#analysis-engine').onchange=()=>{
