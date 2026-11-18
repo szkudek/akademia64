@@ -11,7 +11,7 @@ const assets=new Set([shell,manifest,...self.ACADEMY_OFFLINE.assets.map(path=>ne
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(cacheName).then(cache=>
   cache.addAll([...assets].map(url=>new Request(url,{cache:'reload'})))
- ));
+ ).then(()=>self.skipWaiting()));
 });
 self.addEventListener('activate',event=>{
  event.waitUntil((async()=>{
@@ -29,6 +29,12 @@ self.addEventListener('fetch',event=>{
  const cachedKey=appNavigation?shell:request.url;
  if(!assets.has(cachedKey))return;
  event.respondWith((async()=>{
+  if(appNavigation){
+   try{
+    const fresh=await fetch(request);
+    if(fresh.ok)return fresh;
+   }catch{}
+  }
   const cache=await caches.open(cacheName);
   return await cache.match(cachedKey)??fetch(request);
  })());

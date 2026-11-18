@@ -12,7 +12,7 @@ import { ratingFromAttempts, ratedAttempts, choosePuzzle, STARTING_RATING, RATIN
 import { analyzePuzzle } from './puzzle-analysis.js?v=20261116-eval-bar';
 import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261117-pgn-text';
 import { createStockfish, formatScore, uciMove } from './stockfish-analysis.js';
-import { renderGameReport } from './game-report.js?v=20261118-clickable-markers';
+import { renderGameReport } from './game-report.js?v=20261118-analysis-navigation-fix';
 import { openSoundSettings, soundMove, soundAnalysisError, unlockChessSound } from './chess-sound.js?v=20261118-analysis-error';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
@@ -99,6 +99,14 @@ function setMenuOpen(open){
 menuToggle.onclick=mobileMore.onclick=()=>setMenuOpen(!$('.sidebar').classList.contains('open'));
 phoneLayout.addEventListener('change',()=>setMenuOpen(false));
 document.addEventListener('keydown',event=>{
+ if(!event.defaultPrevented&&context?.kind==='analysis'&&!phoneLayout.matches
+  &&(event.key==='ArrowLeft'||event.key==='ArrowRight')
+  &&!event.altKey&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey
+  &&!cancelPromotion&&!document.querySelector('dialog[open]')
+  &&!event.target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="slider"],[role="tablist"]')){
+  event.preventDefault();
+  showBoardPosition(event.key==='ArrowLeft'?'previous':'next');
+ }
  if(event.key==='Escape'&&phoneLayout.matches&&$('.sidebar').classList.contains('open')){
   setMenuOpen(false);
   mobileMore.focus();
