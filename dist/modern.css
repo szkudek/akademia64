@@ -1234,3 +1234,9 @@ h1, h2, .hero h2 { font-weight: 700; }
 .analysis-error-button .analysis-error-mark,.analysis-graph :is(.analysis-current-mark,.analysis-cursor){pointer-events:none}
 
 #analysis-next-error[hidden],#analysis-exercise-complete[hidden]{display:none}
+
+.board-answer-flash{position:absolute;inset:0;z-index:10;pointer-events:none;border-radius:inherit;background:var(--answer-tint);box-shadow:inset 0 0 0 5px var(--answer-color);animation:board-answer-flash .5s ease-out both}
+.board-answer-flash.correct{--answer-tint:rgba(34,197,94,.3);--answer-color:#22c55e}
+.board-answer-flash.incorrect{--answer-tint:rgba(220,38,38,.32);--answer-color:#dc2626}
+@keyframes board-answer-flash{0%,25%{opacity:1}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.board-answer-flash{animation:none;opacity:.45}}
