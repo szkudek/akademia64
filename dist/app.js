@@ -1317,23 +1317,46 @@ async function runFullAnalysis(){
   }
  }
 }
-function startAnalysisExercise(ply){
- stopFullAnalysis();
+function startAnalysisExercise(ply,savedAnalysis){
+ if(context.kind==='analysis')stopFullAnalysis();
  gameAnalysis?.abort();
- const saved={...context,engineEnabled:$('#analysis-engine').checked,showBest:$('#analysis-show-best').checked,suggestion:null};
+ const saved=savedAnalysis??{...context,engineEnabled:$('#analysis-engine').checked,showBest:$('#analysis-show-best').checked,suggestion:null};
  const answer=saved.evaluations[ply-1];
  const original=saved.moves[ply-1];
  const back=()=>analysisPage(saved,ply);
- context={kind:'analysisExercise',answer,onCorrect:()=>saved.solvedErrors.add(ply),flipped:original.color==='b'};
+ const desktop=!phoneLayout.matches;
+ const review=reviewMove(original,answer,saved.evaluations[ply]);
+ const onCorrect=()=>{
+  saved.solvedErrors.add(ply);
+  if(!desktop)return;
+  const pending=saved.moves.map((move,index)=>({move,ply:index+1,
+   review:reviewMove(move,saved.evaluations[index],saved.evaluations[index+1])
+  })).filter(item=>item.review?.severity>=2&&!saved.solvedErrors.has(item.ply)
+   &&(saved.side==='both'||item.move.color===saved.side));
+  const next=pending.find(item=>item.ply>ply)??pending[0];
+  if(next){
+   const button=$('#analysis-next-error');
+   button.hidden=false;
+   button.onclick=()=>startAnalysisExercise(next.ply,saved);
+  }else{
+   const status=$('#analysis-exercise-complete');
+   status.hidden=false;
+   status.textContent='Wszystkie błędy wybranego koloru zostały przećwiczone.';
+  }
+ };
+ context={kind:'analysisExercise',answer,onCorrect,flipped:original.color==='b'};
  setupBoard(original.before);
  practiceShell(`
   <h1>Ćwiczenie z partii</h1>
+  ${desktop?`<p id="analysis-original-move" class="instruction">W partii zagrałeś: <strong>${moveLabel(original)}</strong>${review?' · '+review.label:''}.</p>`:''}
   <p>Pozycja przed ${original.before.split(' ')[5]}. ruchem. Znajdź ruch polecany przez Stockfisha.</p>
   <div id="feedback" class="feedback" role="status">Graj ${original.color==='w'?'białymi':'czarnymi'}.</div>
   <div class="lesson-actions">
    <button class="btn outline" id="analysis-answer" type="button">Pokaż rozwiązanie</button>
+   ${desktop?'<button class="btn" id="analysis-next-error" type="button" hidden>Następny błąd</button>':''}
    <button class="btn" id="analysis-back" type="button">Wróć do analizy</button>
-  </div>`, 'Ćwiczenie z partii',original.color==='w'?'Ruch białych':'Ruch czarnych');
+  </div>
+  ${desktop?'<p id="analysis-exercise-complete" class="tiny" role="status" hidden></p>':''}`, 'Ćwiczenie z partii',original.color==='w'?'Ruch białych':'Ruch czarnych');
  $('#analysis-back').onclick=back;
  $('#analysis-answer').onclick=()=>{
   cancelPromotion?.();
