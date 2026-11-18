@@ -1227,3 +1227,8 @@ h1, h2, .hero h2 { font-weight: 700; }
 @keyframes analysis-error-flash{0%,25%{opacity:1}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.analysis-move-error::after{animation-name:analysis-error-still}}
 @keyframes analysis-error-still{from,to{opacity:.45}}
+
+.analysis-error-button{cursor:pointer;outline:none}
+.analysis-error-hit{fill:transparent;pointer-events:all;stroke:transparent;stroke-width:1.25}
+.analysis-error-button:is(:hover,:focus-visible) .analysis-error-hit{stroke:var(--heading);fill:var(--paper);fill-opacity:.18}
+.analysis-error-button .analysis-error-mark,.analysis-graph :is(.analysis-current-mark,.analysis-cursor){pointer-events:none}

@@ -12,7 +12,7 @@ import { ratingFromAttempts, ratedAttempts, choosePuzzle, STARTING_RATING, RATIN
 import { analyzePuzzle } from './puzzle-analysis.js?v=20261116-eval-bar';
 import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261117-pgn-text';
 import { createStockfish, formatScore, uciMove } from './stockfish-analysis.js';
-import { renderGameReport } from './game-report.js?v=20261116-practiced-markers';
+import { renderGameReport } from './game-report.js?v=20261118-clickable-markers';
 import { openSoundSettings, soundMove, soundAnalysisError, unlockChessSound } from './chess-sound.js?v=20261118-analysis-error';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
@@ -1258,7 +1258,7 @@ function updateGameReport(){
  }
  const root=$('#analysis-report');
  const focusSlider=document.activeElement?.id==='analysis-scrubber';
- renderGameReport(root,{moves,evaluations,current,side,solvedErrors:context.solvedErrors,select:navigateAnalysis,practice:startAnalysisExercise});
+ renderGameReport(root,{moves,evaluations,current,side,solvedErrors:context.solvedErrors,select:navigateAnalysis,practice:startAnalysisExercise,interactive:!phoneLayout.matches});
  $('#analysis-report-empty').hidden=!root.hidden;
  if(focusSlider)$('#analysis-scrubber')?.focus({preventScroll:true});
 }
