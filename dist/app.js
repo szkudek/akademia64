@@ -13,7 +13,7 @@ import { analyzePuzzle } from './puzzle-analysis.js?v=20261116-eval-bar';
 import { moveLabel, readGame, reviewMove, terminalEvaluation } from './game-analysis.js?v=20261117-pgn-text';
 import { createStockfish, formatScore, uciMove } from './stockfish-analysis.js';
 import { renderGameReport } from './game-report.js?v=20261116-practiced-markers';
-import { openSoundSettings, soundMove, unlockChessSound } from './chess-sound.js?v=20261108-recorded-clicks';
+import { openSoundSettings, soundMove, soundAnalysisError, unlockChessSound } from './chess-sound.js?v=20261118-analysis-error';
 const boardInput=createBoardInput();
 const $=s=>document.querySelector(s);const main=$('#main');
 const icons={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
@@ -1190,8 +1190,25 @@ function navigateAnalysis(ply){
  const {current}=boardNavigationRange();
  if(ply===current)return;
  const move=context.moves[(ply>current?ply:current)-1];
- soundMove(move);
+ const played=context.moves[ply-1];
+ const review=context.imported&&!phoneLayout.matches&&played
+  &&(context.side==='both'||played.color===context.side)
+  ?reviewMove(played,context.evaluations[ply-1],context.evaluations[ply]):null;
  showAnalysisPosition(ply);
+ if(review?.severity>=2){
+  soundAnalysisError();
+  const board=$('#board-host .board');
+  board.classList.add('analysis-move-error');
+  const label=document.createElement('span');
+  label.className='analysis-move-error-label';
+  label.setAttribute('role','status');
+  label.textContent=review.label;
+  board.append(label);
+  board.addEventListener('animationend',()=>{
+   board.classList.remove('analysis-move-error');
+   label.remove();
+  },{once:true});
+ }else soundMove(move);
 }
 function keepAnalysisMoveVisible(){
  const panel=$('#analysis-panel-moves');

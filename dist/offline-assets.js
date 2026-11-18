@@ -1,11 +1,11 @@
 self.ACADEMY_OFFLINE={
-  "version": "44aa87b4e3ce53ef",
+  "version": "5b4116af9813e74c",
   "assets": [
     "accounts.js?v=20261116-release",
-    "app.js?v=20261118-mobile",
+    "app.js?v=20261118-analysis-error",
     "board-input.js?v=20261108-free-analysis",
     "chess-clicks.js",
-    "chess-sound.js?v=20261108-recorded-clicks",
+    "chess-sound.js?v=20261118-analysis-error",
     "endgames.js",
     "firebase-config.js",
     "firebase-service.js?v=20261116-release",
@@ -18,7 +18,7 @@ self.ACADEMY_OFFLINE={
     "italian-lesson.js",
     "italian-variations.js",
     "manifest.webmanifest",
-    "modern.css?v=20261118-mobile",
+    "modern.css?v=20261118-analysis-error",
     "opening-catalog.js",
     "opening-chapter.js?v=20261108-shared-board",
     "opening-courses.js",
