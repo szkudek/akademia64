@@ -286,7 +286,7 @@ const boardNavigation=[
  ['last','Do końca','M18 5v14M6 6l6 6-6 6']
 ];
 function analysisBestMoveButton(){
- return '<button class="board-control-button analysis-best-toggle" id="analysis-best-toggle" type="button" aria-label="Pokaż najlepszy ruch" aria-pressed="false" title="Stockfish — Pokaż najlepszy ruch"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M24 16c-3-7-11-9-18-5l-4-4v18l4-4c7 4 15 2 18-5Z" fill="currentColor"/><path d="m12 9 3-5 5 7m-8 12 3 5 5-7" fill="currentColor"/><circle cx="19" cy="14" r="1.6" fill="var(--paper)"/><path d="m24 16 5-3v6Z" fill="currentColor"/></svg></button>';
+ return '<button class="board-control-button analysis-best-toggle" id="analysis-best-toggle" type="button" aria-label="Pokaż najlepszy ruch" aria-pressed="false" title="Stockfish 19 — Pokaż najlepszy ruch"><svg viewBox="0 0 32 32" width="28" height="28" fill="none" aria-hidden="true"><rect x="6" y="6" width="20" height="20" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M10 2v4m6-4v4m6-4v4M10 26v4m6-4v4m6-4v4M2 10h4m-4 6h4m-4 6h4m20-12h4m-4 6h4m-4 6h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><text x="16" y="16.5" text-anchor="middle" dominant-baseline="middle" fill="currentColor" font-family="Arial,sans-serif" font-size="12" font-weight="700">19</text></svg></button>';
 }
 function boardControls(){
  const navigation=boardNavigation.map(([action,label,path])=>`<button class="board-control-button" type="button" data-board-nav="${action}" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="${path}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`).join('');
@@ -1163,7 +1163,7 @@ function updateAnalysisSuggestion(){
  const showBest=checkbox?checkbox.checked:Boolean(context.showBest);
  const button=$('#analysis-best-toggle');
  button?.setAttribute('aria-pressed',String(engine&&showBest));
- if(button)button.title='Stockfish — '+(engine&&showBest?'Ukryj najlepszy ruch':'Pokaż najlepszy ruch');
+ if(button)button.title='Stockfish 19 — '+(engine&&showBest?'Ukryj najlepszy ruch':'Pokaż najlepszy ruch');
  context.suggestion=engine&&showBest&&context.analysisBestMove
   ?{...context.analysisBestMove,color:'blue'}:null;
  boardInput.setSuggestion(context.suggestion);
